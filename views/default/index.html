@@ -3,7 +3,7 @@
 <table>
 	<tr>
         <td>
-<div id="graphdiv"></div>
+			<div id="graphdiv"></div>
         </td>
         <td>
             <h2 onclick="collapse('section_file')">File</h2>
@@ -16,32 +16,31 @@
                 {{=LOAD('default', 'file', ajax=True, target='create_record')}}
             </div>
             <hr />
-            <h2>General Properties</h2>
-            <div id="edit_record"> ... select a record</div>
+            <h2 onclick="collapse('edit_record')">General Properties</h2>
+            <div id="edit_record"> ... upload or select a file.</div>
             <hr />
-            <h2>Series Options</h2>
-            <div id="series_options"> ... select a record</div>
+            <h2 onclick="collapse('series_options')">Series Options</h2>
+            <div id="series_options"> ... upload or select a file.</div>
             <hr />
             <h2>Segmentation</h2>
             <table>
                 <tr>
-		<th>Segementation</th>
-		<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
-	</tr>
-	<tr>
-		<th>Threshold</th>
-		<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
-	</tr>
-</table>
-<input type="submit" value="start"/>
-<hr />
-<h2>Tools</h2>
-<div id="tools">
-    <div id='toolbar'><div id="tool_zoom" onClick='change_tool(this)'></div><div id="tool_cut" onClick='change_tool(this)'></div><div id="tool_nocut" onClick='change_tool(this)'></div><div id="tool_drop" onClick='change_tool(this)'></div><div id="tool_event" onClick='change_tool(this)'></div><div id="tool_cancel" onClick='change_tool(this)'></div></div>
-</div>
-<hr />
-<h2>Preprocessing</h2>
-
+                    <th>Segmentation</th>
+                    <td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
+                </tr>
+                <tr>
+                    <th>Threshold</th>
+                    <td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
+                </tr>
+            </table>
+            <input type="submit" value="start"/>
+            <hr />
+            <h2>Tools</h2>
+            <div id="tools">
+                <div id='toolbar'><div id="tool_zoom" onClick='change_tool(this)'></div><div id="tool_cut" onClick='change_tool(this)'></div><div id="tool_nocut" onClick='change_tool(this)'></div><div id="tool_drop" onClick='change_tool(this)'></div><div id="tool_event" onClick='change_tool(this)'></div><div id="tool_cancel" onClick='change_tool(this)'></div></div>
+            </div>
+            <hr />
+            <h2>Preprocessing</h2>
         </td>
     </tr>
 </table>

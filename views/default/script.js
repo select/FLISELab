@@ -478,6 +478,7 @@ g = new Dygraph(document.getElementById("graphdiv"), "",   //To FALKO: to be rep
 	},
 	strokeWidth: 1.5,
 	gridLineColor: 'rgb(196, 196, 196)',
+	logscale : false,
 	underlayCallback : captureCanvas
 });
 

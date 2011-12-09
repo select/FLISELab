@@ -76,7 +76,13 @@ jQuery(document).ready(function(){
 });
 /* ------------------------------------------------------------------- */
     var isSelecting = false;
-    var tool = 'zoom';
+	var captCanvas = null;
+    var tool = 'zoom';//Default tool
+	//TO FALKO: Load positions from stored previously entered values (if any), or leave empty
+	var cutT = new Array();//Array or list
+	var nocutT = new Array();//Array of Array([start,end])
+	var dropT = new Array();//Array of Array([start,end])
+	var eventT = new Array();//Array or list
 
     function getX(canvasx, g) {
 		var points = g.layout_.points;
@@ -100,6 +106,8 @@ jQuery(document).ready(function(){
 	}
 	
 	function drawSelectRect(event, g, context) {
+		var ctx = g.canvas_ctx_;
+		
 		context.dragEndX = g.dragGetX_(event, context);
 		context.dragEndY = g.dragGetY_(event, context);
 		
@@ -111,15 +119,37 @@ jQuery(document).ready(function(){
 		// I constrain it to horizontal direction only (otherwise comment the following and uncomment what's above.)
 		context.dragDirection = Dygraph.HORIZONTAL;
 		
-		g.drawZoomRect_(
-			context.dragDirection,
-			context.dragStartX,
-			context.dragEndX,
-			context.dragStartY,
-			context.dragEndY,
-			context.prevDragDirection,
-			context.prevEndX,
-			context.prevEndY);
+		
+		// Clean up from the previous rect if necessary
+		if (context.prevDragDirection == Dygraph.HORIZONTAL) {
+		  ctx.clearRect(Math.min(context.dragStartX, context.prevEndX), g.layout_.getPlotArea().y,
+				  				  Math.abs(context.dragStartX - context.prevEndX), g.layout_.getPlotArea().h);
+		} else if (context.prevDragDirection == Dygraph.VERTICAL){
+		  ctx.clearRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.prevEndY),
+						          g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
+		}
+		
+	    if (tool == 'nocut'){
+			ctx.fillStyle = "rgba(128,255,128,0.33)";
+		} else if (tool == 'cancel') {
+			ctx.fillStyle = "rgba(255,128,128,0.33)";
+		} else if (tool == 'drop') {
+			ctx.fillStyle = "rgba(255,255,128,0.33)";
+		} else {
+			ctx.fillStyle = "rgba(128,128,128,0.33)";
+		}
+		// Draw a light-grey (default) rectangle to show the new viewing area
+		if (context.dragDirection == Dygraph.HORIZONTAL) {
+		  if (context.dragEndX && context.dragStartX) {
+			ctx.fillRect(Math.min(context.dragStartX, context.dragEndX), g.layout_.getPlotArea().y,
+						 Math.abs(context.dragEndX - context.dragStartX), g.layout_.getPlotArea().h);
+		  }
+		} else if (context.dragDirection == Dygraph.VERTICAL) {
+		  if (context.dragEndY && context.dragStartY) {
+			ctx.fillRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.dragEndY),
+						 g.layout_.getPlotArea().w, Math.abs(context.dragEndY - context.dragStartY));
+		  }
+		}
 		
 		context.prevEndX = context.dragEndX;
 		context.prevEndY = context.dragEndY;
@@ -139,8 +169,189 @@ jQuery(document).ready(function(){
 	  g.updateSelection_();  
     }
 	
+	function drawRect(g, context) {
+	  var ctx = captCanvas;
+	  
+	  ctx.fillStyle = "rgba(255,1,1,0.33)";
+      // Draw a light-colored rectangle to show the new viewing area
+	  if (context.prevDragDirection == Dygraph.HORIZONTAL) {
+		  ctx.fillRect(Math.min(context.dragStartX, context.prevEndX), g.layout_.getPlotArea().y,
+					  Math.abs(context.dragStartX - context.prevEndX), g.layout_.getPlotArea().h);
+	  } else if (context.prevDragDirection == Dygraph.VERTICAL) {
+		  ctx.fillRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.prevEndY),
+					  g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
+	  }
+	  // Update point display
+	  g.updateSelection_();  
+    }
+	
 	function finishSelect() {
 		isSelecting = false;
+	}
+	
+	function add2nocut(startX, endX) {
+		//Check order
+		if (endX<startX){
+			var x = startX;
+			startX = endX;
+			endX = x;
+		} else if (startX==endX) {
+			return
+		}
+		//If array is empty, initialize
+		if (nocutT.length==0){
+			nocutT.push([startX, endX])
+		} else {
+			//Test if [s,e] overlaps with any already existing nocutT interval, in which case it joins them.
+			var insertT = false;
+			for (i=0; i<nocutT.length; i++) {
+				if ((endX>nocutT[i][0])&&(startX<nocutT[i][0])){
+					insertT = true;
+					nocutT[i][0]=startX
+				}
+				if ((endX>nocutT[i][1])&&(startX<nocutT[i][1])){
+					insertT = true;
+					nocutT[i][1]=endX
+				}
+			}
+			//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
+			//otherwise, add the new segment at correct position so that it is sorted in increasing order.
+			if (insertT){
+				var countHowMany = 0;
+				var index = 0;
+				for (i=1; i<nocutT.length; i++) {
+					if (nocutT[i-1][1]>=nocutT[i][0]){
+						nocutT[i-1][1]=nocutT[i][1];
+						countHowMany++;
+						if (index==0){
+							index=i
+						}
+					} else if (index!=0) {
+						break
+					}
+				}
+				if (index!=0) {
+					nocutT.splice(index, countHowMany)
+				}
+			} else {
+				var flag = true;
+				if (endX<nocutT[0][0]){
+					nocutT.splice(0,0,[startX, endX])
+					flag = false;
+				} else {
+					for (i=1; i<nocutT.length; i++) {
+						if ((endX<nocutT[i][0])&&(startX>nocutT[i-1][1])){
+							nocutT.splice(i,0,[startX, endX]);
+							flag = false;
+							break
+						}
+					}	
+				}
+				if (flag){
+					nocutT.push([startX, endX])
+				}
+			}
+		}
+	}
+	
+	function add2drop(startX, endX) {
+		//Check order
+		if (endX<startX){
+			var x = startX;
+			startX = endX;
+			endX = x;
+		} else if (startX==endX) {
+			return
+		}
+		//If array is empty, initialize
+		if (dropT.length==0){
+			dropT.push([startX, endX])
+		} else {
+			//Test if [s,e] overlaps with any already existing dropT interval, in which case it joins them.
+			var insertT = false;
+			for (i=0; i<dropT.length; i++) {
+				if ((endX>dropT[i][0])&&(startX<dropT[i][0])){
+					insertT = true;
+					dropT[i][0]=startX
+				}
+				if ((endX>dropT[i][1])&&(startX<dropT[i][1])){
+					insertT = true;
+					dropT[i][1]=endX
+				}
+			}
+			//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
+			//otherwise, add the new segment at correct position so that it is sorted in increasing order.
+			if (insertT){
+				var countHowMany = 0;
+				var index = 0;
+				for (i=1; i<dropT.length; i++) {
+					if (dropT[i-1][1]>=dropT[i][0]){
+						dropT[i-1][1]=dropT[i][1];
+						countHowMany++;
+						if (index==0){
+							index=i
+						}
+					} else if (index!=0) {
+						break
+					}
+				}
+				if (index!=0) {
+					dropT.splice(index, countHowMany)
+				}
+			} else {
+				var flag = true;
+				if (endX<dropT[0][0]){
+					dropT.splice(0,0,[startX, endX])
+					flag = false;
+				} else {
+					for (i=1; i<dropT.length; i++) {
+						if ((endX<dropT[i][0])&&(startX>dropT[i-1][1])){
+							dropT.splice(i,0,[startX, endX]);
+							flag = false;
+							break
+						}
+					}	
+				}
+				if (flag){
+					dropT.push([startX, endX])
+				}
+			}
+		}
+	}
+	
+	function add2cut(X) {
+		//If array is empty, initialize
+		if (cutT.length==0){
+			cutT.push(X);
+		} else {
+			//Check if it already exists
+			for (i=0; i<cutT.length; i++) {
+				if (cutT[i]==X){
+					return
+				}
+			}
+			//Otherwise insert it while preserving the increasing order
+			var flag = true;
+			if (X<cutT[0]){
+				cutT.splice(0,0,X);
+				flag = false;
+			} else {
+			  for (i=1; i<cutT.length; i++) {
+				  if ((X>cutT[i-1])&&(X<cutT[i])){
+					  cutT.splice(i,0,X);
+					  flag = false;
+					  break
+				  }
+			  }
+		   }
+		   if (flag){
+			   cutT.push(X);
+		   }
+		}
+	}
+	
+	function captureCanvas(canvas, area, g) {
+	  captCanvas = canvas;
 	}
 
     function change_tool(tool_div) {
@@ -173,8 +384,9 @@ jQuery(document).ready(function(){
     
 	change_tool(document.getElementById("tool_"+tool));
 
-    g = new Dygraph(document.getElementById("graphdiv"), "",
+    g = new Dygraph(document.getElementById("graphdiv"), "",   //To FALKO: to be replaced by imported data
         {
+		  //labels: [],    //To FALKO: to be replaced by eventually already existing values
           interactionModel: {
             mousedown: function (event, g, context) {
               if (tool == 'zoom') {
@@ -194,7 +406,10 @@ jQuery(document).ready(function(){
                 if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
 					isSelecting = true; 
 				} else {
-                  alert('Cut or event at t='+getX(context.dragStartX, g));
+                  //alert('Cut or event at t='+getX(context.dragStartX, g));
+				  if (tool =='cut'){
+					  add2cut(getX(context.dragStartX, g));
+				  }
                 }
               }
             },
@@ -211,11 +426,24 @@ jQuery(document).ready(function(){
                 Dygraph.defaultInteractionModel.mouseup(event, g, context);
               } else if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {			
                 eraseSelectRect(g, context);
-				alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
-				context.dragStartX = null;
-				context.dragStartY = null;
-				finishSelect();
+				if (tool == 'nocut'){
+					if (context.prevEndX != null){
+						add2nocut(getX(context.dragStartX,g),getX(context.dragEndX,g));
+						//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
+					}
+			  	} else if (tool == 'drop'){
+					if (context.prevEndX != null){
+						add2drop(getX(context.dragStartX,g),getX(context.dragEndX,g));
+						drawRect(g, context);
+						//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
+					}
+			  	}	
               }
+			  context.dragStartX = null;
+			  context.dragStartY = null;
+			  context.prevEndX = null;
+			  context.prevEndY = null;
+			  finishSelect();
             },
             mouseout: function(event, g, context) {
               if (tool == 'zoom') {
@@ -246,7 +474,8 @@ jQuery(document).ready(function(){
             }
           },
           strokeWidth: 1.5,
-          gridLineColor: 'rgb(196, 196, 196)'
+          gridLineColor: 'rgb(196, 196, 196)',
+		  underlayCallback : captureCanvas
         });
 		
     window.onmouseup = finishSelect;

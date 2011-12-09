@@ -81,7 +81,7 @@ def series_options():
         reader = list(csv.reader(raw_file, delimiter="\t"))
         num_series = len(reader[0])-1
         name = ['col%s'%i for i in range(num_series)]
-        color = [colors[i] for i in range(num_series)]
+        color = None
         show = [True for i in range(num_series)]
         smoth = [False for i in range(num_series)]
         smoth_value = [1.5 for i in range(num_series)]

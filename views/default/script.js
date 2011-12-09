@@ -9,41 +9,44 @@ function init_files(){
         $('.current_record').html($(this).html());
         $('.current_record').attr('id', $(this).parent().attr('id'));
         $('#my_records').slideUp();
-        $.getJSON('{{=URL('get_data.json')}}/'+$(this).parent().attr('id'),function(data){
-            graph_data = data.result
-            g.updateOptions( { 'file': graph_data, 'labels': data.labels } );
-        });
-        $.getJSON('{{=URL('series_options.json')}}/'+$(this).parent().attr('id'),function(data){
-            $('#series_options').html('');
-            for (var i = 0;i<data.num_series;i++){
-                var st = series_template;
-                st = st.replace(/%name%/, data.name[i]);
-                if(data.show[i]) st = st.replace(/%show%/, 'checked');
-                else st = st.replace(/%show%/, '');
-                if(data.smoth[i]) st = st.replace(/%smoth%/, 'checked');
-                else st = st.replace(/%smoth%/, '');
-                st = st.replace(/%smoth_value%/, data.smoth_value[i]);
-                st = st.replace(/%color%/, data.color[i]);
-                //alert(st);
-                $('#series_options').append('<table>'+st+'</table>');
-            }
-            init_rangeslider();
-            $('input[name="color"]').colorPicker();
-            $('input[name="color"]').change(function(){
-                var items = [];
-                $('input[name="color"]').each(function(){
-                    items.push($(this).val());
-                });
-                g.updateOptions({'colors':items, 'file': graph_data});
-            });
-            $('input[name="series_name"]').change(function(){
-                var items = ['Time'];
-                $('input[name="series_name"]').each(function(){
-                    items.push($(this).val());
-                });
-                //alert items
-                g.updateOptions({'labels':items, 'file': graph_data});
-            });
+	var cur_id = $(this).parent().attr('id');
+        $.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
+            	graph_data = data.result
+        	g.updateOptions( { 'file': graph_data, 'labels': data.labels } );
+		$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
+		    $('#series_options').html('');
+		    var colors = data.color;
+		    if (data.color == null) colors = g.colors_;
+		    for (var i = 0;i<data.num_series;i++){
+			var st = series_template;
+			st = st.replace(/%name%/, data.name[i]);
+			if(data.show[i]) st = st.replace(/%show%/, 'checked');
+			else st = st.replace(/%show%/, '');
+			if(data.smoth[i]) st = st.replace(/%smoth%/, 'checked');
+			else st = st.replace(/%smoth%/, '');
+			st = st.replace(/%smoth_value%/, data.smoth_value[i]);
+			st = st.replace(/%color%/, colors[i]);
+			//alert(st);
+			$('#series_options').append('<table>'+st+'</table>');
+		    }
+		    init_rangeslider();
+		    $('input[name="color"]').colorPicker();
+		    $('input[name="color"]').change(function(){
+			var items = [];
+			$('input[name="color"]').each(function(){
+			    items.push($(this).val());
+			});
+			g.updateOptions({'colors':items, 'file': graph_data});
+		    });
+		    $('input[name="series_name"]').change(function(){
+			var items = ['Time'];
+			$('input[name="series_name"]').each(function(){
+			    items.push($(this).val());
+			});
+			//alert items
+			g.updateOptions({'labels':items, 'file': graph_data});
+		    });
+		});
         });
         web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
     });

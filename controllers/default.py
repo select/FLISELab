@@ -83,9 +83,9 @@ def series_options():
         name = ['col%s'%i for i in range(num_series)]
         color = None
         show = [True for i in range(num_series)]
-        smoth = [False for i in range(num_series)]
-        smoth_value = [1.5 for i in range(num_series)]
-        return dict(name = name, color = color, show = show, smoth = smoth, smoth_value = smoth_value, num_series = num_series)
+        smooth = [False for i in range(num_series)]
+        smooth_value = [1 for i in range(num_series)]
+        return dict(name = name, color = color, show = show, smooth = smooth, smooth_value = smooth_value, num_series = num_series)
     if not record.series_names:#get default values
         return get_defaults()
     else:
@@ -93,9 +93,9 @@ def series_options():
         num_series = len(name)
         color = record.series_colors
         show = record.series_show
-        smoth = record.series_smooth
-        smoth_value = record.series_smooth_values
-    return dict(name = name, color = color, show = show, smoth = smoth, smoth_value = smoth_value, num_series = num_series)
+        smooth = record.series_smooth
+        smooth_value = record.series_smooth_values
+    return dict(name = name, color = color, show = show, smooth = smooth, smooth_value = smooth_value, num_series = num_series)
 
 def user():
     """

@@ -22,11 +22,10 @@ function init_files(){
 					st = st.replace(/%name%/, data.name[i]);
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');
-					if(data.smoth[i] == true) st = st.replace(/%smoth%/, 'checked');
-					else st = st.replace(/%smoth%/, '');
-					st = st.replace(/%smoth_value%/, data.smoth_value[i]);
+					if(data.smooth[i] == true) st = st.replace(/%smooth%/, 'checked');
+					else st = st.replace(/%smooth%/, '');
+					st = st.replace(/%smooth_value%/, data.smooth_value[i]);
 					st = st.replace(/%color%/, colors[i]);
-					//alert(st);
 					$('#series_options').append('<table>'+st+'</table>');
 				}
 				init_rangeslider();
@@ -43,7 +42,6 @@ function init_files(){
 					$('input[name="series_name"]').each(function(){
 						items.push($(this).val());
 					});
-					//alert items
 					g.updateOptions({'labels':items, 'file': graph_data});
 				});
 				$('input[name="show"]').click(function(){
@@ -53,6 +51,12 @@ function init_files(){
 						else vis.push(false);
 					});
 					g.updateOptions({visibility: vis});
+				});
+				$('input[name="smooth"]').click(function(){
+					$('input[name="smooth"]').each(function (){
+						if ($(this).is(':checked')) g.updateOptions({rollPeriod: 2})
+						else g.updateOptions({rollPeriod: 1});
+					});
 				});
 			});
 		});

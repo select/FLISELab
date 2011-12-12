@@ -77,7 +77,8 @@ function init_rangeslider(){
 jQuery(document).ready(function(){ 
     init_rangeslider();
 });
-/* ------------------------------------------------------------------- */
+
+/* ----------------------------SAM----------------------------------- */
 var isSelecting = false;
 var captCanvas = null;
 var tool = 'zoom';//Default tool
@@ -110,29 +111,29 @@ function getX(canvasx, g) {
 
 function drawSelectRect(event, g, context) {
 	var ctx = g.canvas_ctx_;
-
+	
 	context.dragEndX = g.dragGetX_(event, context);
 	context.dragEndY = g.dragGetY_(event, context);
-
+	
 	var xDelta = Math.abs(context.dragStartX - context.dragEndX);
 	var yDelta = Math.abs(context.dragStartY - context.dragEndY);
-
+	
 	/*// drag direction threshold for y axis is twice as large as x axis
 	context.dragDirection = (xDelta < yDelta / 2) ? Dygraph.VERTICAL : Dygraph.HORIZONTAL;*/
 	// I constrain it to horizontal direction only (otherwise comment the following and uncomment what's above.)
 	context.dragDirection = Dygraph.HORIZONTAL;
-
-
+	
+	
 	// Clean up from the previous rect if necessary
 	if (context.prevDragDirection == Dygraph.HORIZONTAL) {
 		ctx.clearRect(Math.min(context.dragStartX, context.prevEndX), g.layout_.getPlotArea().y,
-		Math.abs(context.dragStartX - context.prevEndX), g.layout_.getPlotArea().h);
+									Math.abs(context.dragStartX - context.prevEndX), g.layout_.getPlotArea().h);
 	} else if (context.prevDragDirection == Dygraph.VERTICAL){
 		ctx.clearRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.prevEndY),
-		g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
+										g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
 	}
-
-	if (tool == 'nocut'){
+	
+		if (tool == 'nocut'){
 		ctx.fillStyle = "rgba(128,255,128,0.33)";
 	} else if (tool == 'cancel') {
 		ctx.fillStyle = "rgba(255,128,128,0.33)";
@@ -144,52 +145,118 @@ function drawSelectRect(event, g, context) {
 	// Draw a light-grey (default) rectangle to show the new viewing area
 	if (context.dragDirection == Dygraph.HORIZONTAL) {
 		if (context.dragEndX && context.dragStartX) {
-			ctx.fillRect(Math.min(context.dragStartX, context.dragEndX), g.layout_.getPlotArea().y,
-			Math.abs(context.dragEndX - context.dragStartX), g.layout_.getPlotArea().h);
+		ctx.fillRect(Math.min(context.dragStartX, context.dragEndX), g.layout_.getPlotArea().y,
+					 Math.abs(context.dragEndX - context.dragStartX), g.layout_.getPlotArea().h);
 		}
 	} else if (context.dragDirection == Dygraph.VERTICAL) {
 		if (context.dragEndY && context.dragStartY) {
-			ctx.fillRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.dragEndY),
-			g.layout_.getPlotArea().w, Math.abs(context.dragEndY - context.dragStartY));
+		ctx.fillRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.dragEndY),
+					 g.layout_.getPlotArea().w, Math.abs(context.dragEndY - context.dragStartY));
 		}
 	}
-
+	
 	context.prevEndX = context.dragEndX;
 	context.prevEndY = context.dragEndY;
 	context.prevDragDirection = context.dragDirection;
-}
+	}
 
-function eraseSelectRect(g, context) {	
+	function eraseSelectRect(g, context) {	
 	// Clean up from the previous rect
 	if (context.prevDragDirection == Dygraph.HORIZONTAL) {
-		g.canvas_ctx_.clearRect(Math.min(context.dragStartX, context.prevEndX), g.layout_.getPlotArea().y,
-		Math.abs(context.dragStartX - context.prevEndX), g.layout_.getPlotArea().h);
+	g.canvas_ctx_.clearRect(Math.min(context.dragStartX, context.prevEndX), g.layout_.getPlotArea().y,
+					Math.abs(context.dragStartX - context.prevEndX), g.layout_.getPlotArea().h);
 	} else if (context.prevDragDirection == Dygraph.VERTICAL){
-		g.canvas_ctx_.clearRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.prevEndY),
-		g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
+	g.canvas_ctx_.clearRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.prevEndY),
+					g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
 	}	
 	// Update point display
 	g.updateSelection_();  
-}
-
-function drawRect(g, context) {
-	var ctx = captCanvas;
-
-	ctx.fillStyle = "rgba(255,1,1,0.33)";
-	// Draw a light-colored rectangle to show the new viewing area
-	if (context.prevDragDirection == Dygraph.HORIZONTAL) {
-		ctx.fillRect(Math.min(context.dragStartX, context.prevEndX), g.layout_.getPlotArea().y,
-		Math.abs(context.dragStartX - context.prevEndX), g.layout_.getPlotArea().h);
-	} else if (context.prevDragDirection == Dygraph.VERTICAL) {
-		ctx.fillRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.prevEndY),
-		g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
 	}
-	// Update point display
-	g.updateSelection_();  
-}
+
+function drawInterval(g, startX, endX, color) {
+	var ctx = captCanvas;
+	var range = g.yAxisRange();
+	var p1 = g.toDomCoords(startX, range[0]);
+	var p2 = g.toDomCoords(endX, range[1]);
+	// Draw a light-colored rectangle to show the new viewing area
+	ctx.fillStyle = "rgba("+color[0]+","+color[1]+","+color[2]+",0.33)";
+	ctx.fillRect(Math.min(p1[0], p2[0]), g.layout_.getPlotArea().y,Math.abs(p1[0]-p2[0]), g.layout_.getPlotArea().h/24);
+	}
+
+function drawVerticalLine(g, x, color) {
+	var ctx = captCanvas;
+	var range = g.yAxisRange();
+	var p1 = g.toDomCoords(x, range[1]);
+	var p2 = g.toDomCoords(x, range[1]-Math.abs(range[1]-range[0])/24);
+	ctx.save();
+	ctx.strokeStyle = color;
+	ctx.lineWidth = 1.0;
+	ctx.beginPath();
+	ctx.moveTo(p1[0], p1[1]);
+	ctx.lineTo(p2[0], p2[1]);
+	ctx.closePath();
+	ctx.stroke();
+	ctx.restore(); 
+	}
 
 function finishSelect() {
 	isSelecting = false;
+}
+
+function unifyT() {
+	//Drop tool defines intervals to ignore (data to trash), therefore it has priority (one cannot insert a cut point or a nocut interval in a drop zone)
+	for (iD=0; iD<dropT.length; iD++) {
+		for (iC=0; iC<cutT.length; iC++) {
+			if (cutT[iC]>dropT[iD][1]){break}
+			if ((cutT[iC]>=dropT[iD][0])&&(cutT[iC]<=dropT[iD][1])){
+				cutT.splice(iC,1);
+				iC--;
+			}
+		}
+		for (iN=0; iN<nocutT.length; iN++) {
+			if (nocutT[iN][0]>dropT[iD][1]){break}
+			if ((nocutT[iN][0]>=dropT[iD][0])&&(nocutT[iN][1]<=dropT[iD][1])){
+				nocutT.splice(iN,1);
+				iN--;
+			} else if ((nocutT[iN][0]<dropT[iD][0])&&(nocutT[iN][1]>dropT[iD][0])){
+				if(nocutT[iN][1]>dropT[iD][1]){
+					nocutT.splice(iN, 1, [nocutT[iN][0], dropT[iD][0]], [dropT[iD][1], nocutT[iN][1]]);
+				} else {
+					nocutT[iN][1]=dropT[iD][0];
+				}
+			} else if ((nocutT[iN][0]<dropT[iD][1])&&(nocutT[iN][1]>dropT[iD][1])){
+				//here we should have (nocutT[iN][0]>dropT[iD][0]) only
+				nocutT[iN][0]=dropT[iD][1];
+			}
+		}
+	}
+	//Cut has priority over nocut interval.
+	for (iC=0; iC<cutT.length; iC++) {
+		for (iN=0; iN<nocutT.length; iN++) {
+			if ((nocutT[iN][0]<cutT[iC])&&(nocutT[iN][1]>cutT[iC])){
+				nocutT.splice(iN, 0, [nocutT[iN][0], cutT[iC]]);
+				nocutT[iN+1][0]=cutT[iC];
+			}
+		}
+	}
+	
+	//DRAW
+	//Refresh
+	var ctx = captCanvas;
+	var area = g.layout_.getPlotArea();
+	ctx.clearRect(area.x, area.y, area.w, area.h/24);
+	//Draw drop intervals
+	for (iD=0; iD<dropT.length; iD++) {
+		drawInterval (g, dropT[iD][0], dropT[iD][1], [255,255,128]);
+	}
+	//Draw nocut intervals
+	for (iN=0; iN<nocutT.length; iN++) {
+		drawInterval (g, nocutT[iN][0], nocutT[iN][1], [128,255,128]);
+	}
+	//Draw cut lines
+	for (iC=0; iC<cutT.length; iC++) {
+		drawVerticalLine(g, cutT[iC], "#7fbf7f")
+	}
 }
 
 function add2nocut(startX, endX) {
@@ -216,6 +283,9 @@ function add2nocut(startX, endX) {
 				insertT = true;
 				nocutT[i][1]=endX
 			}
+			if ((endX<nocutT[i][1])&&(startX>nocutT[i][0])){
+				return
+			}
 		}
 		//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
 		//otherwise, add the new segment at correct position so that it is sorted in increasing order.
@@ -227,14 +297,17 @@ function add2nocut(startX, endX) {
 					nocutT[i-1][1]=nocutT[i][1];
 					countHowMany++;
 					if (index==0){
-						index=i
+						index=i;
 					}
 				} else if (index!=0) {
-					break
+					i=i-countHowMany;
+					nocutT.splice(index, countHowMany);
+					index = 0;
+					countHowMany = 0;
 				}
-			}
-			if (index!=0) {
-				nocutT.splice(index, countHowMany)
+				if ((index!=0)&&(i==nocutT.length-1)){
+					nocutT.splice(index, countHowMany);
+				}
 			}
 		} else {
 			var flag = true;
@@ -255,6 +328,7 @@ function add2nocut(startX, endX) {
 			}
 		}
 	}
+	unifyT();
 }
 
 function add2drop(startX, endX) {
@@ -281,6 +355,9 @@ function add2drop(startX, endX) {
 				insertT = true;
 				dropT[i][1]=endX
 			}
+			if ((endX<dropT[i][1])&&(startX>dropT[i][0])){
+				return
+			}
 		}
 		//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
 		//otherwise, add the new segment at correct position so that it is sorted in increasing order.
@@ -295,11 +372,14 @@ function add2drop(startX, endX) {
 						index=i
 					}
 				} else if (index!=0) {
-					break
+					i=i-countHowMany;
+					dropT.splice(index, countHowMany);
+					index = 0;
+					countHowMany = 0;
 				}
-			}
-			if (index!=0) {
-				dropT.splice(index, countHowMany)
+				if ((index!=0)&&(i==dropT.length-1)) {
+					dropT.splice(index, countHowMany)
+				}
 			}
 		} else {
 			var flag = true;
@@ -320,6 +400,7 @@ function add2drop(startX, endX) {
 			}
 		}
 	}
+	unifyT();
 }
 
 function add2cut(X) {
@@ -351,45 +432,45 @@ function add2cut(X) {
 			cutT.push(X);
 		}
 	}
+	unifyT();
 }
 
 function captureCanvas(canvas, area, g) {
 	captCanvas = canvas;
 }
 
-function change_tool(tool_div) {
-	var ids = ['tool_zoom', 'tool_cut', 'tool_nocut', 'tool_drop', 'tool_event', 'tool_cancel'];
-	for (var i = 0; i < ids.length; i++) {
-		var div = document.getElementById(ids[i]);
-		if (div == tool_div) {
-			div.style.backgroundPosition = -(i * 32) + 'px -32px';
-		} else {
-			div.style.backgroundPosition = -(i * 32) + 'px 0px';
+	function change_tool(tool_div) {
+		var ids = ['tool_zoom', 'tool_cut', 'tool_nocut', 'tool_drop', 'tool_event', 'tool_cancel'];
+		for (var i = 0; i < ids.length; i++) {
+			var div = document.getElementById(ids[i]);
+			if (div == tool_div) {
+				div.style.backgroundPosition = -(i * 32) + 'px -32px';
+			} else {
+				div.style.backgroundPosition = -(i * 32) + 'px 0px';
+			}
+		}
+		tool = tool_div.id.replace('tool_', '');
+
+		var dg_div = document.getElementById("graphdiv");
+		if (tool == 'cut') {
+			dg_div.style.cursor = 'url(icons/cursor-cut.png) 1 30, auto';
+		} else if (tool == 'nocut') {
+			dg_div.style.cursor = 'url(icons/cursor-nocut.png) 1 30, auto';
+	} else if (tool == 'drop') {
+			dg_div.style.cursor = 'url(icons/cursor-drop.png) 1 30, auto';
+	} else if (tool == 'event') {
+			dg_div.style.cursor = 'url(icons/cursor-event.png) 1 30, auto';
+	} else if (tool == 'cancel') {
+			dg_div.style.cursor = 'url(icons/cursor-cancel.png) 1 30, auto';
+		} else if (tool == 'zoom') {
+			dg_div.style.cursor = 'crosshair';
 		}
 	}
-	tool = tool_div.id.replace('tool_', '');
-
-	var dg_div = document.getElementById("graphdiv");
-	if (tool == 'cut') {
-		dg_div.style.cursor = 'url(icons/cursor-cut.png) 1 30, auto';
-	} else if (tool == 'nocut') {
-		dg_div.style.cursor = 'url(icons/cursor-nocut.png) 1 30, auto';
-	} else if (tool == 'drop') {
-		dg_div.style.cursor = 'url(icons/cursor-drop.png) 1 30, auto';
-	} else if (tool == 'event') {
-		dg_div.style.cursor = 'url(icons/cursor-event.png) 1 30, auto';
-	} else if (tool == 'cancel') {
-		dg_div.style.cursor = 'url(icons/cursor-cancel.png) 1 30, auto';
-	} else if (tool == 'zoom') {
-		dg_div.style.cursor = 'crosshair';
-	}
-}
-
+	
 change_tool(document.getElementById("tool_"+tool));
 
-g = new Dygraph(document.getElementById("graphdiv"), "",   //To FALKO: to be replaced by imported data
+g = new Dygraph(document.getElementById("graphdiv"), "",
 {
-	//labels: [],    //To FALKO: to be replaced by eventually already existing values
 	interactionModel: {
 		mousedown: function (event, g, context) {
 			if (tool == 'zoom') {
@@ -437,7 +518,6 @@ g = new Dygraph(document.getElementById("graphdiv"), "",   //To FALKO: to be rep
 				} else if (tool == 'drop'){
 					if (context.prevEndX != null){
 						add2drop(getX(context.dragStartX,g),getX(context.dragEndX,g));
-						drawRect(g, context);
 						//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
 					}
 				}	
@@ -464,12 +544,12 @@ g = new Dygraph(document.getElementById("graphdiv"), "",   //To FALKO: to be rep
 			var x = event.offsetX - xOffset;
 			var w = g.toDomCoords(axis[1], null)[0] - xOffset;
 			var xPct = w == 0 ? 0 : (x / w);
-
+	
 			var delta = axis[1] - axis[0];
 			var increment = delta * percentage;
 			var foo = [increment * xPct, increment * (1 - xPct)];
 			var dateWindow = [ axis[0] + foo[0], axis[1] - foo[1] ];
-
+	
 			g.updateOptions({
 				dateWindow: dateWindow
 			});
@@ -482,5 +562,5 @@ g = new Dygraph(document.getElementById("graphdiv"), "",   //To FALKO: to be rep
 	underlayCallback : captureCanvas
 });
 
-    window.onmouseup = finishSelect;
+window.onmouseup = finishSelect;
 /* ------------------------------------------------------------------- */

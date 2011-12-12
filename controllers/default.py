@@ -66,14 +66,12 @@ def get_data():
 def series_options():
     response.generic_patterns = ['json']
     record = db.flise_file[int(request.args(0))]
-    colors = 'aaa bbb ccc ddd eee'.split()
+    colors = 'aaa bbb ccc ddd eee'.split()                #FALKO: I guess this line is not needed anylonger
     if request.vars.series_names:
         record.update_record(
                 series_names = request.vars.getlist('series_names'),
                 series_colors = request.vars.getlist('series_colors'),
-                series_show = request.vars.getlist('series_show'),
-                series_smooth = request.vars.getlist('series_smooth'),
-                series_smooth_values = [float(x) for x in request.vars.getlist('series_smooth_values')]
+                series_show = request.vars.getlist('series_show')
                 )
     def get_defaults():
         filename, raw_file = db.flise_file.file.retrieve(record.file)
@@ -83,9 +81,7 @@ def series_options():
         name = ['col%s'%i for i in range(num_series)]
         color = None
         show = [True for i in range(num_series)]
-        smooth = [False for i in range(num_series)]
-        smooth_value = [1 for i in range(num_series)]
-        return dict(name = name, color = color, show = show, smooth = smooth, smooth_value = smooth_value, num_series = num_series)
+        return dict(name = name, color = color, show = show, num_series = num_series)
     if not record.series_names:#get default values
         return get_defaults()
     else:
@@ -93,9 +89,29 @@ def series_options():
         num_series = len(name)
         color = record.series_colors
         show = record.series_show
+    return dict(name = name, color = color, show = show, num_series = num_series)
+
+def global_options():
+    response.generic_patterns = ['json']
+    record = db.flise_file[int(request.args(0))]
+    record.update_record(
+        series_smooth = request.vars.get('series_smooth'),
+        series_smooth_values = request.vars.get('series_smooth_values')
+        )
+    def get_defaults():
+        filename, raw_file = db.flise_file.file.retrieve(record.file)
+        import csv
+        reader = list(csv.reader(raw_file, delimiter="\t"))
+        smooth = False
+        smooth_value = 10
+        return dict(smooth = smooth, smooth_value = smooth_value)
+    if not record.series_names:#get default values
+        return get_defaults()
+    else:
         smooth = record.series_smooth
         smooth_value = record.series_smooth_values
-    return dict(name = name, color = color, show = show, smooth = smooth, smooth_value = smooth_value, num_series = num_series)
+    return dict(smooth = smooth, smooth_value = smooth_value)
+
 
 def user():
     """

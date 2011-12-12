@@ -79,8 +79,8 @@ db.define_table('flise_file',
         Field('series_names', 'list:string', readable = False, writable = False),
         Field('series_colors', 'list:string', readable = False, writable = False),
         Field('series_show', 'list:string', readable = False, writable = False),
-        Field('series_smooth', 'list:string', readable = False, writable = False),
-        Field('series_smooth_values', 'list:integer', readable = False, writable = False),
+        Field('series_smooth', 'string', readable = False, writable = False),
+        Field('series_smooth_values', 'integer', readable = False, writable = False),
         Field('processed_data', 'text', readable = False, writable = False),
         )
 

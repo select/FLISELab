@@ -3,6 +3,9 @@ var graph_data = [];
 /************************************/
 var series_template = '';
 $.get('{{=URL(request.application, 'static/templates','series_options.html')}}', function(data) { series_template = data; });
+var global_template = '';
+$.get('{{=URL(request.application, 'static/templates','global_options.html')}}', function(data) { global_template = data; });
+
 /************************************/
 function init_files(){
 	$('.flise_file .select').click(function(){
@@ -22,9 +25,6 @@ function init_files(){
 					st = st.replace(/%name%/, data.name[i]);
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');
-					if(data.smooth[i] == true) st = st.replace(/%smooth%/, 'checked');
-					else st = st.replace(/%smooth%/, '');
-					st = st.replace(/%smooth_value%/, data.smooth_value[i]);
 					st = st.replace(/%color%/, colors[i]);
 					$('#series_options').append('<table>'+st+'</table>');
 				}
@@ -52,9 +52,18 @@ function init_files(){
 					});
 					g.updateOptions({visibility: vis});
 				});
-				$('input[name="smooth"]').click(function(){
+			});
+			$.getJSON('{{=URL('global_options.json')}}/'+cur_id,function(data){
+				$('#global_options').html('');
+				var st = global_template;
+				if(data.smooth == true) st = st.replace(/%smooth%/, 'checked');
+				else st = st.replace(/%smooth%/, '');
+				st = st.replace(/%smooth_value%/, data.smooth_value);
+				$('#global_options').append('<table>'+st+'</table>');
+				init_rangeslider();
+  			$('input[name="smooth"]').click(function(){
 					$('input[name="smooth"]').each(function (){
-						if ($(this).is(':checked')) g.updateOptions({rollPeriod: 2})
+						if ($(this).is(':checked')) g.updateOptions({rollPeriod: data.smooth_value})
 						else g.updateOptions({rollPeriod: 1});
 					});
 				});
@@ -571,6 +580,8 @@ g = new Dygraph(document.getElementById("graphdiv"), "",
 	strokeWidth: 1.5,
 	gridLineColor: 'rgb(196, 196, 196)',
 	logscale : false,
+	rollPeriod: 1,
+	showRoller: false,
 	underlayCallback : captureCanvas
 });
 

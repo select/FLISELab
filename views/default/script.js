@@ -18,16 +18,16 @@ function init_files(){
 		    var colors = data.color;
 		    if (data.color == null) colors = g.colors_;
 		    for (var i = 0;i<data.num_series;i++){
-			var st = series_template;
-			st = st.replace(/%name%/, data.name[i]);
-			if(data.show[i]) st = st.replace(/%show%/, 'checked');
-			else st = st.replace(/%show%/, '');
-			if(data.smoth[i]) st = st.replace(/%smoth%/, 'checked');
-			else st = st.replace(/%smoth%/, '');
-			st = st.replace(/%smoth_value%/, data.smoth_value[i]);
-			st = st.replace(/%color%/, colors[i]);
-			//alert(st);
-			$('#series_options').append('<table>'+st+'</table>');
+			  var st = series_template;
+			  st = st.replace(/%name%/, data.name[i]);
+			  if(data.show[i]) st = st.replace(/%show%/, 'checked');
+			  else st = st.replace(/%show%/, '');
+			  if(data.smoth[i]) st = st.replace(/%smoth%/, 'unchecked');
+			  else st = st.replace(/%smoth%/, '');
+			  st = st.replace(/%smoth_value%/, data.smoth_value[i]);
+			  st = st.replace(/%color%/, colors[i]);
+			  //alert(st);
+			  $('#series_options').append('<table>'+st+'</table>');
 		    }
 		    init_rangeslider();
 		    $('input[name="color"]').colorPicker();

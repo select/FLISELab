@@ -63,8 +63,8 @@ function init_files(){
 				init_rangeslider();
   			$('input[name="smooth"]').click(function(){
 					$('input[name="smooth"]').each(function (){
-						if ($(this).is(':checked')) g.updateOptions({rollPeriod: data.smooth_value})
-						else g.updateOptions({rollPeriod: 1});
+						if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: data.smooth_value})
+						else g.updateOptions({file: graph_data, rollPeriod: 1});
 					});
 				});
 			});

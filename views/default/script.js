@@ -7,6 +7,17 @@ var global_template = '';
 $.get('{{=URL(request.application, 'static/templates','global_options.html')}}', function(data) { global_template = data; });
 
 /************************************/
+/*var before = {
+	setup: function () {
+		cookies = document.cookie.split('; ')
+		for (var i = 0, c; (c = (cookies)[i]) && (c = c.split('=')[0]); i++) {
+			document.cookie = c + '=; expires=' + new Date(0).toUTCString();
+		}
+	}
+};
+if($.cookie('flise_js_options')== null) $.cookie('flise_js_options', 'a=10', { expires: 30, path: '/' });
+*/
+/************************************/
 function init_files(){
 	$('.flise_file .select').click(function(){
 		$('.current_record').html($(this).html());
@@ -263,6 +274,7 @@ function unifyT() {
 	
 	//DRAW
 	//Refresh
+	/*
 	var ctx = captCanvas;
 	var area = g.layout_.getPlotArea();
 	ctx.clearRect(area.x, area.y, area.w, area.h/24);
@@ -278,7 +290,27 @@ function unifyT() {
 	for (iC=0; iC<cutT.length; iC++) {
 		drawVerticalLine(g, cutT[iC], "#7fbf7f")
 	}
+	*/
+	//-------------------------------------------
+	
+	g.updateOptions({
+		file: graph_data, 
+		underlayCallback: function(canvas, area, g) {
+			for (i=0; i<dropT.length; i++) {
+				var highlight_start = dropT[i][0];
+				var highlight_end = dropT[i][1];
+				var bottom_left = g.toDomCoords(highlight_start, -20);
+				var top_right = g.toDomCoords(highlight_end, +20);
+				var left = bottom_left[0];
+				var right = top_right[0];
+				canvas.fillStyle = "rgba(255, 255, 102, 1.0)";
+				canvas.fillRect(left, area.y, right - left, area.h);
+			}
+		}
+	});
+	
 }
+
 
 function add2nocut(startX, endX) {
 	//Check order

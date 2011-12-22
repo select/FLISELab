@@ -25,7 +25,7 @@ function init_files(){
 		$('#my_records').slideUp();
 		var cur_id = $(this).parent().attr('id');
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
-			graph_data = data.result
+			graph_data = data.result;
 			g.updateOptions( { 'file': graph_data, 'labels': data.labels } );
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
 				$('#series_options').html('');
@@ -109,8 +109,16 @@ function init_rangeslider(){
 jQuery(document).ready(function(){ 
     init_rangeslider();
 });
+/************************************/
+function redispg(){
+	document.getElementById("graphdiv").style.width=window.innerWidth-510+"px";
+	document.getElementById("graphdiv").style.height=window.innerHeight-90+"px";
+	if (graph_data != []){
+		g.updateSelection_();
+	}
+}
 
-/* ----------------------------SAM----------------------------------- */
+/* ----------------------------GRAF----------------------------------- */
 var isSelecting = false;
 var captCanvas = null;
 var tool = 'zoom';//Default tool

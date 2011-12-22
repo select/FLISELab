@@ -1,11 +1,10 @@
 {{extend 'layout.html'}}
-		<div >
-		<table>
+		<table style="width:100%">
 			<tr>
 				<td>
 					<div id="graphdiv"></div>
 				</td>
-				<td>
+				<td style="width:490px">
 					<h2 onclick="collapse('section_file')">File</h2>
 					<div id="section_file">
 							<h3>Current File</h3>
@@ -45,7 +44,6 @@
 				</td>
 			</tr>
 		</table>
-		</div>
 		
 		<script type="text/javascript">
 		{{include 'default/script.js'}}

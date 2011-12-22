@@ -1,51 +1,52 @@
 {{extend 'layout.html'}}
-
-<table>
-	<tr>
-        <td>
-			<div id="graphdiv"></div>
-        </td>
-        <td>
-            <h2 onclick="collapse('section_file')">File</h2>
-            <div id="section_file">
-                <h3>Current File</h3>
-                <div class="current_record">... none</div>
-                <h3 onclick="collapse('my_records')">My FLISE</h3>
-                {{=LOAD('default', 'files', target='my_records', ajax=True)}}
-                <h3 onclick="collapse('create_record')">Upload FLISE</h3>
-                {{=LOAD('default', 'file', ajax=True, target='create_record')}}
-            </div>
-            <hr />
-            <h2 onclick="collapse('edit_record')">General Properties</h2>
-            <div id="edit_record"> ... upload or select a file.</div>
-            <hr />
-            <h2 onclick="collapse('series_options');collapse('global_options')">Series Options</h2>
-            <div id="series_options"> ... upload or select a file.</div>
-            <div id="global_options"> </div>
-            <hr />
-            <h2>Auto-segmentation</h2>
-            <table>
-                <tr>
-                    <th>Window size</th>
-                    <td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
-                </tr>
-                <tr>
-                    <th>Threshold</th>
-                    <td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
-                </tr>
-            </table>
-            <input type="submit" value="start"/>
-            <hr />
-            <h2>Tools</h2>
-            <div id="tools">
-                <div id='toolbar'><div id="tool_zoom" onClick='change_tool(this)'></div><div id="tool_cut" onClick='change_tool(this)'></div><div id="tool_nocut" onClick='change_tool(this)'></div><div id="tool_drop" onClick='change_tool(this)'></div><div id="tool_event" onClick='change_tool(this)'></div><div id="tool_cancel" onClick='change_tool(this)'></div></div>
-            </div>
-            <hr />
-            <h2>Preprocessing</h2>
-        </td>
-    </tr>
-</table>
-
-<script type="text/javascript">
-{{include 'default/script.js'}}
-</script>
+		<div >
+		<table>
+			<tr>
+				<td>
+					<div id="graphdiv"></div>
+				</td>
+				<td>
+					<h2 onclick="collapse('section_file')">File</h2>
+					<div id="section_file">
+							<h3>Current File</h3>
+							<div class="current_record">... none</div>
+							<h3 onclick="collapse('my_records')">My FLISE</h3>
+							{{=LOAD('default', 'files', target='my_records', ajax=True)}}
+							<h3 onclick="collapse('create_record')">Upload FLISE</h3>
+							{{=LOAD('default', 'file', ajax=True, target='create_record')}}
+					</div>
+					<hr />
+					<h2 onclick="collapse('edit_record')">General Properties</h2>
+					<div id="edit_record"> ... upload or select a file.</div>
+					<hr />
+					<h2 onclick="collapse('series_options');collapse('global_options')">Series Options</h2>
+					<div id="series_options"> ... upload or select a file.</div>
+					<div id="global_options"> </div>
+					<hr />
+					<h2>Auto-segmentation</h2>
+					<table>
+							<tr>
+									<th>Window size</th>
+									<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
+							</tr>
+							<tr>
+									<th>Threshold</th>
+									<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
+							</tr>
+					</table>
+					<input type="submit" value="start"/>
+					<hr />
+					<h2>Tools</h2>
+					<div id="tools">
+							<div id='toolbar'><div id="tool_zoom" onClick='change_tool(this)'></div><div id="tool_cut" onClick='change_tool(this)'></div><div id="tool_nocut" onClick='change_tool(this)'></div><div id="tool_drop" onClick='change_tool(this)'></div><div id="tool_event" onClick='change_tool(this)'></div><div id="tool_cancel" onClick='change_tool(this)'></div></div>
+					</div>
+					<hr />
+					<h2>Preprocessing</h2>
+				</td>
+			</tr>
+		</table>
+		</div>
+		
+		<script type="text/javascript">
+		{{include 'default/script.js'}}
+		</script>

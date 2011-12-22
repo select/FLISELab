@@ -1,7 +1,8 @@
 #graphdiv {
-    width: 1000px;
-    height: 500px;
+		width: 940px;
+    height: 700px;
 }
+/****************************************/
 #create_record {
     display: none;
 }
@@ -40,52 +41,52 @@ h3[onclick]:hover, h2[onclick]:hover {
     background-color: #eee;
 }
 /****************************************/
-	#tool_zoom {
-      background: url('../icons/tool-palette.png');
-      background-position: 0px 0px;
-      width: 32px;
-      height: 33px;
-      display: inline-block;
-    }
-    #tool_cut {
-	  background: url('../icons/tool-palette.png');
-      background-position: -32px 0px;
-      width: 32px;
-      height: 33px;
-      display: inline-block;
-    }
-    #tool_nocut {
-      background: url('../icons/tool-palette.png');
-      background-position: -64px 0px;
-      width: 33px;
-      height: 33px;
-      display: inline-block;
-    }
-	#tool_drop {
-      background: url('../icons/tool-palette.png');
-      background-position: -96px 0px;
-      width: 33px;
-      height: 33px;
-      display: inline-block;
-    }
-	#tool_event {
-      background: url('../icons/tool-palette.png');
-      background-position: -128px 0px;
-      width: 33px;
-      height: 33px;
-      display: inline-block;
-    }
-	#tool_cancel {
-      background: url('../icons/tool-palette.png');
-      background-position: -160px 0px;
-      width: 33px;
-      height: 33px;
-      display: inline-block;
-    }
-    #toolbar {		
-	  position: relative;
-	  display: inline-block;
-	  #right: 10px;
-	  #top: 40px;
-    }
+#tool_zoom {
+	background: url('../icons/tool-palette.png');
+	background-position: 0px 0px;
+	width: 32px;
+	height: 33px;
+	display: inline-block;
+}
+#tool_cut {
+background: url('../icons/tool-palette.png');
+	background-position: -32px 0px;
+	width: 32px;
+	height: 33px;
+	display: inline-block;
+}
+#tool_nocut {
+	background: url('../icons/tool-palette.png');
+	background-position: -64px 0px;
+	width: 33px;
+	height: 33px;
+	display: inline-block;
+}
+#tool_drop {
+	background: url('../icons/tool-palette.png');
+	background-position: -96px 0px;
+	width: 33px;
+	height: 33px;
+	display: inline-block;
+}
+#tool_event {
+	background: url('../icons/tool-palette.png');
+	background-position: -128px 0px;
+	width: 33px;
+	height: 33px;
+	display: inline-block;
+}
+#tool_cancel {
+	background: url('../icons/tool-palette.png');
+	background-position: -160px 0px;
+	width: 33px;
+	height: 33px;
+	display: inline-block;
+}
+#toolbar {		
+	position: relative;
+	display: inline-block;
+	#right: 10px;
+	#top: 40px;
+}
 /****************************************/

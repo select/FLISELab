@@ -205,8 +205,7 @@ function drawSelectRect(event, g, context) {
 	g.updateSelection_();  
 	}
 
-function drawInterval(g, startX, endX, color) {
-	var ctx = captCanvas;
+function drawInterval(g, ctx, startX, endX, color) {
 	var range = g.yAxisRange();
 	var p1 = g.toDomCoords(startX, range[0]);
 	var p2 = g.toDomCoords(endX, range[1]);
@@ -215,8 +214,7 @@ function drawInterval(g, startX, endX, color) {
 	ctx.fillRect(Math.min(p1[0], p2[0]), g.layout_.getPlotArea().y,Math.abs(p1[0]-p2[0]), g.layout_.getPlotArea().h/24);
 	}
 
-function drawVerticalLine(g, x, color) {
-	var ctx = captCanvas;
+function drawVerticalLine(g, ctx, x, color) {
 	var range = g.yAxisRange();
 	var p1 = g.toDomCoords(x, range[1]);
 	var p2 = g.toDomCoords(x, range[1]-Math.abs(range[1]-range[0])/24);
@@ -272,31 +270,10 @@ function unifyT() {
 		}
 	}
 	
-	//DRAW
-	//Refresh
-	/*
-	var ctx = captCanvas;
-	var area = g.layout_.getPlotArea();
-	ctx.clearRect(area.x, area.y, area.w, area.h/24);
-	//Draw drop intervals
-	for (iD=0; iD<dropT.length; iD++) {
-		drawInterval (g, dropT[iD][0], dropT[iD][1], [255,255,128]);
-	}
-	//Draw nocut intervals
-	for (iN=0; iN<nocutT.length; iN++) {
-		drawInterval (g, nocutT[iN][0], nocutT[iN][1], [128,255,128]);
-	}
-	//Draw cut lines
-	for (iC=0; iC<cutT.length; iC++) {
-		drawVerticalLine(g, cutT[iC], "#7fbf7f")
-	}
-	*/
-	//-------------------------------------------
-	
 	g.updateOptions({
 		file: graph_data, 
 		underlayCallback: function(canvas, area, g) {
-			for (i=0; i<dropT.length; i++) {
+			/*for (i=0; i<dropT.length; i++) {
 				var highlight_start = dropT[i][0];
 				var highlight_end = dropT[i][1];
 				var bottom_left = g.toDomCoords(highlight_start, -20);
@@ -305,6 +282,20 @@ function unifyT() {
 				var right = top_right[0];
 				canvas.fillStyle = "rgba(255, 255, 102, 1.0)";
 				canvas.fillRect(left, area.y, right - left, area.h);
+			}*/
+			var area = g.layout_.getPlotArea();
+			canvas.clearRect(area.x, area.y, area.w, area.h/24);
+			//Draw drop intervals
+			for (iD=0; iD<dropT.length; iD++) {
+				drawInterval (g, canvas, dropT[iD][0], dropT[iD][1], [255,255,128]);
+			}
+			//Draw nocut intervals
+			for (iN=0; iN<nocutT.length; iN++) {
+				drawInterval (g, canvas, nocutT[iN][0], nocutT[iN][1], [128,255,128]);
+			}
+			//Draw cut lines
+			for (iC=0; iC<cutT.length; iC++) {
+				drawVerticalLine(g, canvas, cutT[iC], "#7fbf7f")
 			}
 		}
 	});

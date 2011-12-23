@@ -26,7 +26,7 @@ function init_files(){
 		var cur_id = $(this).parent().attr('id');
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
-			g.updateOptions( { 'file': graph_data, 'labels': data.labels } );
+			createGraph(graph_data, data.labels);
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
 				$('#series_options').html('');
 				var colors = data.color;
@@ -92,8 +92,7 @@ function init_files(){
 	$('.del').confirm({
 		stopAfter:'ok',
 		wrapper: '<div class="del"></div>',
-		timeout:3000,
-		//timeout:9000,
+		timeout:3000
 	}); 
 }
 /************************************/
@@ -105,18 +104,13 @@ function init_rangeslider(){
         $(this).parent().find('span').html($(this).val());
     });
 }
-/************************************/
-jQuery(document).ready(function(){ 
-    init_rangeslider();
+/*----------------------- RESIZE ---------------------------------------*/
+jQuery(document).ready(function(){
+	init_rangeslider();
+	 $(window).resize(function(){
+		 g.updateOptions({width:$(window).innerWidth-510, height:$(window).innerHeight-90});
+	 });
 });
-/************************************/
-function redispg(){
-	document.getElementById("graphdiv").style.width=window.innerWidth-510+"px";
-	document.getElementById("graphdiv").style.height=window.innerHeight-90+"px";
-	if (graph_data != []){
-		g.updateSelection_();
-	}
-}
 
 /* ----------------------------GRAF----------------------------------- */
 var isSelecting = false;
@@ -487,134 +481,138 @@ function add2cut(X) {
 	unifyT();
 }
 
-function captureCanvas(canvas, area, g) {
-	captCanvas = canvas;
+var g=undefined;
+
+function createGraph(graph_data, labels){
+	if (g==undefined){
+		g = new Dygraph(document.getElementById("graphdiv"), graph_data,
+			{
+				labels: labels,
+				width: window.innerWidth-510,
+				height: window.innerHeight-90,
+				interactionModel: {
+					mousedown: function (event, g, context) {
+						if (tool == 'zoom') {
+							Dygraph.defaultInteractionModel.mousedown(event, g, context);
+						} else {
+							// prevents mouse drags from selecting page text.
+							if (event.preventDefault) {
+								event.preventDefault();  // Firefox, Chrome, etc.
+							} else {
+								event.returnValue = false;  // IE
+								event.cancelBubble = true;
+							}
+							context.px = Dygraph.findPosX(g.canvas_);
+							context.py = Dygraph.findPosY(g.canvas_);
+							context.dragStartX = g.dragGetX_(event, context);
+							context.dragStartY = g.dragGetY_(event, context);
+							if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
+								isSelecting = true; 
+							} else {
+								//alert('Cut or event at t='+getX(context.dragStartX, g));
+								if (tool =='cut'){
+									add2cut(getX(context.dragStartX, g));
+								}
+							}
+						}
+					},
+					mousemove: function (event, g, context) {
+						if (tool == 'zoom') {
+							Dygraph.defaultInteractionModel.mousemove(event, g, context);
+						} else {
+							if (!isSelecting) return;
+							drawSelectRect(event, g, context);
+						}
+					},
+					mouseup: function(event, g, context) {
+						if (tool == 'zoom') {
+							Dygraph.defaultInteractionModel.mouseup(event, g, context);
+						} else if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {			
+							eraseSelectRect(g, context);
+							if (tool == 'nocut'){
+								if (context.prevEndX != null){
+									add2nocut(getX(context.dragStartX,g),getX(context.dragEndX,g));
+									//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
+								}
+							} else if (tool == 'drop'){
+								if (context.prevEndX != null){
+									add2drop(getX(context.dragStartX,g),getX(context.dragEndX,g));
+									//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
+								}
+							}	
+						}
+						context.dragStartX = null;
+						context.dragStartY = null;
+						context.prevEndX = null;
+						context.prevEndY = null;
+						finishSelect();
+					},
+					mouseout: function(event, g, context) {
+						if (tool == 'zoom') {
+							Dygraph.defaultInteractionModel.mouseout(event, g, context);
+						}
+					},
+					dblclick: function(event, g, context) {
+						Dygraph.defaultInteractionModel.dblclick(event, g, context);
+					},
+					mousewheel: function(event, g, context) {
+						var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;
+						var percentage = normal / 50;
+						var axis = g.xAxisRange();
+						var xOffset = g.toDomCoords(axis[0], null)[0];
+						var x = event.offsetX - xOffset;
+						var w = g.toDomCoords(axis[1], null)[0] - xOffset;
+						var xPct = w == 0 ? 0 : (x / w);
+				
+						var delta = axis[1] - axis[0];
+						var increment = delta * percentage;
+						var foo = [increment * xPct, increment * (1 - xPct)];
+						var dateWindow = [ axis[0] + foo[0], axis[1] - foo[1] ];
+				
+						g.updateOptions({
+							dateWindow: dateWindow
+						});
+						Dygraph.cancelEvent(event);
+					}
+				},
+				strokeWidth: 1.5,
+				gridLineColor: 'rgb(196, 196, 196)',
+				logscale : false
+			});
+	}
 }
 
-	function change_tool(tool_div) {
-		var ids = ['tool_zoom', 'tool_cut', 'tool_nocut', 'tool_drop', 'tool_event', 'tool_cancel'];
-		for (var i = 0; i < ids.length; i++) {
-			var div = document.getElementById(ids[i]);
-			if (div == tool_div) {
-				div.style.backgroundPosition = -(i * 32) + 'px -32px';
-			} else {
-				div.style.backgroundPosition = -(i * 32) + 'px 0px';
-			}
-		}
-		tool = tool_div.id.replace('tool_', '');
+window.onmouseup = finishSelect;
 
-		var dg_div = document.getElementById("graphdiv");
-		if (tool == 'cut') {
-			dg_div.style.cursor = 'url(icons/cursor-cut.png) 1 30, auto';
-		} else if (tool == 'nocut') {
-			dg_div.style.cursor = 'url(icons/cursor-nocut.png) 1 30, auto';
-	} else if (tool == 'drop') {
-			dg_div.style.cursor = 'url(icons/cursor-drop.png) 1 30, auto';
-	} else if (tool == 'event') {
-			dg_div.style.cursor = 'url(icons/cursor-event.png) 1 30, auto';
-	} else if (tool == 'cancel') {
-			dg_div.style.cursor = 'url(icons/cursor-cancel.png) 1 30, auto';
-		} else if (tool == 'zoom') {
-			dg_div.style.cursor = 'crosshair';
+/*****************************************/
+
+function change_tool(tool_div) {
+	var ids = ['tool_zoom', 'tool_cut', 'tool_nocut', 'tool_drop', 'tool_event', 'tool_cancel'];
+	for (var i = 0; i < ids.length; i++) {
+		var div = document.getElementById(ids[i]);
+		if (div == tool_div) {
+			div.style.backgroundPosition = -(i * 32) + 'px -32px';
+		} else {
+			div.style.backgroundPosition = -(i * 32) + 'px 0px';
 		}
 	}
+	tool = tool_div.id.replace('tool_', '');
+	
+	var dg_div = document.getElementById("graphdiv");
+	if (tool == 'cut') {
+		dg_div.style.cursor = 'url(icons/cursor-cut.png) 1 30, auto';
+	} else if (tool == 'nocut') {
+		dg_div.style.cursor = 'url(icons/cursor-nocut.png) 1 30, auto';
+	} else if (tool == 'drop') {
+		dg_div.style.cursor = 'url(icons/cursor-drop.png) 1 30, auto';
+	} else if (tool == 'event') {
+		dg_div.style.cursor = 'url(icons/cursor-event.png) 1 30, auto';
+	} else if (tool == 'cancel') {
+		dg_div.style.cursor = 'url(icons/cursor-cancel.png) 1 30, auto';
+	} else if (tool == 'zoom') {
+		dg_div.style.cursor = 'crosshair';
+	}
+}
 	
 change_tool(document.getElementById("tool_"+tool));
-
-g = new Dygraph(document.getElementById("graphdiv"), "",
-{
-	interactionModel: {
-		mousedown: function (event, g, context) {
-			if (tool == 'zoom') {
-				Dygraph.defaultInteractionModel.mousedown(event, g, context);
-			} else {
-				// prevents mouse drags from selecting page text.
-				if (event.preventDefault) {
-					event.preventDefault();  // Firefox, Chrome, etc.
-				} else {
-					event.returnValue = false;  // IE
-					event.cancelBubble = true;
-				}
-				context.px = Dygraph.findPosX(g.canvas_);
-				context.py = Dygraph.findPosY(g.canvas_);
-				context.dragStartX = g.dragGetX_(event, context);
-				context.dragStartY = g.dragGetY_(event, context);
-				if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
-					isSelecting = true; 
-				} else {
-					//alert('Cut or event at t='+getX(context.dragStartX, g));
-					if (tool =='cut'){
-						add2cut(getX(context.dragStartX, g));
-					}
-				}
-			}
-		},
-		mousemove: function (event, g, context) {
-			if (tool == 'zoom') {
-				Dygraph.defaultInteractionModel.mousemove(event, g, context);
-			} else {
-				if (!isSelecting) return;
-				drawSelectRect(event, g, context);
-			}
-		},
-		mouseup: function(event, g, context) {
-			if (tool == 'zoom') {
-				Dygraph.defaultInteractionModel.mouseup(event, g, context);
-			} else if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {			
-				eraseSelectRect(g, context);
-				if (tool == 'nocut'){
-					if (context.prevEndX != null){
-						add2nocut(getX(context.dragStartX,g),getX(context.dragEndX,g));
-						//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
-					}
-				} else if (tool == 'drop'){
-					if (context.prevEndX != null){
-						add2drop(getX(context.dragStartX,g),getX(context.dragEndX,g));
-						//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
-					}
-				}	
-			}
-			context.dragStartX = null;
-			context.dragStartY = null;
-			context.prevEndX = null;
-			context.prevEndY = null;
-			finishSelect();
-		},
-		mouseout: function(event, g, context) {
-			if (tool == 'zoom') {
-				Dygraph.defaultInteractionModel.mouseout(event, g, context);
-			}
-		},
-		dblclick: function(event, g, context) {
-			Dygraph.defaultInteractionModel.dblclick(event, g, context);
-		},
-		mousewheel: function(event, g, context) {
-			var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;
-			var percentage = normal / 50;
-			var axis = g.xAxisRange();
-			var xOffset = g.toDomCoords(axis[0], null)[0];
-			var x = event.offsetX - xOffset;
-			var w = g.toDomCoords(axis[1], null)[0] - xOffset;
-			var xPct = w == 0 ? 0 : (x / w);
-	
-			var delta = axis[1] - axis[0];
-			var increment = delta * percentage;
-			var foo = [increment * xPct, increment * (1 - xPct)];
-			var dateWindow = [ axis[0] + foo[0], axis[1] - foo[1] ];
-	
-			g.updateOptions({
-				dateWindow: dateWindow
-			});
-			Dygraph.cancelEvent(event);
-		}
-	},
-	strokeWidth: 1.5,
-	gridLineColor: 'rgb(196, 196, 196)',
-	logscale : false,
-	rollPeriod: 1,
-	showRoller: false,
-	underlayCallback : captureCanvas
-});
-
-window.onmouseup = finishSelect;
 /* ------------------------------------------------------------------- */

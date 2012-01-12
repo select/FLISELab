@@ -1,6 +1,15 @@
-/************************************/
-var graph_data = [];
-var g=undefined;
+/************ GLOBAL VAR ******************/
+var graph_data = [];//Data to be displayed and processed
+var g = undefined;//Graph variable (from dygraph)
+
+var isSelecting = false;
+var tool = 'zoom';//Default tool
+//TO FALKO: Load positions from stored previously entered values (if any), or leave empty
+var cutT = new Array();//Array or list
+var nocutT = new Array();//Array of Array([start,end])
+var dropT = new Array();//Array of Array([start,end])
+var eventT = new Array();//Array or list
+
 /************************************/
 var series_template = '';
 $.get('{{=URL(request.application, 'static/templates','series_options.html')}}', function(data) { series_template = data; });
@@ -105,6 +114,7 @@ function init_rangeslider(){
         $(this).parent().find('span').html($(this).val());
     });
 }
+
 /**************** WINDOW RESIZE *********************/
 jQuery(document).ready(function(){
 	init_rangeslider();
@@ -113,15 +123,10 @@ jQuery(document).ready(function(){
 	 });
 });
 
-/******************* GRAPH ***************************/
-var isSelecting = false;
-var tool = 'zoom';//Default tool
-//TO FALKO: Load positions from stored previously entered values (if any), or leave empty
-var cutT = new Array();//Array or list
-var nocutT = new Array();//Array of Array([start,end])
-var dropT = new Array();//Array of Array([start,end])
-var eventT = new Array();//Array or list
+/******************* AUTO-SEG ************************/
 
+
+/******************* GRAPH ************************/
 function getX(canvasx, g) {
 	var points = g.layout_.points;
 	if (points === undefined) return;
@@ -275,16 +280,6 @@ function unifyT() {
 	g.updateOptions({
 		file: graph_data, 
 		underlayCallback: function(canvas, area, g) {
-			/*for (i=0; i<dropT.length; i++) {
-				var highlight_start = dropT[i][0];
-				var highlight_end = dropT[i][1];
-				var bottom_left = g.toDomCoords(highlight_start, -20);
-				var top_right = g.toDomCoords(highlight_end, +20);
-				var left = bottom_left[0];
-				var right = top_right[0];
-				canvas.fillStyle = "rgba(255, 255, 102, 1.0)";
-				canvas.fillRect(left, area.y, right - left, area.h);
-			}*/
 			var area = g.layout_.getPlotArea();
 			canvas.clearRect(area.x, area.y, area.w, area.h/24);
 			//Draw drop intervals
@@ -303,7 +298,6 @@ function unifyT() {
 	});
 	
 }
-
 
 function add2nocut(startX, endX) {
 	//Check order
@@ -583,7 +577,7 @@ function createGraph(graph_data, labels){
 
 window.onmouseup = finishSelect;
 
-/*****************************************/
+/************* SELECTION TOOLS *********************/
 
 function change_tool(tool_div) {
 	var ids = ['tool_zoom', 'tool_cut', 'tool_nocut', 'tool_drop', 'tool_event', 'tool_cancel'];
@@ -614,4 +608,5 @@ function change_tool(tool_div) {
 }
 	
 change_tool(document.getElementById("tool_"+tool));
-/* ------------------------------------------------------------------- */
+
+/* -----------------------------END JSCRIPT------------------------------- */

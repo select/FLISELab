@@ -1,5 +1,6 @@
 /************************************/
 var graph_data = [];
+var g=undefined;
 /************************************/
 var series_template = '';
 $.get('{{=URL(request.application, 'static/templates','series_options.html')}}', function(data) { series_template = data; });
@@ -17,7 +18,7 @@ $.get('{{=URL(request.application, 'static/templates','global_options.html')}}',
 };
 if($.cookie('flise_js_options')== null) $.cookie('flise_js_options', 'a=10', { expires: 30, path: '/' });
 */
-/************************************/
+/**************** INIT ********************/
 function init_files(){
 	$('.flise_file .select').click(function(){
 		$('.current_record').html($(this).html());
@@ -95,7 +96,7 @@ function init_files(){
 		timeout:3000
 	}); 
 }
-/************************************/
+/************** RANGE SLIDER **********************/
 function init_rangeslider(){
     $('input[type="range"]').each(function(){
         $(this).parent().find('span').html($(this).val());
@@ -104,7 +105,7 @@ function init_rangeslider(){
         $(this).parent().find('span').html($(this).val());
     });
 }
-/*----------------------- RESIZE ---------------------------------------*/
+/**************** WINDOW RESIZE *********************/
 jQuery(document).ready(function(){
 	init_rangeslider();
 	 $(window).resize(function(){
@@ -112,9 +113,8 @@ jQuery(document).ready(function(){
 	 });
 });
 
-/* ----------------------------GRAF----------------------------------- */
+/******************* GRAPH ***************************/
 var isSelecting = false;
-var captCanvas = null;
 var tool = 'zoom';//Default tool
 //TO FALKO: Load positions from stored previously entered values (if any), or leave empty
 var cutT = new Array();//Array or list
@@ -481,8 +481,6 @@ function add2cut(X) {
 	unifyT();
 }
 
-var g=undefined;
-
 function createGraph(graph_data, labels){
 	if (g==undefined){
 		g = new Dygraph(document.getElementById("graphdiv"), graph_data,
@@ -490,6 +488,7 @@ function createGraph(graph_data, labels){
 				labels: labels,
 				width: window.innerWidth-510,
 				height: window.innerHeight-90,
+				labelsDiv: "labelsdiv",
 				interactionModel: {
 					mousedown: function (event, g, context) {
 						if (tool == 'zoom') {
@@ -575,7 +574,7 @@ function createGraph(graph_data, labels){
 						Dygraph.cancelEvent(event);
 					}
 				},
-				strokeWidth: 1.5,
+				strokeWidth: 0.5,
 				gridLineColor: 'rgb(196, 196, 196)',
 				logscale : false
 			});

@@ -219,7 +219,10 @@ function autoseg(data){
 		var prev = index[0]-1;
 		var IntDrop = new Array(index[0], -1);
 		for (var i = 0; i < index.length; i++) {
-			if (index(i)-1!=prev) if(
+			if (index(i)-1!=prev){
+				i
+			}
+		}
 	}
 }
 

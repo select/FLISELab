@@ -124,7 +124,104 @@ jQuery(document).ready(function(){
 });
 
 /******************* AUTO-SEG ************************/
+listMath = function(list){
+    var r = {mean: 0, variance: 0, std: 0, minV: 0, maxV: 0}, t = list.length;
+	 for(var ma = list[t-1], mi = list[t-1], l = t-1; l--; ma = Math.max(ma,list[l]), mi = Math.min(mi,list[l]));
+    for(var m, s = 0, l = t; l--; s += list[l]);
+    for(m = r.mean = s / t, l = t, s = 0; l--; s += Math.pow(list[l] - m, 2));
+    return r.std = Math.sqrt(r.variance = s / t), r.minV = mi, r.maxV = ma, r;
+}
+function array2col(arrayOfArray, colNum){
+	var list = new Array();
+	if (colNum>arrayOfArray[0].length-1){return list;}
+	for (var i = 0; i < arrayOfArray.length-1; i++) {
+			list.push(arrayOfArray[i][colNum]);
+	}
+	return list;
+}
 
+function autoseg(data){
+	var w=25; //Number of points to the right and to the left to consider: must be a positive integer
+	var dataLocVar = new Array();
+	var x = listMath([1, 2, 3]);//whatever, just to initialize
+	if (data.length>w){
+		//Calculate data local variation
+		for (var i = w; i < data.length-w; i++) {
+			for (var j = 1; j < data[0].length; j++) {
+				x = listMath(array2col(data.slice(i-w,i+w),j));
+				dataLocVar[i][j-1]=x.std;
+			}
+		}
+		for (var i = 0; i < w; i++) {
+			for (var j = 1; j < data[0].length; j++) {
+				dataLocVar[i][j-1]=dataLocVar[w][j-1];
+			}
+		}
+		for (var i = data.length-w; i < data.length; i++) {
+			for (var j = 1; j < data[0].length; j++) {
+				dataLocVar[i][j-1]=dataLocVar[data.length-w-1][j-1];
+			}
+		}
+		//Calculate frequencies of values of local std
+		var histcount = new Array();
+		var ldata = new Array();
+		for (var j = 1; j < dataLocVar[0].length; j++) {
+			ldata = ldata.concat(array2col(data,j));
+		}
+		x = listMath(ldata);
+		var histx = new Array();
+		var step = (x.maxV - x.minV)/2000*1.0003;
+		for (var i = 0; i <= 2000; i++) {
+			histx[i] = x.minV + i*step;
+			histcount[i] = [0,0];
+		}
+		for (var i = 0; i < dataLocVar.length; i++) {
+			for (var j = 0; j < dataLocVar[0].length; j++) {
+				for (var ii = 0; ii < 2000; ii++) {
+					if (dataLocVar[i][j]>=histx[ii] && dataLocVar[i][j]<histx[ii+1]){
+						histcount[ii][j]++;
+						break;
+					}
+				}
+			}
+		}
+		for (var i = 0; i < 2000; i++) {
+			for (var j = 0; j < histcount[0].length; j++) {
+				histcount[i][j] = histcount[i][j]*100/data.length;
+			}
+		}
+		//Find thresholds
+		var threshold = new Array();
+		for (var i = 0; i < 2000; i++) {
+			for (var j = 0; j < histcount[0].length; j++) {
+				//find max histx so that histcount (quantile) is greater than 1%
+				if (histcount[i][j]>1){
+					threshold[j]=histx[i];
+				}
+			}
+		}
+		//Find position where all dataLocVar are above their threshold
+		var index = new Array();
+		var flag = true;
+		for (var i = 0; i < dataLocVar.length; i++) {
+			flag = true;
+			for (var j = 0; j < dataLocVar[0].length; j++) {
+				if (dataLocVar[i][j]<threshold[j]){
+					flag = false;
+					break
+				}
+			}
+			if (flag){
+				index.push(i);
+			}
+		}
+		//Convert to interval
+		var prev = index[0]-1;
+		var IntDrop = new Array(index[0], -1);
+		for (var i = 0; i < index.length; i++) {
+			if (index(i)-1!=prev) if(
+	}
+}
 
 /******************* GRAPH ************************/
 function getX(canvasx, g) {

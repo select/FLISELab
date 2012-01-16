@@ -217,12 +217,66 @@ function autoseg(data){
 		}
 		//Convert to interval
 		var prev = index[0]-1;
-		var IntDrop = new Array(index[0], -1);
+		var intDrop = new Array(index[0], -1);
 		for (var i = 0; i < index.length; i++) {
-			if (index(i)-1!=prev){
-				i
+			if (index(i)-1 != prev){
+				intDrop[intDrop.length-1][2]=prev;
+				intDrop.push([index(i), 0]);
+			}
+			prev = index(i);
+		}
+		intDrop[intDrop.length-1][2]=prev;
+		//Additionnaly we will fuse those intDrop intervals if the interval between them is with dataLocVar>threshold for at least one series
+		//Find position where some dataLocVar are above their threshold
+		var index2 = new Array();
+		for (var i = 0; i < dataLocVar.length; i++) {
+			flag = false;
+			for (var j = 0; j < dataLocVar[0].length; j++) {
+				if (dataLocVar[i][j]>=threshold[j]){
+					flag = true;
+					break
+				}
+			}
+			if (flag){
+				index2.push(i);
 			}
 		}
+		//Convert to interval
+		var prev = index2[0]-1;
+		var intVar = new Array(index2[0], -1);
+		for (var i = 0; i < index2.length; i++) {
+			if (index2(i)-1 != prev){
+				intVar[intVar.length-1][2]=prev;
+				intVar.push([index2(i), 0]);
+			}
+			prev = index2(i);
+		}
+		intVar[intVar.length-1][2]=prev;
+		//Fuse and/or extend intDrop
+		var indInt = new Array();
+		for (var i = 0; i < intVar.length; i++) {
+			//Find all intDrop in contact with this intVar[i]
+			indInt = [];
+			for (var j = 0; j < intDrop.length; j++) {
+				if (intDrop[j][1]>=intVar[i][1] && intDrop[j][2]<=intVar[i][2]){
+					indInt.push(j);
+				} else {
+					if (indInt.length!=0){
+						break
+					}
+				}
+			}
+			//Modify and remove unnecessary elements
+			if (indInt.length>0){
+				intDrop[indInt[0]][1]=intVar[i][1];
+				intDrop[indInt[0]][2]=intVar[i][2];
+				if (indInt.length>1){
+					intDrop.splice(indInt[1],indInt.length-1);
+				}
+			}
+		}
+		//Cleaning up by removing intervals that are too small and shrinking the rest to take into account the windowing of size w
+		
 	}
 }
 

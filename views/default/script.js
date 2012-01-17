@@ -89,6 +89,7 @@ function init_files(){
 					});
 				});
 			});
+			//autoseg(graph_data);  //  <====================-----------------<<<
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
 	});
@@ -119,7 +120,7 @@ function init_rangeslider(){
 jQuery(document).ready(function(){
 	init_rangeslider();
 	 $(window).resize(function(){
-		 g.updateOptions({width:$(window).innerWidth-510, height:$(window).innerHeight-90});
+		 if (g != undefined){g.resize(window.innerWidth-510, window.innerHeight-90);}
 	 });
 });
 
@@ -147,17 +148,20 @@ function autoseg(data){
 	if (data.length>w){
 		//Calculate data local variation
 		for (var i = w; i < data.length-w; i++) {
+			dataLocVar[i] = new Array();
 			for (var j = 1; j < data[0].length; j++) {
 				x = listMath(array2col(data.slice(i-w,i+w),j));
 				dataLocVar[i][j-1]=x.std;
 			}
 		}
 		for (var i = 0; i < w; i++) {
+			dataLocVar[i] = new Array();
 			for (var j = 1; j < data[0].length; j++) {
 				dataLocVar[i][j-1]=dataLocVar[w][j-1];
 			}
 		}
 		for (var i = data.length-w; i < data.length; i++) {
+			dataLocVar[i] = new Array();
 			for (var j = 1; j < data[0].length; j++) {
 				dataLocVar[i][j-1]=dataLocVar[data.length-w-1][j-1];
 			}
@@ -219,11 +223,11 @@ function autoseg(data){
 		var prev = index[0]-1;
 		var intDrop = new Array(index[0], -1);
 		for (var i = 0; i < index.length; i++) {
-			if (index(i)-1 != prev){
+			if (index[i]-1 != prev){
 				intDrop[intDrop.length-1][2]=prev;
-				intDrop.push([index(i), 0]);
+				intDrop.push([index[i], 0]);
 			}
-			prev = index(i);
+			prev = index[i];
 		}
 		intDrop[intDrop.length-1][2]=prev;
 		//Additionnaly we will fuse those intDrop intervals if the interval between them is with dataLocVar>threshold for at least one series
@@ -245,11 +249,11 @@ function autoseg(data){
 		var prev = index2[0]-1;
 		var intVar = new Array(index2[0], -1);
 		for (var i = 0; i < index2.length; i++) {
-			if (index2(i)-1 != prev){
+			if (index2[i]-1 != prev){
 				intVar[intVar.length-1][2]=prev;
-				intVar.push([index2(i), 0]);
+				intVar.push([index2[i], 0]);
 			}
-			prev = index2(i);
+			prev = index2[i];
 		}
 		intVar[intVar.length-1][2]=prev;
 		//Fuse and/or extend intDrop
@@ -277,6 +281,10 @@ function autoseg(data){
 		}
 		//Cleaning up by removing intervals that are too small and shrinking the rest to take into account the windowing of size w
 		
+		//Passing them to graph and global variable
+		for (var i = 0; i < intDrop.length; i++) {
+			add2drop(intDrop[i][1], intDrop[i][2]);
+		}
 	}
 }
 

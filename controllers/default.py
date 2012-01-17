@@ -55,7 +55,7 @@ def get_data():
     filename, raw_file = db.flise_file.file.retrieve(record.file)
     import csv
     reader = list(csv.reader(raw_file, delimiter="\t"))
-    csv_data = [[i*record.sampling_time]+line[:-1] for i,line in enumerate(reader)]
+    csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
     labels = ['Time']+['col%s'%i for i,x in enumerate(csv_data[0][1:])]
     if request.extension == 'json':
         return dict(result=csv_data,labels = labels)

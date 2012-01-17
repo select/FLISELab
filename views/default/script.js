@@ -280,7 +280,16 @@ function autoseg(data){
 			}
 		}
 		//Cleaning up by removing intervals that are too small and shrinking the rest to take into account the windowing of size w
-		
+		step = Math.ceil(w/2);
+		for (var i = 0; i < intDrop.length; i++) {
+			if (intDrop[i][1]-step > intDrop[i][0]+step){
+				intDrop[i][1]=intDrop[i][1]-step;
+				intDrop[i][0]=intDrop[i][0]+step;
+			} else {
+				intDrop.splice(i,1);
+				i--;
+			}
+		}
 		
 		//Passing them to graph and global variable
 		var Tstep = data[1][0]-data[0][0];

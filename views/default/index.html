@@ -26,11 +26,11 @@
 					<h2>Auto-segmentation</h2>
 					<table>
 							<tr>
-									<th>Window size</th>
+									<th>Local window size</th>
 									<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
 							</tr>
 							<tr>
-									<th>Threshold</th>
+									<th>Distance to fuse</th>
 									<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
 							</tr>
 					</table>
@@ -47,4 +47,6 @@
 		</table>
 		<script type="text/javascript">
 		{{include 'default/script.js'}}
+		</script>
+		<script src="static/html5slider/html5slider.js">
 		</script>

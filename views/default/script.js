@@ -89,7 +89,7 @@ function init_files(){
 					});
 				});
 			});
-			//autoseg(graph_data);  //  <====================-----------------<<<
+			autoseg(graph_data);  //  <====================-----------------<<<
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
 	});
@@ -169,8 +169,8 @@ function autoseg(data){
 		//Calculate frequencies of values of local std
 		var histcount = new Array();
 		var ldata = new Array();
-		for (var j = 1; j < dataLocVar[0].length; j++) {
-			ldata = ldata.concat(array2col(data,j));
+		for (var j = 0; j < dataLocVar[0].length; j++) {
+			ldata = ldata.concat(array2col(dataLocVar,j));
 		}
 		x = listMath(ldata);
 		var histx = new Array();
@@ -221,15 +221,15 @@ function autoseg(data){
 		}
 		//Convert to interval
 		var prev = index[0]-1;
-		var intDrop = new Array(index[0], -1);
+		var intDrop = new Array([index[0], -1]);
 		for (var i = 0; i < index.length; i++) {
 			if (index[i]-1 != prev){
-				intDrop[intDrop.length-1][2]=prev;
+				intDrop[intDrop.length-1][1]=prev;
 				intDrop.push([index[i], 0]);
 			}
 			prev = index[i];
 		}
-		intDrop[intDrop.length-1][2]=prev;
+		intDrop[intDrop.length-1][1]=prev;
 		//Additionnaly we will fuse those intDrop intervals if the interval between them is with dataLocVar>threshold for at least one series
 		//Find position where some dataLocVar are above their threshold
 		var index2 = new Array();
@@ -247,15 +247,15 @@ function autoseg(data){
 		}
 		//Convert to interval
 		var prev = index2[0]-1;
-		var intVar = new Array(index2[0], -1);
+		var intVar = new Array([index2[0], -1]);
 		for (var i = 0; i < index2.length; i++) {
 			if (index2[i]-1 != prev){
-				intVar[intVar.length-1][2]=prev;
+				intVar[intVar.length-1][1]=prev;
 				intVar.push([index2[i], 0]);
 			}
 			prev = index2[i];
 		}
-		intVar[intVar.length-1][2]=prev;
+		intVar[intVar.length-1][1]=prev;
 		//Fuse and/or extend intDrop
 		var indInt = new Array();
 		for (var i = 0; i < intVar.length; i++) {
@@ -281,9 +281,11 @@ function autoseg(data){
 		}
 		//Cleaning up by removing intervals that are too small and shrinking the rest to take into account the windowing of size w
 		
+		
 		//Passing them to graph and global variable
+		var Tstep = data[1][0]-data[0][0];
 		for (var i = 0; i < intDrop.length; i++) {
-			add2drop(intDrop[i][1], intDrop[i][2]);
+			add2drop(intDrop[i][0]*Tstep, intDrop[i][1]*Tstep);
 		}
 	}
 }

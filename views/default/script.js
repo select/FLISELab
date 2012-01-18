@@ -291,11 +291,28 @@ function autoseg(data){
 			}
 		}
 		
+		//Fusing nearby zones
+		var wF = 60;
+		for (var i = 1; i < intDrop.length; i++) {
+			if (intDrop[i][0]-intDrop[i-1][1]<wF){
+				intDrop[i-1][1]=intDrop[i][1];
+				intDrop.splice(i,1);
+				i--;
+			}
+		}
+		
 		//Passing them to graph and global variable
 		var Tstep = data[1][0]-data[0][0];
+		//Backup previous state
+		var prevcutT = cutT;
+		var prevnocutT = nocutT;
+		var prevdropT = dropT;
+		var preveventT = eventT;
+		//Add
 		for (var i = 0; i < intDrop.length; i++) {
 			add2drop(intDrop[i][0]*Tstep, intDrop[i][1]*Tstep);
 		}
+		//unifyT();
 	}
 }
 

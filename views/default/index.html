@@ -28,14 +28,15 @@
 					<table>
 							<tr>
 									<th>Local window size</th>
-									<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
+									<td><input type="range" min="1" max="50" value="25" step="1" class="segmentation_slider" id="locw"/><span/></td>
 							</tr>
 							<tr>
 									<th>Distance to fuse</th>
-									<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
+									<td><input type="range" min="0" max="200" value="60" step="1" class="segmentation_slider" id="fusw"/><span/></td>
 							</tr>
 					</table>
-					<input id="autoseg" type="submit" value="start"/>
+					<input id="autoseg" type="submit" value="Start"/>
+					<input id="revertseg" type="submit" value="Revert" disabled="disabled"/>
 					<hr />
 					<h2>Tools</h2>
 					<div id="tools">

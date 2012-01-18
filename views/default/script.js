@@ -4,12 +4,16 @@ var g = undefined;//Graph variable (from dygraph)
 
 var isSelecting = false;
 var tool = 'zoom';//Default tool
-//TO FALKO: Load positions from stored previously entered values (if any), or leave empty
+//Present state
 var cutT = new Array();//Array or list
 var nocutT = new Array();//Array of Array([start,end])
 var dropT = new Array();//Array of Array([start,end])
 var eventT = new Array();//Array or list
-
+//Previous state
+var prevcutT = new Array();
+var prevnocutT = new Array();
+var prevdropT = new Array();
+var preveventT = new Array();
 /************************************/
 var series_template = '';
 $.get('{{=URL(request.application, 'static/templates','series_options.html')}}', function(data) { series_template = data; });
@@ -36,6 +40,12 @@ function init_files(){
 		var cur_id = $(this).parent().attr('id');
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
+			//TO FALKO: Load positions from stored previously entered values (if any), or leave empty
+			cutT = [];//Array or list
+			nocutT = [];//Array of Array([start,end])
+			dropT = [];//Array of Array([start,end])
+			eventT = [];//Array or list
+			
 			createGraph(graph_data, data.labels);
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
 				$('#series_options').html('');
@@ -90,11 +100,18 @@ function init_files(){
 				});
 			});
 			$('#autoseg').click(function(){
-				//Bloc clicking
-				document.getElementById('processingIco').innerHTML = '<table border="0" width="'+window.innerWidth+'" height="'+(window.innerHeight-80)+'"><tr><td style="vertical-align:middle; text-align:center"><img src="static/processing.gif" width="150" height="150" /></td></tr></table>';
+				/*//Bloc clicking
+				document.getElementById('processingIco').innerHTML = '<table border="0" width="'+window.innerWidth+'" height="'+(window.innerHeight-80)+'"><tr><td style="vertical-align:middle; text-align:center"><img src="static/processing.gif" width="150" height="150" /></td></tr></table>';*/
 				window.setTimeout('autoseg(graph_data)', 1);
-				//Remove bloc clicking
-				document.getElementById('processingIco').innerHTML = '';
+				/*//Remove bloc clicking
+				document.getElementById('processingIco').innerHTML = '';*/
+			});
+			$('#revertseg').click(function(){
+				cutT = prevcutT.slice();
+				nocutT = prevnocutT.slice();
+				dropT = prevdropT.slice();
+				eventT = preveventT.slice();
+				unifyT();
 			});
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
@@ -149,7 +166,7 @@ function array2col(arrayOfArray, colNum){
 
 function autoseg(data){
 	//Load slider values
-	var w=25; //Number of points to the right and to the left to consider: must be a positive integer
+	var w = parseFloat($("#locw").attr("value")); //Number of points to the right and to the left to consider: must be a positive integer
 	
 	var dataLocVar = new Array();
 	var x = listMath([1, 2, 3]);//whatever, just to initialize
@@ -300,7 +317,7 @@ function autoseg(data){
 		}
 		
 		//Fusing nearby zones
-		var wF = 60;
+		var wF = parseFloat($("#fusw").attr("value"));
 		for (var i = 1; i < intDrop.length; i++) {
 			if (intDrop[i][0]-intDrop[i-1][1]<wF){
 				intDrop[i-1][1]=intDrop[i][1];
@@ -309,18 +326,81 @@ function autoseg(data){
 			}
 		}
 		
-		//Passing them to graph and global variable
+		//Passing them to graph and global variables
 		var Tstep = data[1][0]-data[0][0];
 		//Backup previous state
-		var prevcutT = cutT;
-		var prevnocutT = nocutT;
-		var prevdropT = dropT;
-		var preveventT = eventT;
+		prevcutT = cutT.slice();
+		prevnocutT = nocutT.slice();
+		prevdropT = dropT.slice();
+		preveventT = eventT.slice();
 		//Add
+		var startX, endX;
 		for (var i = 0; i < intDrop.length; i++) {
-			add2drop(intDrop[i][0]*Tstep, intDrop[i][1]*Tstep);
+			startX = intDrop[i][0]*Tstep;
+			endX = intDrop[i][1]*Tstep;
+			//If array is empty, initialize
+			if (dropT.length==0){
+				dropT.push([startX, endX])
+			} else {
+				//Test if [s,e] overlaps with any already existing dropT interval, in which case it joins them.
+				var insertT = false;
+				for (i=0; i<dropT.length; i++) {
+					if ((endX>dropT[i][0])&&(startX<dropT[i][0])){
+						insertT = true;
+						dropT[i][0]=startX
+					}
+					if ((endX>dropT[i][1])&&(startX<dropT[i][1])){
+						insertT = true;
+						dropT[i][1]=endX
+					}
+					if ((endX<dropT[i][1])&&(startX>dropT[i][0])){
+						return
+					}
+				}
+				//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
+				//otherwise, add the new segment at correct position so that it is sorted in increasing order.
+				if (insertT){
+					var countHowMany = 0;
+					var index = 0;
+					for (i=1; i<dropT.length; i++) {
+						if (dropT[i-1][1]>=dropT[i][0]){
+							dropT[i-1][1]=dropT[i][1];
+							countHowMany++;
+							if (index==0){
+								index=i
+							}
+						} else if (index!=0) {
+							i=i-countHowMany;
+							dropT.splice(index, countHowMany);
+							index = 0;
+							countHowMany = 0;
+						}
+						if ((index!=0)&&(i==dropT.length-1)) {
+							dropT.splice(index, countHowMany)
+						}
+					}
+				} else {
+					var flag = true;
+					if (endX<dropT[0][0]){
+						dropT.splice(0,0,[startX, endX])
+						flag = false;
+					} else {
+						for (i=1; i<dropT.length; i++) {
+							if ((endX<dropT[i][0])&&(startX>dropT[i-1][1])){
+								dropT.splice(i,0,[startX, endX]);
+								flag = false;
+								break
+							}
+						}	
+					}
+					if (flag){
+						dropT.push([startX, endX])
+					}
+				}
+			}
 		}
-		//unifyT();
+		unifyT();
+		$("#revertseg").removeAttr("disabled");
 	}
 }
 
@@ -674,7 +754,7 @@ function add2cut(X) {
 }
 
 function createGraph(graph_data, labels){
-	if (g==undefined){
+	//if (g==undefined){
 		g = new Dygraph(document.getElementById("graphdiv"), graph_data,
 			{
 				labels: labels,
@@ -770,7 +850,7 @@ function createGraph(graph_data, labels){
 				gridLineColor: 'rgb(196, 196, 196)',
 				logscale : false
 			});
-	}
+	//}
 }
 
 window.onmouseup = finishSelect;

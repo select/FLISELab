@@ -15,6 +15,7 @@ def index():
     rendered by views/default/index.html or views/generic.html
     """
     response.files.append(URL(request.application, 'static/dygraphs', 'dygraph-dev.js'))
+    response.files.append(URL(request.application, 'static/html5slider', 'html5slider.js'))      #toREMOVE in the end
     response.files.append(URL(request.application, 'static/js', 'jquery.confirm.js'))
     response.files.append(URL(request.application, 'static/colorpicker', 'jquery.colorPicker.js'))
     response.files.append(URL(request.application, 'static/colorpicker', 'colorPicker.css'))

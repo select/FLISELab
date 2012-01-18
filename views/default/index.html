@@ -1,4 +1,5 @@
 {{extend 'layout.html'}}
+		<div id="processingIco" style="z-index:10; background-color:rgba(128,128,128,0.2); position:absolute; top:20; bottom:20; left:20; right:20; cursor:wait;"></div>
 		<table style="width:100%">
 			<tr>
 				<td>
@@ -34,7 +35,7 @@
 									<td><input type="range" min="0" max="50" value="7" step="1" class="segmentation_slider"/><span/></td>
 							</tr>
 					</table>
-					<input type="submit" value="start"/>
+					<input id="autoseg" type="submit" value="start"/>
 					<hr />
 					<h2>Tools</h2>
 					<div id="tools">
@@ -47,6 +48,4 @@
 		</table>
 		<script type="text/javascript">
 		{{include 'default/script.js'}}
-		</script>
-		<script src="static/html5slider/html5slider.js">
 		</script>

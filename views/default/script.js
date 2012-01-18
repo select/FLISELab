@@ -89,7 +89,13 @@ function init_files(){
 					});
 				});
 			});
-			autoseg(graph_data);  //  <====================-----------------<<<
+			$('#autoseg').click(function(){
+				//Bloc clicking
+				document.getElementById('processingIco').innerHTML = '<table border="0" width="'+window.innerWidth+'" height="'+(window.innerHeight-80)+'"><tr><td style="vertical-align:middle; text-align:center"><img src="static/processing.gif" width="150" height="150" /></td></tr></table>';
+				window.setTimeout('autoseg(graph_data)', 1);
+				//Remove bloc clicking
+				document.getElementById('processingIco').innerHTML = '';
+			});
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
 	});
@@ -142,7 +148,9 @@ function array2col(arrayOfArray, colNum){
 }
 
 function autoseg(data){
+	//Load slider values
 	var w=25; //Number of points to the right and to the left to consider: must be a positive integer
+	
 	var dataLocVar = new Array();
 	var x = listMath([1, 2, 3]);//whatever, just to initialize
 	if (data.length>w){
@@ -783,15 +791,15 @@ function change_tool(tool_div) {
 	
 	var dg_div = document.getElementById("graphdiv");
 	if (tool == 'cut') {
-		dg_div.style.cursor = 'url(icons/cursor-cut.png) 1 30, auto';
+		dg_div.style.cursor = 'url(static/icons/cursor-cut.png) 1 30, auto';
 	} else if (tool == 'nocut') {
-		dg_div.style.cursor = 'url(icons/cursor-nocut.png) 1 30, auto';
+		dg_div.style.cursor = 'url(static/icons/cursor-nocut.png) 1 30, auto';
 	} else if (tool == 'drop') {
-		dg_div.style.cursor = 'url(icons/cursor-drop.png) 1 30, auto';
+		dg_div.style.cursor = 'url(static/icons/cursor-drop.png) 1 30, auto';
 	} else if (tool == 'event') {
-		dg_div.style.cursor = 'url(icons/cursor-event.png) 1 30, auto';
+		dg_div.style.cursor = 'url(static/icons/cursor-event.png) 1 30, auto';
 	} else if (tool == 'cancel') {
-		dg_div.style.cursor = 'url(icons/cursor-cancel.png) 1 30, auto';
+		dg_div.style.cursor = 'url(static/icons/cursor-cancel.png) 1 30, auto';
 	} else if (tool == 'zoom') {
 		dg_div.style.cursor = 'crosshair';
 	}

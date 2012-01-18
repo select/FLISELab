@@ -37,6 +37,10 @@ function init_files(){
 		$('.current_record').html($(this).html());
 		$('.current_record').attr('id', $(this).parent().attr('id'));
 		$('#my_records').slideUp();
+		$('#edit_record').slideToggle();
+		$('#series_options').slideToggle();
+		$('#global_options').slideToggle();
+		$('#section_file').slideToggle();
 		var cur_id = $(this).parent().attr('id');
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
@@ -92,7 +96,7 @@ function init_files(){
 				st = st.replace(/%smooth_value%/, data.smooth_value);
 				$('#global_options').append('<table>'+st+'</table>');
 				init_rangeslider();
-  			$('input[name="smooth"]').click(function(){
+  				$('input[name="smooth"]').click(function(){
 					$('input[name="smooth"]').each(function (){
 						if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: data.smooth_value})
 						else g.updateOptions({file: graph_data, rollPeriod: 1});
@@ -101,10 +105,11 @@ function init_files(){
 			});
 			$('#autoseg').click(function(){
 				/*//Bloc clicking
-				document.getElementById('processingIco').innerHTML = '<table border="0" width="'+window.innerWidth+'" height="'+(window.innerHeight-80)+'"><tr><td style="vertical-align:middle; text-align:center"><img src="static/processing.gif" width="150" height="150" /></td></tr></table>';*/
+				document.getElementById('processingIco').innerHTML = '<table border="0" width="'+window.innerWidth+'" height="'+(window.innerHeight-80)+'"><tr><td style="vertical-align:middle; text-align:center"><img src="static/processing.gif" width="150" height="150" /></td></tr></table>';
 				window.setTimeout('autoseg(graph_data)', 1);
-				/*//Remove bloc clicking
+				//Remove bloc clicking
 				document.getElementById('processingIco').innerHTML = '';*/
+				autoseg(graph_data);
 			});
 			$('#revertseg').click(function(){
 				cutT = prevcutT.slice();
@@ -453,9 +458,9 @@ function drawSelectRect(event, g, context) {
 		if (tool == 'nocut'){
 		ctx.fillStyle = "rgba(128,255,128,0.33)";
 	} else if (tool == 'cancel') {
-		ctx.fillStyle = "rgba(255,128,128,0.33)";
-	} else if (tool == 'drop') {
 		ctx.fillStyle = "rgba(255,255,128,0.33)";
+	} else if (tool == 'drop') {
+		ctx.fillStyle = "rgba(255,128,128,0.33)";
 	} else {
 		ctx.fillStyle = "rgba(128,128,128,0.33)";
 	}
@@ -495,7 +500,7 @@ function drawInterval(g, ctx, startX, endX, color) {
 	var p1 = g.toDomCoords(startX, range[0]);
 	var p2 = g.toDomCoords(endX, range[1]);
 	// Draw a light-colored rectangle to show the new viewing area
-	ctx.fillStyle = "rgba("+color[0]+","+color[1]+","+color[2]+",0.33)";
+	ctx.fillStyle = "rgba("+color[0]+","+color[1]+","+color[2]+",0.66)";
 	ctx.fillRect(Math.min(p1[0], p2[0]), g.layout_.getPlotArea().y,Math.abs(p1[0]-p2[0]), g.layout_.getPlotArea().h/24);
 	}
 
@@ -562,7 +567,7 @@ function unifyT() {
 			canvas.clearRect(area.x, area.y, area.w, area.h/24);
 			//Draw drop intervals
 			for (iD=0; iD<dropT.length; iD++) {
-				drawInterval (g, canvas, dropT[iD][0], dropT[iD][1], [255,255,128]);
+				drawInterval (g, canvas, dropT[iD][0], dropT[iD][1], [255,128,128]);
 			}
 			//Draw nocut intervals
 			for (iN=0; iN<nocutT.length; iN++) {

@@ -18,13 +18,14 @@
 					</div>
 					<hr />
 					<h2 onclick="collapse('edit_record')">General Properties</h2>
-					<div id="edit_record"> ... upload or select a file.</div>
+					<div id="edit_record" style="display:none;"> ... upload or select a file.</div>
 					<hr />
 					<h2 onclick="collapse('series_options');collapse('global_options')">Series Options</h2>
-					<div id="series_options"> ... upload or select a file.</div>
-					<div id="global_options"> </div>
+					<div id="series_options" style="display:none;"> ... upload or select a file.</div>
+					<div id="global_options" style="display:none;"> </div>
 					<hr />
-					<h2>Auto-segmentation</h2>
+					<h2 onclick="collapse('autoseg_options')">Auto-segmentation</h2>
+					<div id="autoseg_options" style="display:none">
 					<table>
 							<tr>
 									<th>Local window size</th>
@@ -37,9 +38,10 @@
 					</table>
 					<input id="autoseg" type="submit" value="Start"/>
 					<input id="revertseg" type="submit" value="Revert" disabled="disabled"/>
+					</div>
 					<hr />
-					<h2>Tools</h2>
-					<div id="tools">
+					<h2 onclick="collapse('tools')">Tools</h2>
+					<div id="tools" style="display:none;">
 							<div id='toolbar'><div id="tool_zoom" onClick='change_tool(this)'></div><div id="tool_cut" onClick='change_tool(this)'></div><div id="tool_nocut" onClick='change_tool(this)'></div><div id="tool_drop" onClick='change_tool(this)'></div><div id="tool_event" onClick='change_tool(this)'></div><div id="tool_cancel" onClick='change_tool(this)'></div></div>
 					</div>
 					<hr />

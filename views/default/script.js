@@ -4,16 +4,15 @@ var g = undefined;//Graph variable (from dygraph)
 
 var isSelecting = false;
 var tool = 'zoom';//Default tool
-//Present state
-var cutT = new Array();//Array or list
-var nocutT = new Array();//Array of Array([start,end])
-var dropT = new Array();//Array of Array([start,end])
-var eventT = new Array();//Array or list
-//Previous state
-var prevcutT = new Array();
-var prevnocutT = new Array();
-var prevdropT = new Array();
-var preveventT = new Array();
+//Force clean up
+var cutT;
+var nocutT;
+var dropT;
+var eventT;
+var prevcutT;
+var prevnocutT;
+var prevdropT;
+var preveventT;
 /************************************/
 var series_template = '';
 $.get('{{=URL(request.application, 'static/templates','series_options.html')}}', function(data) { series_template = data; });
@@ -45,12 +44,20 @@ function init_files(){
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
 			//TO FALKO: Load positions from stored previously entered values (if any), or leave empty
+			//Present state
 			cutT = [];//Array or list
 			nocutT = [];//Array of Array([start,end])
 			dropT = [];//Array of Array([start,end])
 			eventT = [];//Array or list
+			//Previous state
+			prevcutT = [];
+			prevnocutT = [];
+			prevdropT = [];
+			preveventT = [];
 			
+			g=undefined;
 			createGraph(graph_data, data.labels);
+			
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
 				$('#series_options').html('');
 				var colors = data.color;
@@ -104,20 +111,21 @@ function init_files(){
 				});
 			});
 			$('#autoseg').click(function(){
-				/*//Bloc clicking
-				document.getElementById('processingIco').innerHTML = '<table border="0" width="'+window.innerWidth+'" height="'+(window.innerHeight-80)+'"><tr><td style="vertical-align:middle; text-align:center"><img src="static/processing.gif" width="150" height="150" /></td></tr></table>';
-				window.setTimeout('autoseg(graph_data)', 1);
-				//Remove bloc clicking
-				document.getElementById('processingIco').innerHTML = '';*/
+				$("#autoseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				autoseg(graph_data);
+				$("#revertseg").removeAttr("disabled").removeAttr("style");
 			});
 			$('#revertseg').click(function(){
+				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				cutT = prevcutT.slice();
 				nocutT = prevnocutT.slice();
 				dropT = prevdropT.slice();
 				eventT = preveventT.slice();
 				unifyT();
+				$("#autoseg").removeAttr("disabled").removeAttr("style");
 			});
+			$("#autoseg").removeAttr("disabled").removeAttr("style");
+			$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
 	});
@@ -340,6 +348,8 @@ function autoseg(data){
 		preveventT = eventT.slice();
 		//Add
 		var startX, endX;
+		var insertT;
+		var countHowMany, indexI;
 		for (var i = 0; i < intDrop.length; i++) {
 			startX = intDrop[i][0]*Tstep;
 			endX = intDrop[i][1]*Tstep;
@@ -348,64 +358,68 @@ function autoseg(data){
 				dropT.push([startX, endX])
 			} else {
 				//Test if [s,e] overlaps with any already existing dropT interval, in which case it joins them.
-				var insertT = false;
-				for (i=0; i<dropT.length; i++) {
-					if ((endX>dropT[i][0])&&(startX<dropT[i][0])){
-						insertT = true;
-						dropT[i][0]=startX
-					}
-					if ((endX>dropT[i][1])&&(startX<dropT[i][1])){
-						insertT = true;
-						dropT[i][1]=endX
-					}
-					if ((endX<dropT[i][1])&&(startX>dropT[i][0])){
-						return
+				insertT = false;
+				flag = true;
+				for (j=0; j<dropT.length; j++) {
+					if ((endX<=dropT[j][1])&&(startX>=dropT[j][0])){
+						flag = false;
+						break;
+					} else {
+						if ((endX>dropT[j][0])&&(startX<dropT[j][0])){
+							insertT = true;
+							dropT[j][0]=startX;
+						}
+						if ((endX>dropT[j][1])&&(startX<dropT[j][1])){
+							insertT = true;
+							dropT[j][1]=endX;
+						}
 					}
 				}
 				//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
 				//otherwise, add the new segment at correct position so that it is sorted in increasing order.
-				if (insertT){
-					var countHowMany = 0;
-					var index = 0;
-					for (i=1; i<dropT.length; i++) {
-						if (dropT[i-1][1]>=dropT[i][0]){
-							dropT[i-1][1]=dropT[i][1];
-							countHowMany++;
-							if (index==0){
-								index=i
+				if (flag){
+					if (insertT){
+						countHowMany = 0;
+						indexI = 0;
+						for (j=1; j<dropT.length; j++) {
+							if (dropT[j-1][1]>=dropT[j][0]){
+								countHowMany++;
+								if (indexI==0){
+									indexI=j;
+								}
+								dropT[indexI-1][1]=dropT[j][1];
+							} else if (indexI!=0) {
+								j=j-countHowMany;
+								dropT.splice(indexI, countHowMany);
+								indexI = 0;
+								countHowMany = 0;
 							}
-						} else if (index!=0) {
-							i=i-countHowMany;
-							dropT.splice(index, countHowMany);
-							index = 0;
-							countHowMany = 0;
+							if ((indexI!=0)&&(i==dropT.length-1)) {
+								dropT.splice(indexI, countHowMany);
+							}
 						}
-						if ((index!=0)&&(i==dropT.length-1)) {
-							dropT.splice(index, countHowMany)
-						}
-					}
-				} else {
-					var flag = true;
-					if (endX<dropT[0][0]){
-						dropT.splice(0,0,[startX, endX])
-						flag = false;
 					} else {
-						for (i=1; i<dropT.length; i++) {
-							if ((endX<dropT[i][0])&&(startX>dropT[i-1][1])){
-								dropT.splice(i,0,[startX, endX]);
-								flag = false;
-								break
-							}
-						}	
-					}
-					if (flag){
-						dropT.push([startX, endX])
+						flag = true;
+						if (endX<dropT[0][0]){
+							dropT.splice(0,0,[startX, endX]);
+							flag = false;
+						} else {
+							for (j=1; j<dropT.length; j++) {
+								if ((endX<dropT[j][0])&&(startX>dropT[j-1][1])){
+									dropT.splice(j,0,[startX, endX]);
+									flag = false;
+									break;
+								}
+							}	
+						}
+						if (flag){
+							dropT.push([startX, endX]);
+						}
 					}
 				}
 			}
 		}
 		unifyT();
-		$("#revertseg").removeAttr("disabled");
 	}
 }
 
@@ -589,25 +603,26 @@ function add2nocut(startX, endX) {
 		startX = endX;
 		endX = x;
 	} else if (startX==endX) {
-		return
+		return;
 	}
 	//If array is empty, initialize
 	if (nocutT.length==0){
-		nocutT.push([startX, endX])
+		nocutT.push([startX, endX]);
 	} else {
 		//Test if [s,e] overlaps with any already existing nocutT interval, in which case it joins them.
 		var insertT = false;
 		for (i=0; i<nocutT.length; i++) {
-			if ((endX>nocutT[i][0])&&(startX<nocutT[i][0])){
-				insertT = true;
-				nocutT[i][0]=startX
-			}
-			if ((endX>nocutT[i][1])&&(startX<nocutT[i][1])){
-				insertT = true;
-				nocutT[i][1]=endX
-			}
-			if ((endX<nocutT[i][1])&&(startX>nocutT[i][0])){
-				return
+			if ((endX<=nocutT[i][1])&&(startX>=nocutT[i][0])){
+				return;
+			} else {
+				if ((endX>nocutT[i][0])&&(startX<nocutT[i][0])){
+					insertT = true;
+					nocutT[i][0]=startX;
+				}
+				if ((endX>nocutT[i][1])&&(startX<nocutT[i][1])){
+					insertT = true;
+					nocutT[i][1]=endX;
+				}
 			}
 		}
 		//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
@@ -617,11 +632,11 @@ function add2nocut(startX, endX) {
 			var index = 0;
 			for (i=1; i<nocutT.length; i++) {
 				if (nocutT[i-1][1]>=nocutT[i][0]){
-					nocutT[i-1][1]=nocutT[i][1];
 					countHowMany++;
 					if (index==0){
 						index=i;
 					}
+					nocutT[index-1][1]=nocutT[i][1];
 				} else if (index!=0) {
 					i=i-countHowMany;
 					nocutT.splice(index, countHowMany);
@@ -635,7 +650,7 @@ function add2nocut(startX, endX) {
 		} else {
 			var flag = true;
 			if (endX<nocutT[0][0]){
-				nocutT.splice(0,0,[startX, endX])
+				nocutT.splice(0,0,[startX, endX]);
 				flag = false;
 			} else {
 				for (i=1; i<nocutT.length; i++) {
@@ -647,7 +662,7 @@ function add2nocut(startX, endX) {
 				}	
 			}
 			if (flag){
-				nocutT.push([startX, endX])
+				nocutT.push([startX, endX]);
 			}
 		}
 	}
@@ -661,25 +676,26 @@ function add2drop(startX, endX) {
 		startX = endX;
 		endX = x;
 	} else if (startX==endX) {
-		return
+		return;
 	}
 	//If array is empty, initialize
 	if (dropT.length==0){
-		dropT.push([startX, endX])
+		dropT.push([startX, endX]);
 	} else {
 		//Test if [s,e] overlaps with any already existing dropT interval, in which case it joins them.
 		var insertT = false;
 		for (i=0; i<dropT.length; i++) {
-			if ((endX>dropT[i][0])&&(startX<dropT[i][0])){
-				insertT = true;
-				dropT[i][0]=startX
-			}
-			if ((endX>dropT[i][1])&&(startX<dropT[i][1])){
-				insertT = true;
-				dropT[i][1]=endX
-			}
-			if ((endX<dropT[i][1])&&(startX>dropT[i][0])){
-				return
+			if ((endX<=dropT[i][1])&&(startX>=dropT[i][0])){
+				return;
+			} else {
+				if ((endX>dropT[i][0])&&(startX<dropT[i][0])){
+					insertT = true;
+					dropT[i][0]=startX;
+				}
+				if ((endX>dropT[i][1])&&(startX<dropT[i][1])){
+					insertT = true;
+					dropT[i][1]=endX;
+				}
 			}
 		}
 		//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
@@ -689,11 +705,11 @@ function add2drop(startX, endX) {
 			var index = 0;
 			for (i=1; i<dropT.length; i++) {
 				if (dropT[i-1][1]>=dropT[i][0]){
-					dropT[i-1][1]=dropT[i][1];
 					countHowMany++;
 					if (index==0){
-						index=i
+						index=i;
 					}
+					dropT[index-1][1]=dropT[i][1];
 				} else if (index!=0) {
 					i=i-countHowMany;
 					dropT.splice(index, countHowMany);
@@ -701,25 +717,25 @@ function add2drop(startX, endX) {
 					countHowMany = 0;
 				}
 				if ((index!=0)&&(i==dropT.length-1)) {
-					dropT.splice(index, countHowMany)
+					dropT.splice(index, countHowMany);
 				}
 			}
 		} else {
 			var flag = true;
 			if (endX<dropT[0][0]){
-				dropT.splice(0,0,[startX, endX])
+				dropT.splice(0,0,[startX, endX]);
 				flag = false;
 			} else {
 				for (i=1; i<dropT.length; i++) {
 					if ((endX<dropT[i][0])&&(startX>dropT[i-1][1])){
 						dropT.splice(i,0,[startX, endX]);
 						flag = false;
-						break
+						break;
 					}
 				}	
 			}
 			if (flag){
-				dropT.push([startX, endX])
+				dropT.push([startX, endX]);
 			}
 		}
 	}
@@ -734,7 +750,7 @@ function add2cut(X) {
 		//Check if it already exists
 		for (i=0; i<cutT.length; i++) {
 			if (cutT[i]==X){
-				return
+				return;
 			}
 		}
 		//Otherwise insert it while preserving the increasing order
@@ -747,7 +763,7 @@ function add2cut(X) {
 				if ((X>cutT[i-1])&&(X<cutT[i])){
 					cutT.splice(i,0,X);
 					flag = false;
-					break
+					break;
 				}
 			}
 		}
@@ -759,7 +775,7 @@ function add2cut(X) {
 }
 
 function createGraph(graph_data, labels){
-	//if (g==undefined){
+	if (g==undefined){
 		g = new Dygraph(document.getElementById("graphdiv"), graph_data,
 			{
 				labels: labels,
@@ -855,7 +871,7 @@ function createGraph(graph_data, labels){
 				gridLineColor: 'rgb(196, 196, 196)',
 				logscale : false
 			});
-	//}
+	}
 }
 
 window.onmouseup = finishSelect;

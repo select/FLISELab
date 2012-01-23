@@ -114,11 +114,13 @@ function init_files(){
 					});
 				});
 			});
+			$('#autoseg').unbind('click');
 			$('#autoseg').click(function(){
 				$("#autoseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				autoseg(graph_data);
 				$("#revertseg").removeAttr("disabled").removeAttr("style");
 			});
+			$('#revertseg').unbind('click');
 			$('#revertseg').click(function(){
 				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				cutT = prevcutT.slice();

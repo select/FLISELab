@@ -4,15 +4,19 @@ var g = undefined;//Graph variable (from dygraph)
 
 var isSelecting = false;
 var tool = 'zoom';//Default tool
-//Force clean up
+
+//Global variables to save
 var cutT;
 var nocutT;
 var dropT;
 var eventT;
+
+//Global variables not to save
 var prevcutT;
 var prevnocutT;
 var prevdropT;
 var preveventT;
+var dataT;
 /************************************/
 var series_template = '';
 $.get('{{=URL(request.application, 'static/templates','series_options.html')}}', function(data) { series_template = data; });
@@ -126,6 +130,7 @@ function init_files(){
 			});
 			$("#autoseg").removeAttr("disabled").removeAttr("style");
 			$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+			unifyT();
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
 	});
@@ -184,6 +189,12 @@ function autoseg(data){
 	var dataLocVar = new Array();
 	var x = listMath([1, 2, 3]);//whatever, just to initialize
 	if (data.length>w){
+		//Backup previous state
+		prevcutT = cutT.slice();
+		prevnocutT = nocutT.slice();
+		prevdropT = dropT.slice();
+		preveventT = eventT.slice();
+		
 		//Calculate data local variation
 		for (var i = w; i < data.length-w; i++) {
 			dataLocVar[i] = new Array();
@@ -341,11 +352,6 @@ function autoseg(data){
 		
 		//Passing them to graph and global variables
 		var Tstep = data[1][0]-data[0][0];
-		//Backup previous state
-		prevcutT = cutT.slice();
-		prevnocutT = nocutT.slice();
-		prevdropT = dropT.slice();
-		preveventT = eventT.slice();
 		//Add
 		var startX, endX;
 		var insertT;
@@ -469,7 +475,7 @@ function drawSelectRect(event, g, context) {
 										g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
 	}
 	
-		if (tool == 'nocut'){
+	if (tool == 'nocut'){
 		ctx.fillStyle = "rgba(128,255,128,0.33)";
 	} else if (tool == 'cancel') {
 		ctx.fillStyle = "rgba(255,255,128,0.33)";
@@ -507,7 +513,16 @@ function drawSelectRect(event, g, context) {
 	}	
 	// Update point display
 	g.updateSelection_();  
-	}
+}
+
+function drawDataZone(g, ctx, startX, endX, color) {
+	var range = g.yAxisRange();
+	var p1 = g.toDomCoords(startX, range[0]);
+	var p2 = g.toDomCoords(endX, range[1]);
+	// Draw a light-colored rectangle to show the new viewing area
+	ctx.fillStyle = "rgba("+color[0]+","+color[1]+","+color[2]+",0.25)";
+	ctx.fillRect(Math.min(p1[0], p2[0]), g.layout_.getPlotArea().y+g.layout_.getPlotArea().h/24,Math.abs(p1[0]-p2[0]), g.layout_.getPlotArea().h*23/24);
+}
 
 function drawInterval(g, ctx, startX, endX, color) {
 	var range = g.yAxisRange();
@@ -516,7 +531,7 @@ function drawInterval(g, ctx, startX, endX, color) {
 	// Draw a light-colored rectangle to show the new viewing area
 	ctx.fillStyle = "rgba("+color[0]+","+color[1]+","+color[2]+",0.66)";
 	ctx.fillRect(Math.min(p1[0], p2[0]), g.layout_.getPlotArea().y,Math.abs(p1[0]-p2[0]), g.layout_.getPlotArea().h/24);
-	}
+}
 
 function drawVerticalLine(g, ctx, x, color) {
 	var range = g.yAxisRange();
@@ -531,7 +546,7 @@ function drawVerticalLine(g, ctx, x, color) {
 	ctx.closePath();
 	ctx.stroke();
 	ctx.restore(); 
-	}
+}
 
 function finishSelect() {
 	isSelecting = false;
@@ -539,15 +554,15 @@ function finishSelect() {
 
 function unifyT() {
 	//Drop tool defines intervals to ignore (data to trash), therefore it has priority (one cannot insert a cut point or a nocut interval in a drop zone)
-	for (iD=0; iD<dropT.length; iD++) {
-		for (iC=0; iC<cutT.length; iC++) {
+	for (var iD=0; iD<dropT.length; iD++) {
+		for (var iC=0; iC<cutT.length; iC++) {
 			if (cutT[iC]>dropT[iD][1]){break}
 			if ((cutT[iC]>=dropT[iD][0])&&(cutT[iC]<=dropT[iD][1])){
 				cutT.splice(iC,1);
 				iC--;
 			}
 		}
-		for (iN=0; iN<nocutT.length; iN++) {
+		for (var iN=0; iN<nocutT.length; iN++) {
 			if (nocutT[iN][0]>dropT[iD][1]){break}
 			if ((nocutT[iN][0]>=dropT[iD][0])&&(nocutT[iN][1]<=dropT[iD][1])){
 				nocutT.splice(iN,1);
@@ -573,12 +588,39 @@ function unifyT() {
 			}
 		}
 	}
+	//Data zones are intervals between drop zones and cuts.
+	dataT = [];
+	dataT.push([0]);
+	for (iD=0; iD<dropT.length; iD++) {
+		dataT[dataT.length-1].push(dropT[iD][0]);
+		dataT.push([dropT[iD][1]]);
+	}
+	dataT[dataT.length-1].push(graph_data[graph_data.length-1][0]);
+	iD=0;
+	var flag = true;
+	for (iC=0; iC<cutT.length; iC++){
+		flag = true;
+		while (flag){
+			if ((dataT[iD][0]==cutT[iC])||(dataT[iD][1]==cutT[iC])){
+				flag=false;
+			} else if ((dataT[iD][0]<cutT[iC])&&(dataT[iD][1]>cutT[iC])){
+				flag=false;
+				dataT.splice(iD,0,dataT[iD].slice());
+				dataT[iD][1]=cutT[iC];
+				dataT[iD+1][0]=cutT[iC];
+				iD++;
+			} else {
+				iD++;
+			}
+		}
+	}
 	
 	g.updateOptions({
 		file: graph_data, 
 		underlayCallback: function(canvas, area, g) {
 			var area = g.layout_.getPlotArea();
-			canvas.clearRect(area.x, area.y, area.w, area.h/24);
+			var altColor = false;
+			canvas.clearRect(area.x, area.y, area.w, area.h);
 			//Draw drop intervals
 			for (iD=0; iD<dropT.length; iD++) {
 				drawInterval (g, canvas, dropT[iD][0], dropT[iD][1], [255,128,128]);
@@ -590,6 +632,18 @@ function unifyT() {
 			//Draw cut lines
 			for (iC=0; iC<cutT.length; iC++) {
 				drawVerticalLine(g, canvas, cutT[iC], "#7fbf7f")
+			}
+			//Draw data zones
+			if (dataT.length>1){
+				for (iD=0; iD<dataT.length; iD++) {
+					if (altColor){
+						drawDataZone (g, canvas, dataT[iD][0], dataT[iD][1], [128,128,255]);
+						altColor = false;
+					} else {
+						drawDataZone (g, canvas, dataT[iD][0], dataT[iD][1], [51,204,255]);
+						altColor = true;
+					}
+				}
 			}
 		}
 	});

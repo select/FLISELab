@@ -798,6 +798,38 @@ function add2drop(startX, endX) {
 	unifyT();
 }
 
+function erase(startX, endX) {
+	//Check order
+	if (endX<startX){
+		var x = startX;
+		startX = endX;
+		endX = x;
+	} else if (startX==endX) {
+		return;
+	}
+	//Erase
+	for (var iD=0; iD<dropT.length; iD++) {
+		if ((startX<=dropT[iD][0])&&(endX>=dropT[iD][1])){
+			dropT.splice(iD,1);
+			iD--;
+		}
+	}
+	for (var iC=0; iC<cutT.length; iC++) {
+		if ((cutT[iC]>=startX)&&(cutT[iC]<=endX)){
+			cutT.splice(iC,1);
+			iC--;
+		}
+	}
+	for (var iN=0; iN<nocutT.length; iN++) {
+		if ((startX<=nocutT[iN][0])&&(endX>=nocutT[iN][1])){
+			nocutT.splice(iN,1);
+			iN--;
+		}
+	}
+	//EVENT is missing here
+	unifyT();
+}
+
 function add2cut(X) {
 	//If array is empty, initialize
 	if (cutT.length==0){
@@ -857,7 +889,6 @@ function createGraph(graph_data, labels){
 							if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
 								isSelecting = true; 
 							} else {
-								//alert('Cut or event at t='+getX(context.dragStartX, g));
 								if (tool =='cut'){
 									add2cut(getX(context.dragStartX, g));
 								}
@@ -880,14 +911,16 @@ function createGraph(graph_data, labels){
 							if (tool == 'nocut'){
 								if (context.prevEndX != null){
 									add2nocut(getX(context.dragStartX,g),getX(context.dragEndX,g));
-									//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
 								}
 							} else if (tool == 'drop'){
 								if (context.prevEndX != null){
 									add2drop(getX(context.dragStartX,g),getX(context.dragEndX,g));
-									//alert('Bloc selection from '+Math.min(getX(context.dragStartX,g),getX(context.dragEndX,g))+' to '+Math.max(getX(context.dragStartX,g),getX(context.dragEndX,g)));
 								}
-							}	
+							}	else if (tool == 'cancel'){
+								if (context.prevEndX != null){
+									erase(getX(context.dragStartX,g),getX(context.dragEndX,g));
+								}
+							}
 						}
 						context.dragStartX = null;
 						context.dragStartY = null;
@@ -948,15 +981,15 @@ function change_tool(tool_div) {
 	
 	var dg_div = document.getElementById("graphdiv");
 	if (tool == 'cut') {
-		dg_div.style.cursor = 'url(static/icons/cursor-cut.png) 1 30, auto';
+		dg_div.style.cursor = 'url(flise/static/icons/cursor-cut.png) 1 30, auto';
 	} else if (tool == 'nocut') {
-		dg_div.style.cursor = 'url(static/icons/cursor-nocut.png) 1 30, auto';
+		dg_div.style.cursor = 'url(flise/static/icons/cursor-nocut.png) 1 30, auto';
 	} else if (tool == 'drop') {
-		dg_div.style.cursor = 'url(static/icons/cursor-drop.png) 1 30, auto';
+		dg_div.style.cursor = 'url(flise/static/icons/cursor-drop.png) 1 30, auto';
 	} else if (tool == 'event') {
-		dg_div.style.cursor = 'url(static/icons/cursor-event.png) 1 30, auto';
+		dg_div.style.cursor = 'url(flise/static/icons/cursor-event.png) 1 30, auto';
 	} else if (tool == 'cancel') {
-		dg_div.style.cursor = 'url(static/icons/cursor-cancel.png) 1 30, auto';
+		dg_div.style.cursor = 'url(flise/static/icons/cursor-cancel.png) 1 30, auto';
 	} else if (tool == 'zoom') {
 		dg_div.style.cursor = 'crosshair';
 	}

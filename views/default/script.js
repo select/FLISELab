@@ -62,6 +62,8 @@ function init_files(){
 			g=undefined;
 			createGraph(graph_data, data.labels);
 			
+			unifyT();
+			
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
 				$('#series_options').html('');
 				var colors = data.color;
@@ -90,6 +92,7 @@ function init_files(){
 					});
 					g.updateOptions({'labels':items, 'file': graph_data});
 				});
+				$('input[name="show"]').unbind('click');
 				$('input[name="show"]').click(function(){
 					var vis = []
 					$('input[name="show"]').each(function (){
@@ -107,6 +110,7 @@ function init_files(){
 				st = st.replace(/%smooth_value%/, data.smooth_value);
 				$('#global_options').append('<table>'+st+'</table>');
 				init_rangeslider();
+				$('input[name="smooth"]').unbind('click');
   				$('input[name="smooth"]').click(function(){
 					$('input[name="smooth"]').each(function (){
 						if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: data.smooth_value})
@@ -114,28 +118,32 @@ function init_files(){
 					});
 				});
 			});
-			$('#autoseg').unbind('click');
-			$('#autoseg').click(function(){
-				$("#autoseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				autoseg(graph_data);
-				$("#revertseg").removeAttr("disabled").removeAttr("style");
-			});
-			$('#revertseg').unbind('click');
-			$('#revertseg').click(function(){
-				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				cutT = prevcutT.slice();
-				nocutT = prevnocutT.slice();
-				dropT = prevdropT.slice();
-				eventT = preveventT.slice();
-				unifyT();
+			$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
+				$('#autoseg_options').html('');
+				$('#autoseg_options').append(data);
+				$('#autoseg').unbind('click');
+				$('#autoseg').click(function(){
+					$("#autoseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+					autoseg(graph_data);
+					$("#revertseg").removeAttr("disabled").removeAttr("style");
+				});
+				$('#revertseg').unbind('click');
+				$('#revertseg').click(function(){
+					$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+					cutT = prevcutT.slice();
+					nocutT = prevnocutT.slice();
+					dropT = prevdropT.slice();
+					eventT = preveventT.slice();
+					unifyT();
+					$("#autoseg").removeAttr("disabled").removeAttr("style");
+				});
 				$("#autoseg").removeAttr("disabled").removeAttr("style");
+				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 			});
-			$("#autoseg").removeAttr("disabled").removeAttr("style");
-			$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-			unifyT();
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
 	});
+	$('.del').unbind('click');
 	$('.del').click(function(){
 		$(this).parent().remove();
 		$.ajax({

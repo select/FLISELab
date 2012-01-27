@@ -124,6 +124,7 @@ function init_files(){
 				$('#autoseg').unbind('click');
 				$('#autoseg').click(function(){
 					$("#autoseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+					$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 					autoseg(graph_data);
 					$("#revertseg").removeAttr("disabled").removeAttr("style");
 				});
@@ -139,6 +140,21 @@ function init_files(){
 				});
 				$("#autoseg").removeAttr("disabled").removeAttr("style");
 				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+			});
+			$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
+				$('#tools').html('');
+				$('#tools').append(data);
+				$('#revert_tool').unbind('click');
+				$('#revert_tool').click(function(){
+					$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+					cutT = prevcutT.slice();
+					nocutT = prevnocutT.slice();
+					dropT = prevdropT.slice();
+					eventT = preveventT.slice();
+					unifyT();
+				});
+				$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				change_tool(document.getElementById("tool_"+tool));
 			});
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
@@ -562,6 +578,18 @@ function finishSelect() {
 	isSelecting = false;
 }
 
+function save2undo(){
+	//Backup previous state
+	prevcutT = cutT.slice();
+	prevnocutT = nocutT.slice();
+	prevdropT = dropT.slice();
+	preveventT = eventT.slice();
+	$("#revert_tool").removeAttr("disabled").removeAttr("style");
+	$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+	$("#autoseg").removeAttr("disabled").removeAttr("style");
+}
+	
+
 function unifyT() {
 	//Drop tool defines intervals to ignore (data to trash), therefore it has priority (one cannot insert a cut point or a nocut interval in a drop zone)
 	for (var iD=0; iD<dropT.length; iD++) {
@@ -661,6 +689,7 @@ function unifyT() {
 }
 
 function add2nocut(startX, endX) {
+	save2undo();
 	//Check order
 	if (endX<startX){
 		var x = startX;
@@ -734,6 +763,7 @@ function add2nocut(startX, endX) {
 }
 
 function add2drop(startX, endX) {
+	save2undo();
 	//Check order
 	if (endX<startX){
 		var x = startX;
@@ -807,6 +837,7 @@ function add2drop(startX, endX) {
 }
 
 function erase(startX, endX) {
+	save2undo();
 	//Check order
 	if (endX<startX){
 		var x = startX;
@@ -839,6 +870,7 @@ function erase(startX, endX) {
 }
 
 function add2cut(X) {
+	save2undo();
 	//If array is empty, initialize
 	if (cutT.length==0){
 		cutT.push(X);
@@ -1002,7 +1034,5 @@ function change_tool(tool_div) {
 		dg_div.style.cursor = 'crosshair';
 	}
 }
-	
-change_tool(document.getElementById("tool_"+tool));
 
 /* -----------------------------END JSCRIPT------------------------------- */

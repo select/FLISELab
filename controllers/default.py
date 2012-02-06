@@ -113,7 +113,14 @@ def global_options():
         smooth_value = record.series_smooth_values
     return dict(smooth = smooth, smooth_value = smooth_value)
 
-
+def get_savgol():
+	response.generic_patterns = ['json']
+	import savgol
+	myinstance = savgol.Savgol(int(request.vars.w/2), int(request.vars.w/2), int(request.vars.order), request.vars.deriv)
+	#from gluon.contrib import simplesjson
+	result = myinstance.filterTS(simplejson.loads(request.vars.data))
+	return dict(result = result)
+	
 def user():
     """
     exposes:

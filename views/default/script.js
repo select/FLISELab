@@ -45,6 +45,10 @@ function init_files(){
 		$('#global_options').slideToggle();
 		$('#section_file').slideToggle();
 		var cur_id = $(this).parent().attr('id');
+		$.getJSON('{{=URL('get_savgol.json')}}/'+cur_id,{w:16,order:4,deriv:1,data:[1,2,3]},function(data){
+			var reslut = data.result;
+		});
+			
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
 			//TO FALKO: Load positions from stored previously entered values (if any), or leave empty

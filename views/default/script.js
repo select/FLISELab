@@ -1,9 +1,7 @@
 /************ GLOBAL VAR ******************/
 var graph_data = [];//Data to be displayed and processed
 var g = undefined;//Graph variable (from dygraph)
-
-var isSelecting = false;
-var tool = 'zoom';//Default tool
+var smooth_val;//Smoothing tool
 
 //Global variables to save
 var cutT;
@@ -41,13 +39,13 @@ function init_files(){
 		$('.current_record').attr('id', $(this).parent().attr('id'));
 		$('#my_records').slideUp();
 		$('#edit_record').slideToggle();
-		$('#series_options').slideToggle();
-		$('#global_options').slideToggle();
+		$('#series_options').slideDown();
+		$('#global_options').slideDown();
 		$('#section_file').slideToggle();
 		var cur_id = $(this).parent().attr('id');
-		$.getJSON('{{=URL('get_savgol.json')}}/'+cur_id,{w:16,order:4,deriv:1,data:[1,2,3]},function(data){
-			var reslut = data.result;
-		});
+		
+		var isSelecting = false;
+		var tool = 'zoom';//Default tool
 			
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
@@ -114,11 +112,21 @@ function init_files(){
 				st = st.replace(/%smooth_value%/, data.smooth_value);
 				$('#global_options').append('<table>'+st+'</table>');
 				init_rangeslider();
+				smooth_val = data.smooth_value;
 				$('input[name="smooth"]').unbind('click');
   				$('input[name="smooth"]').click(function(){
 					$('input[name="smooth"]').each(function (){
-						if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: data.smooth_value})
+						//TO FALKO: save checked state
+						if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: parseFloat($('input[type="range"]').attr("value"))});
 						else g.updateOptions({file: graph_data, rollPeriod: 1});
+					});
+				});
+				$('input[type="range"]').unbind('change');
+				$('input[type="range"]').change(function(event, value) { //THIS does not work <-- to correct
+					$('input[name="range"]').each(function(){
+						//TO FALKO: save new smooth_value
+						smooth_val = parseFloat($(this).attr("value"));
+						if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
 					});
 				});
 			});
@@ -159,6 +167,18 @@ function init_files(){
 				});
 				$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				change_tool(document.getElementById("tool_"+tool));
+			});
+			$.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
+				$('#deriv').html('');
+				$('#deriv').append(data);
+				$('#preproc').unbind('click');
+				$('#preproc').click(function(){
+					var lochw = parseFloat($("#lochw").attr("value"));
+					var porder = parseFloat($("#order").attr("value"));
+					$.getJSON('{{=URL('get_savgol.json')}}/'+cur_id,{w:lochw,order:porder,deriv:1,data:[1,2,3]},function(data){
+						var result = data.result;
+					});
+				});
 			});
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')

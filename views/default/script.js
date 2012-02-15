@@ -46,7 +46,7 @@ function init_files(){
 		$('.current_record').attr('id', cur_id);
 		//Rearrange which panel is developped or not
 		$('#my_records').slideUp();
-		$('#edit_record').slideToggle();
+		$('#edit_record').slideDown();
 		$('#series_options').slideDown();
 		$('#global_options').slideDown();
 		$('#section_file').slideToggle();
@@ -83,11 +83,27 @@ function init_files(){
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
 					st = st.replace(/%name%/, data.name[i]);
+					st = st.replace(/%units%/, data.units[i]);
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');
 					st = st.replace(/%color%/, colors[i]);
 					$('#series_options').append('<table>'+st+'</table>');
 				}
+				//Series name input
+				$('input[name="series_name"]').unbind('change');
+				$('input[name="series_name"]').change(function(){
+					var items = ['Time'];
+					$('input[name="series_name"]').each(function(){
+						items.push($(this).val());
+					});
+					g.updateOptions({'labels':items, 'file': graph_data});
+					//TO FALKO: save new series name
+				});
+				//Series units input
+				$('input[name="series_units"]').unbind('change');
+				$('input[name="series_units"]').change(function(){
+					//TO FALKO: save new series units
+				});
 				//Color picker creation
 				$('input[name="color"]').colorPicker();
 				$('input[name="color"]').change(function(){
@@ -97,15 +113,6 @@ function init_files(){
 					});
 					g.updateOptions({'colors':items, 'file': graph_data});
 					//TO FALKO: save color change
-				});
-				//Series name panel
-				$('input[name="series_name"]').change(function(){
-					var items = ['Time'];
-					$('input[name="series_name"]').each(function(){
-						items.push($(this).val());
-					});
-					g.updateOptions({'labels':items, 'file': graph_data});
-					//TO FALKO: save new series name
 				});
 				//Check box to activate or not display of series
 				$('input[name="show"]').unbind('click');
@@ -126,10 +133,22 @@ function init_files(){
 				$('#global_options').html('');
 				//Adapt panel HTML
 				var st = global_template;
+				st = st.replace(/%strain_ref%/, data.strain);
+				st = st.replace(/%comments%/, data.comments);
 				if(data.smooth == true) st = st.replace(/%smooth%/, 'checked');
 				else st = st.replace(/%smooth%/, '');
 				st = st.replace(/%smooth_value%/, data.smooth_value);
 				$('#global_options').append('<table>'+st+'</table>');
+				//Strain reference input
+				$('input[name="strain_ref"]').unbind('change');
+				$('input[name="strain_ref"]').change(function(){
+					//TO FALKO: save new strain reference
+				});
+				//Comments free text area
+				$('#comments').unbind('change');
+				$('#comments').change(function(){
+					//TO FALKO: save comments
+				});
 				//Init slider
 				smooth_val = data.smooth_value;
 				//Activate smoothing (only on "g")
@@ -227,6 +246,13 @@ function init_files(){
 				$('#deriv').html('');
 				//Load panel
 				$('#deriv').append(data);
+				//Value next to slider
+				$('input[class="savgol_slider"]').each(function(){
+					$(this).parent().find('span').html($(this).val());
+				});
+				$('input[class="savgol_slider"]').change(function(){
+					$(this).parent().find('span').html($(this).val());
+				});
 				//Preprocessing button
 				$('#preproc').unbind('click');
 				$('#preproc').click(function(){

@@ -1,7 +1,7 @@
 /************ GLOBAL VAR ******************/
 var graph_data = [];//Data to be displayed and processed
-var g = undefined;//Graph variable (from dygraph)
-var smooth_val;//Smoothing tool
+var g;//Graph variable (from dygraph)
+var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
 
 //Global variables to save
 var cutT;
@@ -15,7 +15,10 @@ var prevnocutT;
 var prevdropT;
 var preveventT;
 var dataT;
-/************************************/
+var isSelecting;
+var tool;
+
+/************ Preload *********************/
 var series_template = '';
 $.get('{{=URL(request.application, 'static/templates','series_options.html')}}', function(data) { series_template = data; });
 var global_template = '';
@@ -32,21 +35,22 @@ $.get('{{=URL(request.application, 'static/templates','global_options.html')}}',
 };
 if($.cookie('flise_js_options')== null) $.cookie('flise_js_options', 'a=10', { expires: 30, path: '/' });
 */
+
 /**************** INIT ********************/
 function init_files(){
+	//Select a file (click behavior)
 	$('.flise_file .select').click(function(){
+		//Show which file is selected
+		var cur_id = $(this).parent().attr('id');
 		$('.current_record').html($(this).html());
-		$('.current_record').attr('id', $(this).parent().attr('id'));
+		$('.current_record').attr('id', cur_id);
+		//Rearrange which panel is developped or not
 		$('#my_records').slideUp();
 		$('#edit_record').slideToggle();
 		$('#series_options').slideDown();
 		$('#global_options').slideDown();
 		$('#section_file').slideToggle();
-		var cur_id = $(this).parent().attr('id');
-		
-		var isSelecting = false;
-		var tool = 'zoom';//Default tool
-			
+		//Load time-series and associated data, then display graph and initiate callbacks			
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
 			//TO FALKO: Load positions from stored previously entered values (if any), or leave empty
@@ -60,16 +64,22 @@ function init_files(){
 			prevnocutT = [];
 			prevdropT = [];
 			preveventT = [];
-			
+			//Reset the global graph object "g"
 			g=undefined;
+			//Create "g"
 			createGraph(graph_data, data.labels);
-			
+			//Initiate graph underlaycallback based on cutT, etc...
 			unifyT();
 			
+			//Load series options and create corresponding panel
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
+				//Reset the panel
 				$('#series_options').html('');
+				//Color choice for timeseries
 				var colors = data.color;
+				//If not previously defined, use the default color from dygraph
 				if (data.color == null) colors = g.colors_;
+				//Adapt panel HTML
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
 					st = st.replace(/%name%/, data.name[i]);
@@ -78,7 +88,7 @@ function init_files(){
 					st = st.replace(/%color%/, colors[i]);
 					$('#series_options').append('<table>'+st+'</table>');
 				}
-				init_rangeslider();
+				//Color picker creation
 				$('input[name="color"]').colorPicker();
 				$('input[name="color"]').change(function(){
 					var items = [];
@@ -86,14 +96,18 @@ function init_files(){
 						items.push($(this).val());
 					});
 					g.updateOptions({'colors':items, 'file': graph_data});
+					//TO FALKO: save color change
 				});
+				//Series name panel
 				$('input[name="series_name"]').change(function(){
 					var items = ['Time'];
 					$('input[name="series_name"]').each(function(){
 						items.push($(this).val());
 					});
 					g.updateOptions({'labels':items, 'file': graph_data});
+					//TO FALKO: save new series name
 				});
+				//Check box to activate or not display of series
 				$('input[name="show"]').unbind('click');
 				$('input[name="show"]').click(function(){
 					var vis = []
@@ -101,38 +115,61 @@ function init_files(){
 						if ($(this).is(':checked')) vis.push(true);
 						else vis.push(false);
 					});
+					//Pass visibility option to graph object
 					g.updateOptions({visibility: vis});
 				});
 			});
+			
+			//Load global series options and create corresponding panel
 			$.getJSON('{{=URL('global_options.json')}}/'+cur_id,function(data){
+				//Reset the panel
 				$('#global_options').html('');
+				//Adapt panel HTML
 				var st = global_template;
 				if(data.smooth == true) st = st.replace(/%smooth%/, 'checked');
 				else st = st.replace(/%smooth%/, '');
 				st = st.replace(/%smooth_value%/, data.smooth_value);
 				$('#global_options').append('<table>'+st+'</table>');
-				init_rangeslider();
+				//Init slider
 				smooth_val = data.smooth_value;
+				//Activate smoothing (only on "g")
 				$('input[name="smooth"]').unbind('click');
   				$('input[name="smooth"]').click(function(){
 					$('input[name="smooth"]').each(function (){
 						//TO FALKO: save checked state
-						if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: parseFloat($('input[type="range"]').attr("value"))});
+						if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
 						else g.updateOptions({file: graph_data, rollPeriod: 1});
 					});
 				});
-				$('input[type="range"]').unbind('change');
-				$('input[type="range"]').change(function(event, value) { //THIS does not work <-- to correct
-					$('input[name="range"]').each(function(){
-						//TO FALKO: save new smooth_value
-						smooth_val = parseFloat($(this).attr("value"));
-						if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
-					});
+				$('input[name="smooth_val"]').unbind('change');
+				//Value next to slider
+				$('input[name="smooth_val"]').each(function(){
+					$(this).parent().find('span').html($(this).val());
+				});
+				//Update smooth value
+				$('input[name="smooth_val"]').change(function(){
+					$(this).parent().find('span').html($(this).val());
+					//TO FALKO: save new smooth_value
+					smooth_val = parseFloat($(this).attr("value"));
+					if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
 				});
 			});
+			
+			// Load autosegmentation panel
 			$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
+				//Reset the panel
 				$('#autoseg_options').html('');
+				//Create panel
 				$('#autoseg_options').append(data);
+				//Value next to slider
+				$('input[class="segmentation_slider"]').each(function(){
+					$(this).parent().find('span').html($(this).val());
+				});
+				$('input[class="segmentation_slider"]').change(function(){
+					$(this).parent().find('span').html($(this).val());
+				});
+				//Autosegmentation start button
+				// -here: when we launch autosegmentation, the button is disabled, as well as the Undo button from Tools panel, and only the Revert button is unabled.
 				$('#autoseg').unbind('click');
 				$('#autoseg').click(function(){
 					$("#autoseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
@@ -140,9 +177,12 @@ function init_files(){
 					autoseg(graph_data);
 					$("#revertseg").removeAttr("disabled").removeAttr("style");
 				});
+				//Autosegmentation revert button
+				// -here: when we go back to previous state, the button is disabled, and only the start button is unabled. The Undo button is not restored since we store only one previous state. The "Undo" and "Revert" are redundant, but it is for sake of clarity since they don't belong to the same panel.
 				$('#revertseg').unbind('click');
 				$('#revertseg').click(function(){
 					$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+					// -here: we use the Array.slice() method since otherwise the Array object is passed by reference.
 					cutT = prevcutT.slice();
 					nocutT = prevnocutT.slice();
 					dropT = prevdropT.slice();
@@ -150,12 +190,25 @@ function init_files(){
 					unifyT();
 					$("#autoseg").removeAttr("disabled").removeAttr("style");
 				});
+				//Default button unabling
 				$("#autoseg").removeAttr("disabled").removeAttr("style");
 				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 			});
+			
+			//Load Tools panel
 			$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
+				//Initialize tool variables
+				isSelecting = false;
+				tool = 'zoom';//Default tool
+				
+				//Reset panel
 				$('#tools').html('');
+				//Load the panel
 				$('#tools').append(data);
+				
+				//Initialize default tool
+				change_tool(document.getElementById("tool_"+tool));
+				//Undo button (see button Revert in Autosegmentation panel)
 				$('#revert_tool').unbind('click');
 				$('#revert_tool').click(function(){
 					$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
@@ -166,11 +219,15 @@ function init_files(){
 					unifyT();
 				});
 				$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				change_tool(document.getElementById("tool_"+tool));
 			});
+			
+			//Load preprocessing panel
 			$.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
+				//Reset panel
 				$('#deriv').html('');
+				//Load panel
 				$('#deriv').append(data);
+				//Preprocessing button
 				$('#preproc').unbind('click');
 				$('#preproc').click(function(){
 					var lochw = parseFloat($("#lochw").attr("value"));
@@ -183,6 +240,7 @@ function init_files(){
 		});
 		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
 	});
+	//Files Delete button
 	$('.del').unbind('click');
 	$('.del').click(function(){
 		$(this).parent().remove();
@@ -197,19 +255,9 @@ function init_files(){
 		timeout:3000
 	}); 
 }
-/************** RANGE SLIDER **********************/
-function init_rangeslider(){
-    $('input[type="range"]').each(function(){
-        $(this).parent().find('span').html($(this).val());
-    });
-    $('input[type="range"]').change(function(){
-        $(this).parent().find('span').html($(this).val());
-    });
-}
 
 /**************** WINDOW RESIZE *********************/
 jQuery(document).ready(function(){
-	init_rangeslider();
 	 $(window).resize(function(){
 		 if (g != undefined){g.resize(window.innerWidth-510, window.innerHeight-90);}
 	 });

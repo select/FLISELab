@@ -77,10 +77,12 @@ function web2py_trap_form(action,target) {
                 }
              });
          }else{
+            //$(form).append('<!--aaaaa-->');
              $("[type=submit],[type=image]", this).click(function(e){
                  $(this).attr("was_clicked_to_submit","YES");
              });
             form.submit(function(obj){
+             //alert('trapped submit caught');
              jQuery('.flash').hide().html('');
              web2py_ajax_page('post',action,form.serialize() + "&" + $("[was_clicked_to_submit=YES]").attr('name') + "=" + $("[was_clicked_to_submit=YES]").val(),target);
              e.preventDefault();

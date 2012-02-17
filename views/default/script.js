@@ -106,6 +106,15 @@ function init_files(){
 				//Series units input
 				$('input[name="series_units"]').unbind('change');
 				$('input[name="series_units"]').change(function(){
+					var items = [];
+					$('input[name="series_units"]').each(function(){
+						items.push($(this).val());
+					});
+                    $.ajax({
+                        url: '{{=URL("store_option")}}',
+                        data: {record_id:cur_id, var_name:'series_units', val: items},
+                        traditional: true,
+                    });
 					//TO FALKO: save new series units
 				});
 				//Color picker creation

@@ -47,8 +47,15 @@ def file():
         submit = form.element("input",_type="submit")
         submit["_value"] = "update"
     else:
+        db.flise_file.created_on.writable = False
         form = crud.create(db.flise_file, onaccept=on_accept)
     return TAG[''](JS(response.headers['web2py-component-command']) if response.headers.has_key('web2py-component-command') else '', form)
+
+def store_option():
+    record_id = request.vars.record_id
+    var = request.vars.var_name
+    val = request.vars.val
+    db.flise_file[int(record_id)].update_record(**{var: val})
 
 def get_data():
     response.generic_patterns = ['html', 'json']

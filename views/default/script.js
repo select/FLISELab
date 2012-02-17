@@ -50,6 +50,10 @@ function init_files(){
 		$('#series_options').slideDown();
 		$('#global_options').slideDown();
 		$('#section_file').slideToggle();
+		
+		//Load Raw Data Description Panel
+		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
+		
 		//Load time-series and associated data, then display graph and initiate callbacks			
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
@@ -160,14 +164,16 @@ function init_files(){
 						else g.updateOptions({file: graph_data, rollPeriod: 1});
 					});
 				});
-				$('input[name="smooth_val"]').unbind('change');
+				$('input[name="smooth_val"]').unbind();
 				//Value next to slider
 				$('input[name="smooth_val"]').each(function(){
 					$(this).parent().find('span').html($(this).val());
 				});
 				//Update smooth value
-				$('input[name="smooth_val"]').mouseup(function(){
+				$('input[name="smooth_val"]').change(function(){
 					$(this).parent().find('span').html($(this).val());
+				});
+				$('input[name="smooth_val"]').mouseup(function(){
 					//TO FALKO: save new smooth_value
 					smooth_val = parseFloat($(this).attr("value"));
 					if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
@@ -264,7 +270,6 @@ function init_files(){
 				});
 			});
 		});
-		web2py_component('{{=URL('file')}}/'+$(this).parent().attr('id'),'edit_record')
 	});
 	//Files Delete button
 	$('.del').unbind('click');

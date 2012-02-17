@@ -166,7 +166,7 @@ function init_files(){
 					$(this).parent().find('span').html($(this).val());
 				});
 				//Update smooth value
-				$('input[name="smooth_val"]').change(function(){
+				$('input[name="smooth_val"]').mouseup(function(){
 					$(this).parent().find('span').html($(this).val());
 					//TO FALKO: save new smooth_value
 					smooth_val = parseFloat($(this).attr("value"));

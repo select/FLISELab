@@ -61,12 +61,14 @@
     style_content = 'style="width: %s"' % width_content
     }}
     
-    <!-- uncomment here to load jquery-ui -->
+    <!-- uncomment here to load jquery-ui 
     
     <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css" type="text/css" media="all" />
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js" type="text/javascript"></script>
     
-   <!-- uncomment to load jquery-ui -->
+    uncomment to load jquery-ui -->
+	 {{response.files.append(URL('static','css/jquery-ui.css'))}}
+    {{response.files.append(URL('static','js/jquery-ui.min.js'))}}
     
     
   </head>

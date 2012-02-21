@@ -82,7 +82,7 @@ db.define_table('flise_file',
         Field('series_show', 'list:string', readable = False, writable = False),
         Field('series_strain', 'string', readable = False, writable = False),
         Field('series_comments', 'string', readable = False, writable = False),
-        Field('series_smooth', 'string', readable = False, writable = False),
+        Field('series_smooth', 'boolean', readable = False, writable = False),
         Field('series_smooth_values', 'integer', readable = False, writable = False),
         Field('processed_data', 'text', readable = False, writable = False),
         )

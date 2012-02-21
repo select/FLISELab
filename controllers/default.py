@@ -53,9 +53,9 @@ def file():
 
 def store_option():
     record_id = request.vars.record_id
-    var = request.vars.var_name
+    var_name = request.vars.var_name
     val = request.vars.val
-    db.flise_file[int(record_id)].update_record(**{var: val})
+    db.flise_file[int(record_id)].update_record(**{var_name: val})
 
 def get_data():
     response.generic_patterns = ['html', 'json']
@@ -64,7 +64,8 @@ def get_data():
     import csv
     reader = list(csv.reader(raw_file, delimiter="\t"))
     csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
-    labels = ['Time']+['Ion%s'%i for i,x in enumerate(csv_data[0][1:])]                #FALKO: I guess one should load series name here
+    labels = record.series_names or ['Ion%s'%i for i,x in enumerate(csv_data[0][1:])]
+    labels = ['Time']+labels
     if request.extension == 'json':
         return dict(result=csv_data,labels = labels)
     #not really working so better not use it
@@ -74,13 +75,13 @@ def get_data():
 def series_options():
     response.generic_patterns = ['json']
     record = db.flise_file[int(request.args(0))]
-    if request.vars.series_names:
+    '''if request.vars.series_names:
         record.update_record(
                 series_names = request.vars.getlist('series_names'),
                 series_units = request.vars.getlist('series_units'),
                 series_colors = request.vars.getlist('series_colors'),
                 series_show = request.vars.getlist('series_show')
-                )
+                )'''
     def get_defaults():
         filename, raw_file = db.flise_file.file.retrieve(record.file)
         import csv
@@ -89,41 +90,39 @@ def series_options():
         name = ['Ion%s'%i for i in range(num_series)]
         units = ['mV' for i in range(num_series)]
         color = None
-        show = [True for i in range(num_series)]
+        show = ['true' for i in range(num_series)]
         return dict(name = name, units = units, color = color, show = show, num_series = num_series)
-    if not record.series_names:#get default values
-        return get_defaults()
-    else:
-        name = record.series_names
-        units = record.series_units
-        num_series = len(name)
-        color = record.series_colors
-        show = record.series_show
-    return dict(name = name, units = units, color = color, show = show, num_series = num_series)
+    defaults = get_defaults()
+    name = record.series_names or defaults["name"]
+    units = record.series_units or defaults["units"]
+    num_series = len(name) or defaults["num_series"]
+    color = record.series_colors or defaults["color"]
+    show = record.series_show or defaults["show"]
+    #convert to boolean
+    show_bool = [s in ['true','True','1'] for s in show]
+    return dict(name = name, units = units, color = color, show = show_bool, num_series = num_series)
 
 def global_options():
     response.generic_patterns = ['json']
     record = db.flise_file[int(request.args(0))]
-    record.update_record(
+    '''record.update_record(
         series_strain = request.vars.get('series_strain'),
         series_comments = request.vars.get('series_comments'),
         series_smooth = request.vars.get('series_smooth'),
         series_smooth_values = request.vars.get('series_smooth_values')
-        )
+        )'''
     def get_defaults():
         strain = 'BN-1???'
         comments = 'General description, or any particular problem with the series...'
         smooth = False
         smooth_value = 10
         return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value)
-    if not record.series_names:#get default values
-        return get_defaults()
-    else:
-        strain = record.series_strain
-        comments = record.series_comments
-        smooth = record.series_smooth
-        smooth_value = record.series_smooth_values
-    return dict(train = strain, comments = comments, smooth = smooth, smooth_value = smooth_value)
+    defaults = get_defaults()
+    strain = record.series_strain or defaults["strain"]
+    comments = record.series_comments or defaults["comments"]
+    smooth = record.series_smooth or defaults["smooth"]
+    smooth_value = record.series_smooth_values or defaults["smooth_value"]
+    return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value)
 
 def get_savgol():
     response.generic_patterns = ['json']

@@ -83,6 +83,7 @@ function init_files(){
 				var colors = data.color;
 				//If not previously defined, use the default color from dygraph
 				if (data.color == null) colors = g.colors_;
+				g.updateOptions({'colors':colors, 'file': graph_data, 'visibility': data.show});
 				//Adapt panel HTML
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
@@ -101,7 +102,12 @@ function init_files(){
 						items.push($(this).val());
 					});
 					g.updateOptions({'labels':items, 'file': graph_data});
-					//TO FALKO: save new series name
+					//Save new series name
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'series_names', val: items.slice(1)},
+						traditional: true
+					});
 				});
 				//Series units input
 				$('input[name="series_units"]').unbind('change');
@@ -110,12 +116,12 @@ function init_files(){
 					$('input[name="series_units"]').each(function(){
 						items.push($(this).val());
 					});
-                    $.ajax({
-                        url: '{{=URL("store_option")}}',
-                        data: {record_id:cur_id, var_name:'series_units', val: items},
-                        traditional: true,
-                    });
-					//TO FALKO: save new series units
+					//Save new series units
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'series_units', val: items},
+						traditional: true
+					});
 				});
 				//Color picker creation
 				$('input[name="color"]').colorPicker();
@@ -125,7 +131,12 @@ function init_files(){
 						items.push($(this).val());
 					});
 					g.updateOptions({'colors':items, 'file': graph_data});
-					//TO FALKO: save color change
+					//Save color change
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'series_colors', val: items},
+						traditional: true
+					});
 				});
 				//Check box to activate or not display of series
 				$('input[name="show"]').unbind('click');
@@ -137,6 +148,11 @@ function init_files(){
 					});
 					//Pass visibility option to graph object
 					g.updateOptions({visibility: vis});
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'series_show', val: vis},
+						traditional: true
+					});
 				});
 			});
 			
@@ -155,23 +171,40 @@ function init_files(){
 				//Strain reference input
 				$('input[name="strain_ref"]').unbind('change');
 				$('input[name="strain_ref"]').change(function(){
-					//TO FALKO: save new strain reference
+					//Save new strain reference
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'series_strain', val: $(this).val()},
+						traditional: true
+					});
 				});
 				//Comments free text area
-				$('#comments').unbind('change');
-				$('#comments').change(function(){
-					//TO FALKO: save comments
+				$('textarea[name="comments"]').unbind('change');
+				$('textarea[name="comments"]').change(function(){
+					//Save comments
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'series_comments', val: $('textarea[name="comments"]').val()},
+						traditional: true
+					});
 				});
 				//Init slider
 				smooth_val = data.smooth_value;
+				//Update graph "g" options
+				if (data.smooth) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
+				else g.updateOptions({file: graph_data, rollPeriod: 1});
 				//Activate smoothing (only on "g")
 				$('input[name="smooth"]').unbind('click');
   				$('input[name="smooth"]').click(function(){
-					$('input[name="smooth"]').each(function (){
-						//TO FALKO: save checked state
-						if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
-						else g.updateOptions({file: graph_data, rollPeriod: 1});
+					//Save checked state
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'series_smooth', val: $(this).is(':checked')},
+						traditional: true
 					});
+					//Apply visual smoothing
+					if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
+					else g.updateOptions({file: graph_data, rollPeriod: 1});
 				});
 				$('input[name="smooth_val"]').unbind();
 				//Value next to slider
@@ -183,7 +216,12 @@ function init_files(){
 					$(this).parent().find('span').html($(this).val());
 				});
 				$('input[name="smooth_val"]').mouseup(function(){
-					//TO FALKO: save new smooth_value
+					//Save new smooth_value
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'series_smooth_values', val: $(this).val()},
+						traditional: true
+					});
 					smooth_val = parseFloat($(this).attr("value"));
 					if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
 				});

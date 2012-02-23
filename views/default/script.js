@@ -87,7 +87,7 @@ function init_files(){
 				//Adapt panel HTML
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
-					st = st.replace(/%name%/, data.name[i]);
+					//st = st.replace(/%name%/, data.name[i]);
 					st = st.replace(/%units%/, data.units[i]);
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');

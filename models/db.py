@@ -71,22 +71,51 @@ use_janrain(auth,filename='private/janrain.key')
 ## >>> rows=db(db.mytable.myfield=='value').select(db.mytable.ALL)
 ## >>> for row in rows: print row.id, row.myfield
 #########################################################################
+db.define_table('species',
+        Field('name')
+        )
+db.define_table('strain',
+        Field('name'),
+        Field('pymantis_id', 'integer'),
+        )
 db.define_table('flise_file',
         Field('name'),
         Field('file', 'upload', requires = IS_NOT_EMPTY()),
         Field('sampling_time', 'double', default=0.5, label='Sampling Time (s)'),
         Field('created_on', 'date', default = request.now),
-        Field('series_names', 'list:string', readable = False, writable = False),
+        #Field('created_by', db.auth_user),
+        Field('series_species_id', 'list:reference species', readable = False, writable = False),
         Field('series_units', 'list:string', readable = False, writable = False),
         Field('series_colors', 'list:string', readable = False, writable = False),
         Field('series_show', 'list:string', readable = False, writable = False),
-        Field('series_strain', 'string', readable = False, writable = False),
-        Field('series_comments', 'string', readable = False, writable = False),
-        Field('series_smooth', 'boolean', readable = False, writable = False),
-        Field('series_smooth_values', 'integer', readable = False, writable = False),
-        Field('processed_data', 'text', readable = False, writable = False),
+        Field('strain_id', db.strain, readable = False, writable = False),
+        Field('comments', 'text', readable = False, writable = False),
+        Field('disp_smooth', 'boolean', readable = False, writable = False),
+        Field('disp_smooth_value', 'integer', readable = False, writable = False),
+        Field('segment_drop', 'text', readable = False, writable = False),#pickle!!!
+        Field('segment_cut', 'text', readable = False, writable = False),#pickle!!!
+        Field('segment_nocut', 'text', readable = False, writable = False),#pickle!!!
+        Field('event_id', 'list:reference event'),
         )
-
+db.define_table('calibration',
+        Field('species_id', db.species),
+        Field('offset', 'double'),
+        Field('gain', 'double'),
+        )
+db.define_table('subseries',
+        Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
+        Field('name'),
+        Field('extract_time', 'text'),#pickle!!
+        Field('calibration_id', db.calibration),
+        )
+db.define_table('event',
+        Field('subseries', db.subseries, requires = IS_EMPTY_OR(IS_IN_DB(db, 'flise_file.id'))),
+        Field('time', 'double'),
+        Field('type', requires = IS_IN_SET('wash calibration injection'.split())),
+        Field('spiecies_id', db.species, label="Injected Species"),
+        Field('concentration', 'double'),
+        Field('volume', 'double'),
+        )
 JS = lambda x: SCRIPT(x, _type="text/javascript")
 
 def parse_raw_flise(raw_file):

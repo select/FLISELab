@@ -64,7 +64,8 @@ def get_data():
     import csv
     reader = list(csv.reader(raw_file, delimiter="\t"))
     csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
-    labels = record.series_names or ['Ion%s'%i for i,x in enumerate(csv_data[0][1:])]
+    #labels = [x.name for x in record.series_species_id.select()] or ['Ion%s'%i for i,x in enumerate(csv_data[0][1:])]
+    labels = ['Ion%s'%i for i,x in enumerate(csv_data[0][1:])]
     labels = ['Time']+labels
     if request.extension == 'json':
         return dict(result=csv_data,labels = labels)
@@ -75,54 +76,46 @@ def get_data():
 def series_options():
     response.generic_patterns = ['json']
     record = db.flise_file[int(request.args(0))]
-    '''if request.vars.series_names:
-        record.update_record(
-                series_names = request.vars.getlist('series_names'),
-                series_units = request.vars.getlist('series_units'),
-                series_colors = request.vars.getlist('series_colors'),
-                series_show = request.vars.getlist('series_show')
-                )'''
     def get_defaults():
         filename, raw_file = db.flise_file.file.retrieve(record.file)
         import csv
         reader = list(csv.reader(raw_file, delimiter="\t"))
         num_series = len(reader[0])-1
         name = ['Ion%s'%i for i in range(num_series)]
-        units = ['mV' for i in range(num_series)]
         color = None
         show = ['true' for i in range(num_series)]
-        return dict(name = name, units = units, color = color, show = show, num_series = num_series)
+        return dict(name = name, color = color, show = show, num_series = num_series)
     defaults = get_defaults()
-    name = record.series_names or defaults["name"]
-    units = record.series_units or defaults["units"]
+    #name = [x.name for x in record.series_species_id.select()] or defaults["name"]
+    name = defaults["name"]
     num_series = len(name) or defaults["num_series"]
     color = record.series_colors or defaults["color"]
     show = record.series_show or defaults["show"]
     #convert to boolean
     show_bool = [s in ['true','True','1'] for s in show]
-    return dict(name = name, units = units, color = color, show = show_bool, num_series = num_series)
+    return dict(name = name, color = color, show = show_bool, num_series = num_series)
 
 def global_options():
     response.generic_patterns = ['json']
     record = db.flise_file[int(request.args(0))]
-    '''record.update_record(
-        series_strain = request.vars.get('series_strain'),
-        series_comments = request.vars.get('series_comments'),
-        series_smooth = request.vars.get('series_smooth'),
-        series_smooth_values = request.vars.get('series_smooth_values')
-        )'''
     def get_defaults():
-        strain = 'BN-1???'
+        strain = 1 #'BN-1???'
         comments = 'General description, or any particular problem with the series...'
         smooth = False
         smooth_value = 10
-        return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value)
+        OD = 0
+        dilution = 50
+        cell_diameter = 4.5
+        return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value, OD = OD, dilution = dilution, celld = cell_diameter)
     defaults = get_defaults()
-    strain = record.series_strain or defaults["strain"]
-    comments = record.series_comments or defaults["comments"]
-    smooth = record.series_smooth or defaults["smooth"]
-    smooth_value = record.series_smooth_values or defaults["smooth_value"]
-    return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value)
+    strain = record.strain_id or defaults["strain"]
+    comments = record.comments or defaults["comments"]
+    smooth = record.disp_smooth or defaults["smooth"]
+    smooth_value = record.disp_smooth_value or defaults["smooth_value"]
+    OD = record.optical_density or defaults["OD"]
+    dilution = record.dilution_factor or defaults["dilution"]
+    cell_diameter = record.cell_diameter or defaults["celld"]
+    return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value, od = OD, dilution = dilution, celld = cell_diameter)
 
 def get_savgol():
     response.generic_patterns = ['json']

@@ -88,7 +88,6 @@ function init_files(){
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
 					//st = st.replace(/%name%/, data.name[i]);
-					st = st.replace(/%units%/, data.units[i]);
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');
 					st = st.replace(/%color%/, colors[i]);
@@ -105,21 +104,7 @@ function init_files(){
 					//Save new series name
 					$.ajax({
 						url: '{{=URL("store_option")}}',
-						data: {record_id:cur_id, var_name:'series_names', val: items.slice(1)},
-						traditional: true
-					});
-				});
-				//Series units input
-				$('input[name="series_units"]').unbind('change');
-				$('input[name="series_units"]').change(function(){
-					var items = [];
-					$('input[name="series_units"]').each(function(){
-						items.push($(this).val());
-					});
-					//Save new series units
-					$.ajax({
-						url: '{{=URL("store_option")}}',
-						data: {record_id:cur_id, var_name:'series_units', val: items},
+						data: {record_id:cur_id, var_name:'series_species_id', val: items.slice(1)},
 						traditional: true
 					});
 				});
@@ -167,6 +152,10 @@ function init_files(){
 				if(data.smooth == true) st = st.replace(/%smooth%/, 'checked');
 				else st = st.replace(/%smooth%/, '');
 				st = st.replace(/%smooth_value%/, data.smooth_value);
+				if(data.od == 0) st = st.replace(/%od%/, '');
+				else st = st.replace(/%od%/, data.od);
+				st = st.replace(/%dilutionf%/, data.dilution);
+				st = st.replace(/%celldiameter%/, data.celld);
 				$('#global_options').append('<table>'+st+'</table>');
 				//Strain reference input
 				$('input[name="strain_ref"]').unbind('change');
@@ -174,7 +163,37 @@ function init_files(){
 					//Save new strain reference
 					$.ajax({
 						url: '{{=URL("store_option")}}',
-						data: {record_id:cur_id, var_name:'series_strain', val: $(this).val()},
+						data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO: here we need to retrieve strain_id
+						traditional: true
+					});
+				});
+				//OD input
+				$('input[name="od"]').unbind('change');
+				$('input[name="od"]').change(function(){
+					//Save new strain reference
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'optical_density', val: $(this).val()},
+						traditional: true
+					});
+				});
+				//Strain reference input
+				$('input[name="dilutionf"]').unbind('change');
+				$('input[name="dilutionf"]').change(function(){
+					//Save new strain reference
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'dilution_factor', val: $(this).val()},
+						traditional: true
+					});
+				});
+				//Strain reference input
+				$('input[name="celldiameter"]').unbind('change');
+				$('input[name="celldiameter"]').change(function(){
+					//Save new strain reference
+					$.ajax({
+						url: '{{=URL("store_option")}}',
+						data: {record_id:cur_id, var_name:'cell_diameter', val: $(this).val()},
 						traditional: true
 					});
 				});
@@ -184,7 +203,7 @@ function init_files(){
 					//Save comments
 					$.ajax({
 						url: '{{=URL("store_option")}}',
-						data: {record_id:cur_id, var_name:'series_comments', val: $('textarea[name="comments"]').val()},
+						data: {record_id:cur_id, var_name:'comments', val: $('textarea[name="comments"]').val()},
 						traditional: true
 					});
 				});
@@ -199,7 +218,7 @@ function init_files(){
 					//Save checked state
 					$.ajax({
 						url: '{{=URL("store_option")}}',
-						data: {record_id:cur_id, var_name:'series_smooth', val: $(this).is(':checked')},
+						data: {record_id:cur_id, var_name:'disp_smooth', val: $(this).is(':checked')},
 						traditional: true
 					});
 					//Apply visual smoothing
@@ -219,7 +238,7 @@ function init_files(){
 					//Save new smooth_value
 					$.ajax({
 						url: '{{=URL("store_option")}}',
-						data: {record_id:cur_id, var_name:'series_smooth_values', val: $(this).val()},
+						data: {record_id:cur_id, var_name:'disp_smooth_value', val: $(this).val()},
 						traditional: true
 					});
 					smooth_val = parseFloat($(this).attr("value"));

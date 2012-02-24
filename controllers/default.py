@@ -95,6 +95,11 @@ def series_options():
     show_bool = [s in ['true','True','1'] for s in show]
     return dict(name = name, color = color, show = show_bool, num_series = num_series)
 
+def species():
+    if(request.vars.new_species):
+        db.species.insert(request.vars.new_species)
+    return SELECT( [OPTION(x.name,_value=x.name) for x in db(db.species.id>0).select()], _name="select_species")
+
 def global_options():
     response.generic_patterns = ['json']
     record = db.flise_file[int(request.args(0))]

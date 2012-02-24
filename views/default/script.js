@@ -87,12 +87,22 @@ function init_files(){
 				//Adapt panel HTML
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
-					//st = st.replace(/%name%/, data.name[i]);
+					st = st.replace(/%select_species%/, $('#species_store').html());
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');
 					st = st.replace(/%color%/, colors[i]);
-					$('#series_options').append('<table>'+st+'</table>');
+					$('#series_options').append('<table id="series'+i+'">'+st+'</table>');
+                    $('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
 				}
+                $('add_species').click(function () {
+					$.ajax({
+						url: '{{=URL("species")}}',
+						data: {new_species: $(this).parent().find('.new_species').val()},
+						success: function(data, xhr){
+                            //TODO insert into all other selects and select this val in the series speices select
+                        }
+					});
+                });
 				//Series name input
 				$('input[name="series_name"]').unbind('change');
 				$('input[name="series_name"]').change(function(){

@@ -87,22 +87,23 @@ function init_files(){
 				//Adapt panel HTML
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
-					st = st.replace(/%select_species%/, $('#species_store').html());
+					st = st.replace(/%select_species%/, $('#species_store > div').html());
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');
 					st = st.replace(/%color%/, colors[i]);
 					$('#series_options').append('<table id="series'+i+'">'+st+'</table>');
-                    $('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
+					$('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
 				}
-                $('add_species').click(function () {
+				$('add_species').unbind('click');
+				$('add_species').click(function () {
 					$.ajax({
 						url: '{{=URL("species")}}',
 						data: {new_species: $(this).parent().find('.new_species').val()},
 						success: function(data, xhr){
-                            //TODO insert into all other selects and select this val in the series speices select
+                            //TODO insert into all other selects and select this val in the series spieces select
                         }
 					});
-                });
+				});
 				//Series name input
 				$('input[name="series_name"]').unbind('change');
 				$('input[name="series_name"]').change(function(){
@@ -1110,6 +1111,10 @@ function createGraph(graph_data, labels){
 							} else {
 								if (tool =='cut'){
 									add2cut(getX(context.dragStartX, g));
+								} else {
+										if (tool=='event'){
+											add2event(getX(context.dragStartX, g));
+										}
 								}
 							}
 						}

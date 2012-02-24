@@ -1,19 +1,19 @@
 <tr>
-	<th>Name</th>
-    
-    <td>%select_species% <input class="new_species" type="text" value=""/> <input type="submit" value="add" class="add_species"/> </td>
+	<th>Species:</th>
+   <td>select %select_species% or add <input class="new_species" type="text" style="width:100px" value=""/> <input type="submit" value="add" class="add_species"/> </td>
 </tr>
 <tr>
-	<th>Units</th>
-    <td> <input name="series_units" type="text" value="%units%"/> </td>
-</tr>
-<tr>
-	<th>Show</th>
-    <td> <input name="show" type="checkbox" %show%/> </td>
-</tr>
-<tr>
-	<th>Color</th>
-    <td> <input name="color" type="text" value="%color%"/> </td>
+	<th>Display:</th>
+	 <td>
+	 	<table>
+			<tr>
+				<th>Color</th>
+				<td> <input name="color" type="text" value="%color%"/> </td>
+				<th>Show</th>
+				<td> <input name="show" type="checkbox" %show%/> </td>
+			</tr>
+		</table>
+	 </td>
 </tr>
 <tr>
     <td colspan="4"><hr/></td>

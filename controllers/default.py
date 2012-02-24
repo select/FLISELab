@@ -98,7 +98,7 @@ def series_options():
 def species():
     if(request.vars.new_species):
         db.species.insert(request.vars.new_species)
-    return SELECT( [OPTION(x.name,_value=x.name) for x in db(db.species.id>0).select()], _name="select_species")
+    return SELECT([OPTION(x.name,_value=x.name) for x in db((db.species.id>0)&(db.species.measured == True)).select()], _name="select_species", _style="width:100px")
 
 def global_options():
     response.generic_patterns = ['json']

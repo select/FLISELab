@@ -78,6 +78,13 @@ background: url('../icons/tool-palette.png');
 	height: 33px;
 	display: inline-block;
 }
+#tool_export {
+	background: url('../icons/tool-palette.png');
+	background-position: -192px 0px;
+	width: 33px;
+	height: 33px;
+	display: inline-block;
+}
 #toolbar {		
 	position: relative;
 	display: inline-block;

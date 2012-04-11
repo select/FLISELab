@@ -1,5 +1,11 @@
 <table>
 	<tr>
+		<th>Interval</th>
+		<td>
+			from %start% to %end%.
+		</td>
+	</tr>
+	<tr>
 		<th>Name</th>
 		<td>
 			<input name="sub_name" type="text" value=""/>
@@ -37,8 +43,12 @@
 	</tr>
 	<tr>
 		<th>Calibration</th>
-		<td> 
-			  
+		<td>
+			<table>
+				%caloptions%
+			</table>
 		</td>
 	</tr>
 </table>
+<a class="button" id="export2excel">Export as XLSX</a> <a class="button" id="export2pyMantis">Upload to pyMantis</a>
+<form id="json2spreadsheet_form" style="display:none" method="POST" target="_blank" action="/flise/default/export_spreadsheet"></form>

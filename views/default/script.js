@@ -74,14 +74,16 @@ function init_files(){
 			createGraph(graph_data, data.labels);
 			//Initiate graph underlaycallback based on cutT, etc...
 			unifyT();
-            //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-            //spreadsheet export test
-		    $('#export_test').click(function(){
+            
+			//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+         //spreadsheet export test
+		   $('#export_test').click(function(){
                 alert('rock');
                 $('#json2spreadsheet_form').html(" <input type='hidden' value='"+JSON.stringify(data.labels)+"' name='header'/> <input type='hidden' value='"+JSON.stringify(graph_data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
                 $('#json2spreadsheet_form').submit();
-            });	
-            //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+         });	
+         //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+			
 			//Load series options and create corresponding panel
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
 				//Reset the panel
@@ -95,6 +97,7 @@ function init_files(){
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
 					st = st.replace(/%select_species%/, $('#species_store > div').html());
+					//st = st.replace(/name="select_species"/, 'id="select_species'+i+'"');
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');
 					st = st.replace(/%color%/, colors[i]);
@@ -644,18 +647,41 @@ function autoseg(data){
 }
 
 /******************* SUBINTERVAL ************************/
-function intervalDblclick() {
+function interval2export(pos) {
+	//Find interval
+	var flag = true;
+	for (iD=0; iD<dataT.length; iD++){
+		if ((dataT[iD][0]<pos)&&(dataT[iD][1]>pos)){
+			var intStart=dataT[iD][0];
+			var intEnd=dataT[iD][1];
+			flag = false;
+			break;
+		}
+	}
+	if (flag) return;
+	
 	//Temp subinterval options and create corresponding panel
 	$.get('{{=URL(request.application, 'static/templates','subinterval.html')}}', function(htmlstr) {
 		//Reset the panel
 		$('#subinterval').html('');
 		//Adapt panel HTML
 		var st = htmlstr;
+		st = st.replace(/%start%/,intStart);
+		st = st.replace(/%end%/,intEnd);
 		st = st.replace(/%strain_ref%/, $('input[name="strain_ref"]').val());
-		st = st.replace(/%comments%/, $('input[name="comments"]').val());
+		st = st.replace(/%comments%/, $('textarea[name="comments"]').val());
 		st = st.replace(/%od%/, $('input[name="od"]').val());
 		st = st.replace(/%dilutionf%/, $('input[name="dilutionf"]').val());
 		st = st.replace(/%celldiameter%/, $('input[name="celldiameter"]').val());
+		//Calibration
+		var stcal;
+		for (var i = 0;i<$('#series_options > table').size();i++){
+			stcal = '<tr><td style="color:%color%">%species%</td><td>Gain: <input name="sub_calgain" type="text" value="" style="width:60px"/></td><td>Offset: <input name="sub_caloffset" type="text" value="" style="width:60px"/></td></tr>';
+			stcal = stcal.replace(/%species%/, $('#series'+i+' > tbody > tr > td > select').val());
+			stcal = stcal.replace(/%color%/, $('#series'+i+' > tbody > tr:eq(1) > td > table > tbody > tr > td > input').val());
+			st = st.replace(/%caloptions%/,stcal+'%caloptions%');
+		}
+		st = st.replace(/%caloptions%/,'');
 		$('#subinterval').append(st);
 		//Strain reference input
 		$('input[name="sub_name"]').unbind('change');
@@ -665,7 +691,7 @@ function intervalDblclick() {
 			//Save subinterval name
 			$.ajax({
 				url: '{{=URL("store_subint_option")}}',
-				data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO: here we need to retrieve strain_id
+				data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO
 				traditional: true
 			});
 		});
@@ -675,7 +701,7 @@ function intervalDblclick() {
 			//Save new strain reference
 			$.ajax({
 				url: '{{=URL("store_subint_option")}}',
-				data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO: here we need to retrieve strain_id
+				data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO
 				traditional: true
 			});
 		});
@@ -720,6 +746,7 @@ function intervalDblclick() {
 			});
 		});
 		//Calibration
+		
 	});
 }
 
@@ -1201,9 +1228,11 @@ function createGraph(graph_data, labels){
 								if (tool =='cut'){
 									add2cut(getX(context.dragStartX, g));
 								} else {
-										if (tool=='event'){
-											add2event(getX(context.dragStartX, g));
-										}
+									if (tool=='event'){
+										add2event(getX(context.dragStartX, g));
+									} else {
+										interval2export(getX(context.dragStartX, g));
+									}
 								}
 							}
 						}
@@ -1247,8 +1276,9 @@ function createGraph(graph_data, labels){
 						}
 					},
 					dblclick: function(event, g, context) {
-						//Dygraph.defaultInteractionModel.dblclick(event, g, context);
-						intervalDblclick();
+						if (tool == 'zoom') {
+							Dygraph.defaultInteractionModel.dblclick(event, g, context);
+						}
 					},
 					mousewheel: function(event, g, context) {
 						var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;
@@ -1282,7 +1312,7 @@ window.onmouseup = finishSelect;
 /************* SELECTION TOOLS *********************/
 
 function change_tool(tool_div) {
-	var ids = ['tool_zoom', 'tool_cut', 'tool_nocut', 'tool_drop', 'tool_event', 'tool_cancel'];
+	var ids = ['tool_zoom', 'tool_cut', 'tool_nocut', 'tool_drop', 'tool_event', 'tool_cancel', 'tool_export'];
 	for (var i = 0; i < ids.length; i++) {
 		var div = document.getElementById(ids[i]);
 		if (div == tool_div) {
@@ -1295,15 +1325,17 @@ function change_tool(tool_div) {
 	
 	var dg_div = document.getElementById("graphdiv");
 	if (tool == 'cut') {
-		dg_div.style.cursor = 'url(flise/static/icons/cursor-cut.png) 1 30, auto';
+		dg_div.style.cursor = 'url(/flise/static/icons/cursor-cut.png) 1 30, auto';
 	} else if (tool == 'nocut') {
-		dg_div.style.cursor = 'url(flise/static/icons/cursor-nocut.png) 1 30, auto';
+		dg_div.style.cursor = 'url(/flise/static/icons/cursor-nocut.png) 1 30, auto';
 	} else if (tool == 'drop') {
-		dg_div.style.cursor = 'url(flise/static/icons/cursor-drop.png) 1 30, auto';
+		dg_div.style.cursor = 'url(/flise/static/icons/cursor-drop.png) 1 30, auto';
 	} else if (tool == 'event') {
-		dg_div.style.cursor = 'url(flise/static/icons/cursor-event.png) 1 30, auto';
+		dg_div.style.cursor = 'url(/flise/static/icons/cursor-event.png) 1 30, auto';
 	} else if (tool == 'cancel') {
-		dg_div.style.cursor = 'url(flise/static/icons/cursor-cancel.png) 1 30, auto';
+		dg_div.style.cursor = 'url(/flise/static/icons/cursor-cancel.png) 1 30, auto';
+	} else if (tool == 'export') {
+		dg_div.style.cursor = 'url(/flise/static/icons/cursor-export.png) 1 30, auto';
 	} else if (tool == 'zoom') {
 		dg_div.style.cursor = 'crosshair';
 	}

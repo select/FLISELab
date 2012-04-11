@@ -78,8 +78,8 @@ def get_data():
     import csv
     reader = list(csv.reader(raw_file, delimiter="\t"))
     csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
-    #labels = [x.name for x in record.series_species_id.select()] or ['Ion%s'%i for i,x in enumerate(csv_data[0][1:])]
-    labels = ['Ion%s'%i for i,x in enumerate(csv_data[0][1:])]
+    #labels = [x.name for x in record.series_species_id.select()] or ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
+    labels = ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
     labels = ['Time']+labels
     if request.extension == 'json':
         return dict(result=csv_data,labels = labels)
@@ -95,7 +95,7 @@ def series_options():
         import csv
         reader = list(csv.reader(raw_file, delimiter="\t"))
         num_series = len(reader[0])-1
-        name = ['Ion%s'%i for i in range(num_series)]
+        name = ['Species%s'%i for i in range(num_series)]
         color = None
         show = ['true' for i in range(num_series)]
         return dict(name = name, color = color, show = show, num_series = num_series)
@@ -144,29 +144,28 @@ def get_savgol():
     result = myinstance.filterTS(simplejson.loads(request.vars.data))
     return dict(result = result)
 
-def export_spreadsheet():
-    export_format = request.vars.format
-    from gluon.contrib import simplejson
-    try:
-        header = simplejson.loads(request.vars.header)
-        data = simplejson.loads(request.vars.data)
-    except:
-        import sys
-        raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
-    #import applications.FLISE.modules.tablib as tablib
-    #import applications.FLISE.modules.tablib.core as tcore
-    #import tablib.core
-    import tablib
-    data = tablib.core.Dataset(*data, headers=header)
-    if export_format in 'yaml csv xls xlsx':
-        import gluon.contenttype
-        import os.path
-        response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
-        response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
-        #response.write(getattr(data,export_format), escape=False)
-        return getattr(data,export_format)
-    return ''
-
+# def export_spreadsheet():
+#     export_format = request.vars.format
+#     from gluon.contrib import simplejson
+#     try:
+#         header = simplejson.loads(request.vars.header)
+#         data = simplejson.loads(request.vars.data)
+#     except:
+#         import sys
+#         raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
+#     #import applications.FLISE.modules.tablib as tablib
+#     #import applications.FLISE.modules.tablib.core as tcore
+#     #import tablib.core
+#     import tablib
+#     data = tablib.core.Dataset(*data, headers=header)
+#     if export_format in 'yaml csv xls xlsx':
+#         import gluon.contenttype
+#         import os.path
+#         response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
+#         response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
+#         #response.write(getattr(data,export_format), escape=False)
+#         return getattr(data,export_format)
+#     return ''
 
 def user():
     """

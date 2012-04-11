@@ -57,6 +57,12 @@ def store_option():
     val = request.vars.val
     db.flise_file[int(record_id)].update_record(**{var_name: val})
 
+def store_subint_option():
+    record_id = request.vars.record_id
+    var_name = request.vars.var_name
+    val = request.vars.val
+    db.subintervals[int(record_id)].update_record(**{var_name: val})
+
 def store_series():
     flise_record_id = request.vars.flise_record_id
     series_name = request.vars.series_name

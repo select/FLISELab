@@ -100,13 +100,18 @@ db.define_table('flise_file',
         Field('segment_nocut', 'text', readable = False, writable = False),#pickle
         Field('event_id', 'list:reference event', readable = False, writable = False),
         )
-db.define_table('subseries',
+db.define_table('subintervals',
         Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
         Field('name'),
         Field('extract_time', 'text'),#pickle
+        Field('strain_id', db.strain, readable = False, writable = False),
+        Field('comments', 'text', readable = False, writable = False),
+        Field('optical_density', 'double', readable = False, writable = False),
+        Field('dilution_factor', 'double', readable = False, writable = False),
+        Field('cell_diameter', 'double', readable = False, writable = False),
         )
 db.define_table('calibration',
-        Field('subseries_id', db.subseries),
+        Field('subinterval_id', db.subintervals),
         Field('species_id', db.species),
         Field('offset', 'double'),
         Field('gain', 'double'),

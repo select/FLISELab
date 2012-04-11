@@ -353,6 +353,7 @@ function init_files(){
 					});
 				});
 			});
+			
 		});
 	});
 	//Files Delete button
@@ -641,6 +642,87 @@ function autoseg(data){
 		unifyT();
 	}
 }
+
+/******************* SUBINTERVAL ************************/
+function intervalDblclick() {
+	//Temp subinterval options and create corresponding panel
+	$.get('{{=URL(request.application, 'static/templates','subinterval.html')}}', function(htmlstr) {
+		//Reset the panel
+		$('#subinterval').html('');
+		//Adapt panel HTML
+		var st = htmlstr;
+		st = st.replace(/%strain_ref%/, $('input[name="strain_ref"]').val());
+		st = st.replace(/%comments%/, $('input[name="comments"]').val());
+		st = st.replace(/%od%/, $('input[name="od"]').val());
+		st = st.replace(/%dilutionf%/, $('input[name="dilutionf"]').val());
+		st = st.replace(/%celldiameter%/, $('input[name="celldiameter"]').val());
+		$('#subinterval').append(st);
+		//Strain reference input
+		$('input[name="sub_name"]').unbind('change');
+		$('input[name="sub_name"]').change(function(){
+			// TODO: first check this name does not exist already for this FLISE file
+			
+			//Save subinterval name
+			$.ajax({
+				url: '{{=URL("store_subint_option")}}',
+				data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO: here we need to retrieve strain_id
+				traditional: true
+			});
+		});
+		//Strain reference input
+		$('input[name="sub_strain_ref"]').unbind('change');
+		$('input[name="sub_strain_ref"]').change(function(){
+			//Save new strain reference
+			$.ajax({
+				url: '{{=URL("store_subint_option")}}',
+				data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO: here we need to retrieve strain_id
+				traditional: true
+			});
+		});
+		//OD input
+		$('input[name="sub_od"]').unbind('change');
+		$('input[name="sub_od"]').change(function(){
+			//Save new strain reference
+			$.ajax({
+				url: '{{=URL("store_subint_option")}}',
+				data: {record_id:cur_id, var_name:'optical_density', val: $(this).val()},
+				traditional: true
+			});
+		});
+		//Strain reference input
+		$('input[name="sub_dilutionf"]').unbind('change');
+		$('input[name="sub_dilutionf"]').change(function(){
+			//Save new strain reference
+			$.ajax({
+				url: '{{=URL("store_subint_option")}}',
+				data: {record_id:cur_id, var_name:'dilution_factor', val: $(this).val()},
+				traditional: true
+			});
+		});
+		//Strain reference input
+		$('input[name="sub_celldiameter"]').unbind('change');
+		$('input[name="sub_celldiameter"]').change(function(){
+			//Save new strain reference
+			$.ajax({
+				url: '{{=URL("store_subint_option")}}',
+				data: {record_id:cur_id, var_name:'cell_diameter', val: $(this).val()},
+				traditional: true
+			});
+		});
+		//Comments free text area
+		$('textarea[name="sub_comments"]').unbind('change');
+		$('textarea[name="sub_comments"]').change(function(){
+			//Save comments
+			$.ajax({
+				url: '{{=URL("store_subint_option")}}',
+				data: {record_id:cur_id, var_name:'comments', val: $('textarea[name="comments"]').val()},
+				traditional: true
+			});
+		});
+		//Calibration
+	});
+}
+
 
 /******************* GRAPH ************************/
 function getX(canvasx, g) {
@@ -1165,7 +1247,8 @@ function createGraph(graph_data, labels){
 						}
 					},
 					dblclick: function(event, g, context) {
-						Dygraph.defaultInteractionModel.dblclick(event, g, context);
+						//Dygraph.defaultInteractionModel.dblclick(event, g, context);
+						intervalDblclick();
 					},
 					mousewheel: function(event, g, context) {
 						var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;

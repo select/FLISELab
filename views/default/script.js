@@ -74,7 +74,14 @@ function init_files(){
 			createGraph(graph_data, data.labels);
 			//Initiate graph underlaycallback based on cutT, etc...
 			unifyT();
-			
+            //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+            //spreadsheet export test
+		    $('#export_test').click(function(){
+                alert('rock');
+                $('#json2spreadsheet_form').html(" <input type='hidden' value='"+JSON.stringify(data.labels)+"' name='header'/> <input type='hidden' value='"+JSON.stringify(graph_data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
+                $('#json2spreadsheet_form').submit();
+            });	
+            //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 			//Load series options and create corresponding panel
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
 				//Reset the panel

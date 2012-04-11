@@ -57,6 +57,14 @@ def store_option():
     val = request.vars.val
     db.flise_file[int(record_id)].update_record(**{var_name: val})
 
+def store_series():
+    flise_record_id = request.vars.flise_record_id
+    series_name = request.vars.series_name
+    series_data = request.vars.series_data
+    record = db(db.subseries.name == series_name)(db.subseries.flise_file_id == flise_record_id).select().first()
+    if record:
+        record.update_record
+
 def get_data():
     response.generic_patterns = ['html', 'json']
     record = db.flise_file[int(request.args(0))]
@@ -126,9 +134,33 @@ def get_savgol():
     response.generic_patterns = ['json']
     import savgol
     myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), request.vars.deriv)
-    #from gluon.contrib import simplesjson
+    #from gluon.contrib import simplejson
     result = myinstance.filterTS(simplejson.loads(request.vars.data))
     return dict(result = result)
+
+def export_spreadsheet():
+    export_format = request.vars.format
+    from gluon.contrib import simplejson
+    try:
+        header = simplejson.loads(request.vars.header)
+        data = simplejson.loads(request.vars.data)
+    except:
+        import sys
+        raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
+    #import applications.FLISE.modules.tablib as tablib
+    #import applications.FLISE.modules.tablib.core as tcore
+    #import tablib.core
+    import tablib
+    data = tablib.core.Dataset(*data, headers=header)
+    if export_format in 'yaml csv xls xlsx':
+        import gluon.contenttype
+        import os.path
+        response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
+        response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
+        #response.write(getattr(data,export_format), escape=False)
+        return getattr(data,export_format)
+    return ''
+
 
 def user():
     """

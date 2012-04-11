@@ -19,6 +19,7 @@
 					<hr />
 					<h2 onclick="collapse('edit_record')">Raw data description</h2>
 					<div id="edit_record" style="display:none;"> ... upload or select a file.</div>
+                    {{=A('export as xls', _id="export_test",_class="button")}}
 					<hr />
 					<h2 onclick="collapse('series_options');collapse('global_options')">Series Options</h2>
 					<div id="series_options" style="display:none;"> ... upload or select a file.</div>
@@ -39,3 +40,5 @@
 		<script type="text/javascript">
 		{{include 'default/script.js'}}
 		</script>
+        <form action="{{=URL('export_spreadsheet')}}" target='_blank' method='POST' style="displa:none" id="json2spreadsheet_form">
+        </form>

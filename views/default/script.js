@@ -75,15 +75,6 @@ function init_files(){
 			createGraph(graph_data, data.labels);
 			//Initiate graph underlaycallback based on cutT, etc...
 			unifyT();
-            
-			//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-         //spreadsheet export test
-		   $('#export_test').click(function(){
-                alert('rock');
-                $('#json2spreadsheet_form').html(" <input type='hidden' value='"+JSON.stringify(data.labels)+"' name='header'/> <input type='hidden' value='"+JSON.stringify(graph_data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
-                $('#json2spreadsheet_form').submit();
-         });	
-         //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 			
 			//Load series options and create corresponding panel
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
@@ -731,7 +722,7 @@ function interval2export(pos) {
 				st = st.replace(/%od%/, od);
 				st = st.replace(/%dilutionf%/, dilutionf);
 				st = st.replace(/%celldiameter%/, celldiameter);
-				//Calibration
+				//Series - Calibration
 				var stcal;
 				for (var i = 0;i<$('#series_options > table').size();i++){
 					stcal = '<tr><td style="color:%color%">%species%</td><td>Gain: <input name="sub_calgain" type="text" value="" style="width:60px"/></td><td>Offset: <input name="sub_caloffset" type="text" value="" style="width:60px"/></td></tr>';
@@ -741,6 +732,15 @@ function interval2export(pos) {
 				}
 				st = st.replace(/%caloptions%/,'');
 				$('#subinterval').append(st);
+				
+				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+				//spreadsheet export test
+				$('#export2excel').click(function(){
+						 alert('rock');
+						 $('#json2spreadsheet_form').html(" <input type='hidden' value='"+JSON.stringify(data.labels)+"' name='header'/> <input type='hidden' value='"+JSON.stringify(graph_data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
+						 $('#json2spreadsheet_form').submit();
+				});	
+				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				
 				//Strain reference input
 				$('input[name="sub_name"]').unbind('change');

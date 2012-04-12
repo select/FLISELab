@@ -108,20 +108,55 @@ function init_files(){
 				//Series name input
 				$('select[name="select_species"]').unbind('change');
 				$('select[name="select_species"]').change(function(){
-                    console.log('triggered select_species');
+               console.log('triggered select_species');
 					var items = [];//['Time'];
 					$('select[name="select_species"]').each(function(){
-                        if (! $(this).val() ) items.push('not set!');
+                        if (! $(this).val() ) items.push('Species');
                         else items.push($(this).val());
 					});
-                    items = items.slice(0,-1)
+               items = items.slice(0,-1)
 					//Save new series name
 					$.ajax({
 						url: '{{=URL("store_option")}}',
 						data: {record_id:cur_id, var_name:'series_species', val: items},
 						traditional: true
 					});
-                    items.splice(0,0,"Time");
+					var listSim=[];
+					var flag=false;
+					var iL;
+					for (var i=0; i<items.length-1; i++){
+						//find if it belongs to one list of similarities
+						flag=false;
+						if (!(listSim==[])){
+							for (var iL1=0;iL1<listSim.length;iL1++){
+								for (var iL2=0;iL2<listSim[iL1].length;iL2++){
+									if (listSim[iL1][iL2]==i){
+										flag=true;
+										break;
+									}
+								}
+								if (flag){break;}
+							}
+						}
+						//if not...
+						if (!flag){
+							iL=listSim.length;
+							listSim[iL]=[i];
+							//find companions
+							for (var j=i+1; j<items.length; j++){
+								if (items[i]==items[j]){
+									listSim[iL].push(j);
+								}
+							}
+							//alter names with index so that graph labels are different
+							if (listSim[iL].length>1){
+								for (var j=0; j<listSim[iL].length; j++){
+									items[listSim[iL][j]]=items[listSim[iL][j]]+j;
+								}
+							}
+						}
+					}
+					items.splice(0,0,"Time");
 					g.updateOptions({'labels':items, 'file': graph_data});
 				});
 				//Color picker creation
@@ -346,8 +381,9 @@ function init_files(){
 				$('#preproc').click(function(){
 					var lochw = parseFloat($("#lochw").attr("value"));
 					var porder = parseFloat($("#order").attr("value"));
-					$.getJSON('{{=URL('get_savgol.json')}}/'+cur_id,{w:lochw,order:porder,deriv:1,data:[1,2,3]},function(data){
+					$.getJSON('{{=URL('get_savgol.json')}}/'+cur_id,{w:lochw,order:porder,deriv:1,data:[1,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,5,5,5,5,5,5,65,6,6,6,6,6,6,6,6]},function(data){
 						var result = data.result;
+						alert('ok');
 					});
 				});
 			});

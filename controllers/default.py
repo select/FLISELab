@@ -162,7 +162,8 @@ def export_spreadsheet():
         import sys
         raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
     import tablib
-    data = tablib.core.Dataset(*data, headers=header)
+    data = tablib.core.Dataset(headers=header)
+    data.extend(data)
     if export_format in 'yaml csv xls xlsx':
         import gluon.contenttype
         import os.path

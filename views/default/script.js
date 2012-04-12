@@ -2,6 +2,7 @@
 var graph_data = [];//Data to be displayed and processed
 var g;//Graph variable (from dygraph)
 var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
+var cur_id;//ID of the Flise-file
 
 //Global variables to save
 var cutT;
@@ -41,7 +42,7 @@ function init_files(){
 	//Select a file (click behavior)
 	$('.flise_file .select').click(function(){
 		//Show which file is selected
-		var cur_id = $(this).parent().attr('id');
+		cur_id = $(this).parent().attr('id');
 		$('.current_record').html($(this).html());
 		$('.current_record').attr('id', cur_id);
 		//Rearrange which panel is developped or not
@@ -660,6 +661,56 @@ function interval2export(pos) {
 	}
 	if (flag) return;
 	
+	var strain_ref = $('input[name="strain_ref"]').val();
+	var comments = $('textarea[name="comments"]').val();
+	var od = $('input[name="od"]').val();
+	var dilutionf = $('input[name="dilutionf"]').val();
+	var celldiameter = $('input[name="celldiameter"]').val();
+	var name = '';
+	
+	$.ajax({
+		url: '{{=URL("store_subint_option.json")}}',
+		data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd},
+		traditional: true,
+		success: function(subintervals_data){
+			alert(typeof subintervals_data);
+			if (subintervals_data != null){
+				strain_ref = subintervals_data['strain_id'];
+				comments = subintervals_data['comments'];
+				name = subintervals_data['name'];
+				od = subintervals_data['optical_density'];
+				dilutionf = subintervals_data['dilution_factor'];
+				celldiameter = subintervals_data['cell_diameter'];
+			} else {
+				$.ajax({
+					url: '{{=URL("store_subint_option.json")}}',
+					data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'strain_id', val: strain_ref},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_subint_option.json")}}',
+					data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'comments', val: comments},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_subint_option.json")}}',
+					data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'optical_density', val: od},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_subint_option.json")}}',
+					data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'dilution_factor', val: dilutionf},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_subint_option.json")}}',
+					data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'cell_diameter', val: celldiameter},
+					traditional: true
+				});
+			}
+		}
+	});
+	
 	//Temp subinterval options and create corresponding panel
 	$.get('{{=URL(request.application, 'static/templates','subinterval.html')}}', function(htmlstr) {
 		//Reset the panel
@@ -668,11 +719,12 @@ function interval2export(pos) {
 		var st = htmlstr;
 		st = st.replace(/%start%/,intStart);
 		st = st.replace(/%end%/,intEnd);
-		st = st.replace(/%strain_ref%/, $('input[name="strain_ref"]').val());
-		st = st.replace(/%comments%/, $('textarea[name="comments"]').val());
-		st = st.replace(/%od%/, $('input[name="od"]').val());
-		st = st.replace(/%dilutionf%/, $('input[name="dilutionf"]').val());
-		st = st.replace(/%celldiameter%/, $('input[name="celldiameter"]').val());
+		st = st.replace(/%name%/, name)
+		st = st.replace(/%strain_ref%/, strain_ref);
+		st = st.replace(/%comments%/, comments);
+		st = st.replace(/%od%/, od);
+		st = st.replace(/%dilutionf%/, dilutionf);
+		st = st.replace(/%celldiameter%/, celldiameter);
 		//Calibration
 		var stcal;
 		for (var i = 0;i<$('#series_options > table').size();i++){
@@ -683,15 +735,15 @@ function interval2export(pos) {
 		}
 		st = st.replace(/%caloptions%/,'');
 		$('#subinterval').append(st);
+		
 		//Strain reference input
 		$('input[name="sub_name"]').unbind('change');
 		$('input[name="sub_name"]').change(function(){
-			// TODO: first check this name does not exist already for this FLISE file
-			
+			// TODO: first check this name does not exist already for this FLISE file?
 			//Save subinterval name
 			$.ajax({
-				url: '{{=URL("store_subint_option")}}',
-				data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO
+				url: '{{=URL("store_subint_option.json")}}',
+				data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'name', val: $(this).val()},
 				traditional: true
 			});
 		});
@@ -700,8 +752,8 @@ function interval2export(pos) {
 		$('input[name="sub_strain_ref"]').change(function(){
 			//Save new strain reference
 			$.ajax({
-				url: '{{=URL("store_subint_option")}}',
-				data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO
+				url: '{{=URL("store_subint_option.json")}}',
+				data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'strain_id', val: $(this).val()},
 				traditional: true
 			});
 		});
@@ -710,8 +762,8 @@ function interval2export(pos) {
 		$('input[name="sub_od"]').change(function(){
 			//Save new strain reference
 			$.ajax({
-				url: '{{=URL("store_subint_option")}}',
-				data: {record_id:cur_id, var_name:'optical_density', val: $(this).val()},
+				url: '{{=URL("store_subint_option.json")}}',
+				data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'optical_density', val: $(this).val()},
 				traditional: true
 			});
 		});
@@ -720,8 +772,8 @@ function interval2export(pos) {
 		$('input[name="sub_dilutionf"]').change(function(){
 			//Save new strain reference
 			$.ajax({
-				url: '{{=URL("store_subint_option")}}',
-				data: {record_id:cur_id, var_name:'dilution_factor', val: $(this).val()},
+				url: '{{=URL("store_subint_option.json")}}',
+				data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'dilution_factor', val: $(this).val()},
 				traditional: true
 			});
 		});
@@ -730,8 +782,8 @@ function interval2export(pos) {
 		$('input[name="sub_celldiameter"]').change(function(){
 			//Save new strain reference
 			$.ajax({
-				url: '{{=URL("store_subint_option")}}',
-				data: {record_id:cur_id, var_name:'cell_diameter', val: $(this).val()},
+				url: '{{=URL("store_subint_option.json")}}',
+				data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'cell_diameter', val: $(this).val()},
 				traditional: true
 			});
 		});
@@ -740,8 +792,8 @@ function interval2export(pos) {
 		$('textarea[name="sub_comments"]').change(function(){
 			//Save comments
 			$.ajax({
-				url: '{{=URL("store_subint_option")}}',
-				data: {record_id:cur_id, var_name:'comments', val: $('textarea[name="comments"]').val()},
+				url: '{{=URL("store_subint_option.json")}}',
+				data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'comments', val: $(this).val()},
 				traditional: true
 			});
 		});

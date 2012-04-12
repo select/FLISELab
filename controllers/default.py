@@ -58,18 +58,20 @@ def store_option():
     db.flise_file[int(record_id)].update_record(**{var_name: val})
 
 def store_subint_option():
-    record_id = request.vars.record_id
-    var_name = request.vars.var_name
-    val = request.vars.val
-    db.subintervals[int(record_id)].update_record(**{var_name: val})
-
-def store_series():
+    response.generic_patterns = ['json']
     flise_record_id = request.vars.flise_record_id
-    series_name = request.vars.series_name
-    series_data = request.vars.series_data
-    record = db(db.subseries.name == series_name)(db.subseries.flise_file_id == flise_record_id).select().first()
+    interval_time = request.vars.interval_time
+    record = db(db.subintervals.extract_time == interval_time)(db.subintervals.flise_file_id == flise_record_id).select().first()
+    if request.vars.var_name:
+        var_name = request.vars.var_name
+        val = request.vars.val
+        if record:
+            record.update_record(**{var_name: val})
+        else:
+            record = db.subintervals.insert(flise_file_id=flise_record_id, extract_time=interval_time)
+            record.update_record(**{var_name: val})
     if record:
-        record.update_record
+        return dict([(field,record[field]) for field in db.subintervals.fields])
 
 def get_data():
     response.generic_patterns = ['html', 'json']

@@ -72,6 +72,8 @@ def store_subint_option():
             record.update_record(**{var_name: val})
     if record:
         return dict([(field,record[field]) for field in db.subintervals.fields])
+    else:
+        return dict()
 
 def get_data():
     response.generic_patterns = ['html', 'json']

@@ -40,7 +40,7 @@ def file():
         del db.flise_file[int(request.vars.delr)]
         return ''
     def on_accept(form):
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");' % URL(r=request, f='files')
+        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");' % (URL(r=request, f='files'),form.vars.name)
     if request.args(0):
         db.flise_file.file.readable, db.flise_file.file.writable = False, False
         form = crud.update(db.flise_file, request.args(0), onaccept=on_accept, deletable=False)
@@ -81,7 +81,7 @@ def get_data():
     reader = list(csv.reader(raw_file, delimiter="\t"))
     csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
     #labels = [x.name for x in record.series_species_id.select()] or ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
-    labels = ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
+    labels = record.series_species if record.series_species else ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
     labels = ['Time']+labels
     if request.extension == 'json':
         return dict(result=csv_data,labels = labels)
@@ -103,7 +103,7 @@ def series_options():
         return dict(name = name, color = color, show = show, num_series = num_series)
     defaults = get_defaults()
     #name = [x.name for x in record.series_species_id.select()] or defaults["name"]
-    name = defaults["name"]
+    name = record.series_species or defaults["name"]
     num_series = len(name) or defaults["num_series"]
     color = record.series_colors or defaults["color"]
     show = record.series_show or defaults["show"]
@@ -112,9 +112,15 @@ def series_options():
     return dict(name = name, color = color, show = show_bool, num_series = num_series)
 
 def species():
-    if(request.vars.new_species):
-        db.species.insert(request.vars.new_species)
-    return SELECT([OPTION(x.name,_value=x.name) for x in db((db.species.id>0)&(db.species.measured == True)).select()], _name="select_species", _style="width:100px")
+    #if request.vars.new_species:
+    #    db.species.insert(name = request.vars.new_species, measured = True)
+    records = db(db.flise_file.id>0).select(db.flise_file.series_species)
+    species = set()
+    for record in records:
+        if record.series_species:
+            for species_item in record.series_species:
+                species.add(species_item)
+    return SELECT([OPTION('')]+[OPTION(x,_value=x) for x in species], _name="select_species", _style="width:100px")
 
 def global_options():
     response.generic_patterns = ['json']
@@ -146,28 +152,25 @@ def get_savgol():
     result = myinstance.filterTS(simplejson.loads(request.vars.data))
     return dict(result = result)
 
-# def export_spreadsheet():
-#     export_format = request.vars.format
-#     from gluon.contrib import simplejson
-#     try:
-#         header = simplejson.loads(request.vars.header)
-#         data = simplejson.loads(request.vars.data)
-#     except:
-#         import sys
-#         raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
-#     #import applications.FLISE.modules.tablib as tablib
-#     #import applications.FLISE.modules.tablib.core as tcore
-#     #import tablib.core
-#     import tablib
-#     data = tablib.core.Dataset(*data, headers=header)
-#     if export_format in 'yaml csv xls xlsx':
-#         import gluon.contenttype
-#         import os.path
-#         response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
-#         response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
-#         #response.write(getattr(data,export_format), escape=False)
-#         return getattr(data,export_format)
-#     return ''
+def export_spreadsheet():
+    export_format = request.vars.format
+    from gluon.contrib import simplejson
+    try:
+        header = simplejson.loads(request.vars.header)
+        data = simplejson.loads(request.vars.data)
+    except:
+        import sys
+        raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
+    import tablib
+    data = tablib.core.Dataset(*data, headers=header)
+    if export_format in 'yaml csv xls xlsx':
+        import gluon.contenttype
+        import os.path
+        response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
+        response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
+        #response.write(getattr(data,export_format), escape=False)
+        return getattr(data,export_format)
+    return ''
 
 def user():
     """

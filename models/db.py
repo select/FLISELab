@@ -73,7 +73,7 @@ use_janrain(auth,filename='private/janrain.key')
 #########################################################################
 db.define_table('species',
         Field('name'),
-        Field('measured', 'boolean')
+        Field('measured', 'boolean', default = True)
         )
 db.define_table('strain',
         Field('name'),
@@ -85,7 +85,8 @@ db.define_table('flise_file',
         Field('sampling_time', 'double', default=0.5, label='Sampling Time (s)'),
         Field('created_on', 'date', default = request.now),
         #Field('created_by', db.auth_user),
-        Field('series_species_id', 'list:reference species', readable = False, writable = False),
+        #Field('series_species_id', 'list:reference species', readable = False, writable = False),
+        Field('series_species', 'list:string', readable = False, writable = False),
         Field('series_colors', 'list:string', readable = False, writable = False),
         Field('series_show', 'list:string', readable = False, writable = False),
         Field('strain_id', db.strain, readable = False, writable = False),
@@ -103,7 +104,7 @@ db.define_table('flise_file',
 db.define_table('subintervals',
         Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
         Field('name'),
-        Field('extract_time', 'text'),#pickle
+        Field('extract_time', 'text'),#pickle/JSON
         Field('strain_id', db.strain, readable = False, writable = False),
         Field('comments', 'text', readable = False, writable = False),
         Field('optical_density', 'double', readable = False, writable = False),

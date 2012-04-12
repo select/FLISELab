@@ -67,6 +67,7 @@ function web2py_trap_form(action,target) {
    jQuery('#'+target+' form').each(function(i){
       var form=jQuery(this);
       if(!form.hasClass('no_trap')){
+         console.log('really trapped '+target);
          if(form.find('input[type=file]').length>0){
             //using ajaxForm has the disadvantage that the header is not returned in xhr
             //can this be fixed in the ajaxForm plugin???
@@ -77,11 +78,11 @@ function web2py_trap_form(action,target) {
                 }
              });
          }else{
-            //$(form).append('<!--aaaaa-->');
+            console.log('no file')
              $("[type=submit],[type=image]", this).click(function(e){
                  $(this).attr("was_clicked_to_submit","YES");
              });
-            form.submit(function(obj){
+            form.submit(function(e){
              //alert('trapped submit caught');
              jQuery('.flash').hide().html('');
              web2py_ajax_page('post',action,form.serialize() + "&" + $("[was_clicked_to_submit=YES]").attr('name') + "=" + $("[was_clicked_to_submit=YES]").val(),target);

@@ -105,30 +105,33 @@ function init_files(){
 					$('#series_options').append('<table id="series'+i+'">'+st+'</table>');
 					$('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
 				}
-				$('add_species').unbind('click');
-				$('add_species').click(function () {
-					$.ajax({
-						url: '{{=URL("species")}}',
-						data: {new_species: $(this).parent().find('.new_species').val()},
-						success: function(data, xhr){
-                            //TODO insert into all other selects and select this val in the series spieces select
-                        }
-					});
+				$('.add_species').unbind('click');
+				$('.add_species').click(function () {
+                    var new_species = $(this).parent().find('.new_species').val()
+                    $('select[name="select_species"]').each(function(){
+                        $(this).append('<option value="'+new_species+'">'+new_species+'</option>'); 
+                    });
+                    $(this).parent().find('select option[value="'+new_species+'"]').attr('selected', 'selected');
+                    $(this).parent().find('select').change();
 				});
 				//Series name input
-				$('input[name="series_name"]').unbind('change');
-				$('input[name="series_name"]').change(function(){
-					var items = ['Time'];
-					$('input[name="series_name"]').each(function(){
-						items.push($(this).val());
+				$('select[name="select_species"]').unbind('change');
+				$('select[name="select_species"]').change(function(){
+                    console.log('triggered select_species');
+					var items = [];//['Time'];
+					$('select[name="select_species"]').each(function(){
+                        if (! $(this).val() ) items.push('not set!');
+                        else items.push($(this).val());
 					});
-					g.updateOptions({'labels':items, 'file': graph_data});
+                    items = items.slice(0,-1)
 					//Save new series name
 					$.ajax({
 						url: '{{=URL("store_option")}}',
-						data: {record_id:cur_id, var_name:'series_species_id', val: items.slice(1)},
+						data: {record_id:cur_id, var_name:'series_species', val: items},
 						traditional: true
 					});
+                    items.splice(0,0,"Time");
+					g.updateOptions({'labels':items, 'file': graph_data});
 				});
 				//Color picker creation
 				$('input[name="color"]').colorPicker();

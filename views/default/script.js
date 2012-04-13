@@ -381,10 +381,23 @@ function init_files(){
 				$('#preproc').click(function(){
 					var lochw = parseFloat($("#lochw").attr("value"));
 					var porder = parseFloat($("#order").attr("value"));
-					$.getJSON('{{=URL('get_savgol.json')}}/'+cur_id,{w:lochw,order:porder,deriv:1,data:[1,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,5,5,5,5,5,5,65,6,6,6,6,6,6,6,6]},function(data){
+	                $.ajax({
+                        url: '{{=URL('get_savgol.json')}}',
+                        data: {w:lochw,order:porder,deriv:1,data:[1,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,5,5,5,5,5,5,65,6,6,6,6,6,6,6,6]},
+                        traditional: true,
+                        type: 'POST',
+		                success: function(data){
+						var result = data.result;
+						alert('ok'+JSON.stringify(data.result));
+                        }
+					});
+                    /*
+					$.getJSON('{{=URL('get_savgol.json')}}/'+cur_id,
+                    ,function(data){
 						var result = data.result;
 						alert('ok');
 					});
+                    */
 				});
 			});
 			

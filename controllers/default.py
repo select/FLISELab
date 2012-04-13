@@ -149,9 +149,10 @@ def global_options():
 def get_savgol():
     response.generic_patterns = ['json']
     import savgol
-    myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), request.vars.deriv)
+    myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), int(request.vars.deriv))
     #from gluon.contrib import simplejson
-    result = myinstance.filterTS(simplejson.loads(request.vars.data))
+    print request.vars.getlist('data')
+    result = myinstance.filterTS([int(x) for x in request.vars.getlist('data')])
     return dict(result = result)
 
 def export_spreadsheet():

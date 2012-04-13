@@ -194,6 +194,8 @@ class Savgol:
                 Ainv.append(X[:])
             return transpose(Ainv)
 
+        def _fact(n):return reduce(lambda x,y:x*y,range(1,n+1))
+
         #0. test the arguments
         try:
             nleft = abs(int(nleft))
@@ -233,7 +235,7 @@ class Savgol:
         #2. compute the resulting filter
         #2.1 filter is vector c s.t. c_n = AtA^-1[deriv].transpose([n^0, .., n^order]) * deriv! with n in {-nleft, ..., nright}
         filter = [0.0 for i in range(nleft+nright+1)]
-        from math import factorial as _fact
+        #from math import factorial as _fact #only from python2.6
         coeff = _fact(deriv)
         for k in range(-nleft, nright+1):
             sumV = invLU[deriv][0]

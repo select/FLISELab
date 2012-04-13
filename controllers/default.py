@@ -104,7 +104,6 @@ def series_options():
         show = ['true' for i in range(num_series)]
         return dict(name = name, color = color, show = show, num_series = num_series)
     defaults = get_defaults()
-    #name = [x.name for x in record.series_species_id.select()] or defaults["name"]
     name = record.series_species or defaults["name"]
     num_series = len(name) or defaults["num_series"]
     color = record.series_colors or defaults["color"]
@@ -150,9 +149,13 @@ def get_savgol():
     response.generic_patterns = ['json']
     import savgol
     myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), int(request.vars.deriv))
-    #from gluon.contrib import simplejson
-    print request.vars.getlist('data')
-    result = myinstance.filterTS([int(x) for x in request.vars.getlist('data')])
+    from gluon.contrib import simplejson
+    data2derive = simplejson.loads(request.vars.data)
+    result = []
+    for iI in range(len(data2derive)):
+        result.append([])
+        for iS in range(len(data2derive[iI])):
+            result[iI].append(myinstance.filterTS(data2derive[iI][iS]))
     return dict(result = result)
 
 def export_spreadsheet():

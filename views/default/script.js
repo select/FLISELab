@@ -1,6 +1,7 @@
 /************ GLOBAL VAR ******************/
 var graph_data = [];//Data to be displayed and processed
 var g;//Graph variable (from dygraph)
+var g2;//Graph variable for preprocessing result
 var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
 var cur_id;//ID of the Flise-file
 
@@ -109,7 +110,7 @@ function init_files(){
 				$('select[name="select_species"]').unbind('change');
 				$('select[name="select_species"]').change(function(){
                console.log('triggered select_species');
-					var items = [];//['Time'];
+					var items = [];
 					$('select[name="select_species"]').each(function(){
                         if (! $(this).val() ) items.push('Species');
                         else items.push($(this).val());
@@ -376,28 +377,94 @@ function init_files(){
 				$('input[class="savgol_slider"]').change(function(){
 					$(this).parent().find('span').html($(this).val());
 				});
+				//Force local window to be big enought for polynomial order: min loc half window (lochw) of size 6 and max polynomial order (porder) of 10 insures that porder<2*lochw.
 				//Preprocessing button
 				$('#preproc').unbind('click');
 				$('#preproc').click(function(){
 					var lochw = parseFloat($("#lochw").attr("value"));
 					var porder = parseFloat($("#order").attr("value"));
-	                $.ajax({
-                        url: '{{=URL('get_savgol.json')}}',
-                        data: {w:lochw,order:porder,deriv:1,data:[1,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,5,5,5,5,5,5,65,6,6,6,6,6,6,6,6]},
-                        traditional: true,
-                        type: 'POST',
-		                success: function(data){
-						var result = data.result;
-						alert('ok'+JSON.stringify(data.result));
-                        }
+					//Shape data to smooth/derivate
+					var data2derive=[];
+					for (var iD=0; iD<dataT.length; iD++){
+						//TODO if (Math.ceil((dataT[iD][1]-dataT[iD][0])/(graph_data[1][0]-graph_data[0][0]))<=(2*lochw+1)){continue;}
+						data2derive.push([]);
+						for (var iS=1; iS<graph_data[0].length;iS++){
+							data2derive[iD].push([]);
+							data2derive[iD][iS-1]=[];
+							for (var iP=0; iP<graph_data.length;iP++){
+								if ((graph_data[iP][0]>=dataT[iD][0])&&(graph_data[iP][0]<=dataT[iD][1])){
+									data2derive[iD][iS-1].push(graph_data[iP][iS]);
+								}
+							}
+						}
+					}
+					//Pass it to Savgol module
+					$.ajax({
+						url: '{{=URL('get_savgol.json')}}',
+						data: {w:lochw,order:porder,deriv:1,data:JSON.stringify(data2derive)},
+						traditional: true,
+						type: 'POST',
+						success: function(data){
+							var result = data.result;
+							g.resize(window.innerWidth-510, Math.floor((window.innerHeight-90)/2));
+							//Shape data to plot
+							var data2plot=[];
+							for (var iP=0; iP<graph_data.length;iP++){
+								//initialize to null
+								data2plot.push([graph_data[iP][0]]);//recopy time
+								for (var iS=1; iS<graph_data[0].length;iS++){
+									data2plot[iP].push(null);
+								}
+							}
+							for (var iI=0; iI<dataT.length; iI++){
+								//find index when graph_data[iP][0]==dataT[iI][0]
+								for (iP=0; iP<graph_data.length;iP++){
+									if (graph_data[iP][0]==dataT[iI][0]){break;}
+								}
+								//place values
+								for (iS=0; iS<result[iI].length;iS++){
+									for (var iP2=0; iP2<result[iI][iS].length;iP2++){
+										data2plot[iP+iP2][iS+1]=result[iI][iS][iP2];
+									}
+								}
+							}
+							//Plot
+							$('#graphdiv2').show();
+							g2 = new Dygraph(document.getElementById("graphdiv2"), data2plot,
+								{
+									//labels: g.labels_,
+									colors: g.colors_,
+									width: window.innerWidth-510,
+									height: Math.floor((window.innerHeight-90)/2),
+									strokeWidth: 0.5,
+									gridLineColor: 'rgb(196, 196, 196)',
+									logscale : false,
+									drawCallback: function(me, is_initial){
+										if (is_initial){return;}
+										var range = me.xAxisRange();
+										g.updateOptions( {
+										  dateWindow: range
+										} );
+									}
+								});
+							/*g.updateOptions( {
+								drawCallback: function(me, is_initial){
+									if (is_initial){return;}
+									var range = me.xAxisRange();
+									g2.updateOptions( {
+									  dateWindow: range
+									} );
+								}
+							} );*/
+						}
 					});
-                    /*
-					$.getJSON('{{=URL('get_savgol.json')}}/'+cur_id,
-                    ,function(data){
-						var result = data.result;
-						alert('ok');
-					});
-                    */
+				});
+				$('#preproc_close').unbind('click');
+				$('#preproc_close').click(function(){
+					g2=undefined;
+					$('#graphdiv2').hide();
+					$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
+					g.resize(window.innerWidth-510, (window.innerHeight-90));
 				});
 			});
 			
@@ -1057,6 +1124,14 @@ function unifyT() {
 			}
 		}
 	}
+	for (iD=0; iD<dataT.length; iD++) {
+		//may happen at 0 and at end
+		if (dataT[iD][0]==dataT[iD][1]){
+			dataT.splice(iD,1);
+			iD--;
+		}
+	}
+	
 	
 	g.updateOptions({
 		file: graph_data, 

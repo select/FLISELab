@@ -383,6 +383,10 @@ function init_files(){
 				//Preprocessing button
 				$('#preproc').unbind('click');
 				$('#preproc').click(function(){
+					//Disable button
+					$("#preproc").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+					$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+					//Get processing parameters
 					var lochw = parseFloat($("#lochw").attr("value"));
 					var porder = parseFloat($("#order").attr("value"));
 					//Shape data to smooth/derivate
@@ -504,17 +508,24 @@ function init_files(){
 										}
 									}
 								});
-							
+							// Enable close plot button
+							$("#preproc_close").removeAttr("disabled").removeAttr("style");
+							// Enable button
+							$("#preproc").attr("value", "Extract, reprocess and plot").removeAttr("disabled").removeAttr("style");
 						}
 					});
 				});
 				$('#preproc_close').unbind('click');
 				$('#preproc_close').click(function(){
+					$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+					$("#preproc").attr("value", "Extract, process and plot");
 					g2=undefined;
 					$('#graphdiv2').hide();
 					$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
 					g.resize(window.innerWidth-510, (window.innerHeight-90));
 				});
+				//Default button unabling
+				$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 			});
 			
 		});

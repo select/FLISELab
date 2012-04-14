@@ -18,6 +18,7 @@ var prevdropT;
 var preveventT;
 var dataT;
 var isSelecting;
+var isDrawing=false;
 var tool;
 
 /************ Preload *********************/
@@ -72,6 +73,7 @@ function init_files(){
 			preveventT = [];
 			//Reset the global graph object "g"
 			g=undefined;
+			g2=undefined;
 			//Create "g"
 			createGraph(graph_data, data.labels);
 			//Initiate graph underlaycallback based on cutT, etc...
@@ -430,10 +432,15 @@ function init_files(){
 							}
 							//Plot
 							$('#graphdiv2').show();
+							var derivlabels=['Time'];
+							for (var i=0; i<g.colors_.length; i++){
+								derivlabels.push('Deriv'+i);
+							}
 							g2 = new Dygraph(document.getElementById("graphdiv2"), data2plot,
 								{
-									//labels: g.labels_,
+									labels: derivlabels,
 									colors: g.colors_,
+									dateWindow: g.xAxisRange(),
 									width: window.innerWidth-510,
 									height: Math.floor((window.innerHeight-90)/2),
 									strokeWidth: 0.5,
@@ -441,21 +448,63 @@ function init_files(){
 									logscale : false,
 									drawCallback: function(me, is_initial){
 										if (is_initial){return;}
-										var range = me.xAxisRange();
-										g.updateOptions( {
-										  dateWindow: range
-										} );
+										if (!isDrawing){
+											isDrawing=true;
+											var range = me.xAxisRange();
+											g.updateOptions( {
+											  dateWindow: range
+											} );
+											isDrawing=false;
+										}
+									},
+									interactionModel: {
+										mousedown: function (event, me, context) {
+											if (tool == 'zoom') {
+												Dygraph.defaultInteractionModel.mousedown(event, me, context);
+											}
+										},
+										mousemove: function (event, me, context) {
+											if (tool == 'zoom') {
+												Dygraph.defaultInteractionModel.mousemove(event, me, context);
+											}
+										},
+										mouseup: function(event, me, context) {
+											if (tool == 'zoom') {
+												Dygraph.defaultInteractionModel.mouseup(event, me, context);
+											}
+										},
+										mouseout: function(event, me, context) {
+											if (tool == 'zoom') {
+												Dygraph.defaultInteractionModel.mouseout(event, me, context);
+											}
+										},
+										dblclick: function(event, me, context) {
+											if (tool == 'zoom') {
+												Dygraph.defaultInteractionModel.dblclick(event, me, context);
+											}
+										},
+										mousewheel: function(event, me, context) {
+											var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;
+											var percentage = normal / 50;
+											var axis = me.xAxisRange();
+											var xOffset = me.toDomCoords(axis[0], null)[0];
+											var x = event.offsetX - xOffset;
+											var w = me.toDomCoords(axis[1], null)[0] - xOffset;
+											var xPct = w == 0 ? 0 : (x / w);
+									
+											var delta = axis[1] - axis[0];
+											var increment = delta * percentage;
+											var foo = [increment * xPct, increment * (1 - xPct)];
+											var dateWindow = [ axis[0] + foo[0], axis[1] - foo[1] ];
+									
+											me.updateOptions({
+												dateWindow: dateWindow
+											});
+											Dygraph.cancelEvent(event);
+										}
 									}
 								});
-							/*g.updateOptions( {
-								drawCallback: function(me, is_initial){
-									if (is_initial){return;}
-									var range = me.xAxisRange();
-									g2.updateOptions( {
-									  dateWindow: range
-									} );
-								}
-							} );*/
+							
 						}
 					});
 				});
@@ -1486,7 +1535,19 @@ function createGraph(graph_data, labels){
 				},
 				strokeWidth: 0.5,
 				gridLineColor: 'rgb(196, 196, 196)',
-				logscale : false
+				logscale : false,
+				drawCallback: function(me, is_initial){
+					if (is_initial){return;}
+					var range = me.xAxisRange();
+					if ((g2 != undefined)&&(!isDrawing)){
+						isDrawing=true;
+						var range = me.xAxisRange();
+						g2.updateOptions( {
+						  dateWindow: range
+						} );
+						isDrawing=false;
+					}
+				}
 			});
 	}
 }

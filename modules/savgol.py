@@ -194,7 +194,12 @@ class Savgol:
                 Ainv.append(X[:])
             return transpose(Ainv)
 
-        def _fact(n):return reduce(lambda x,y:x*y,range(1,n+1))
+        #def _fact(n):return reduce(lambda x,y:x*y,range(1,n+1))
+        def _fact(n):
+            if n == 0:
+                return 1
+            else:
+                return n * _fact(n-1)
 
         #0. test the arguments
         try:

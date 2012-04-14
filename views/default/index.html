@@ -6,8 +6,8 @@
 					<div id="graphdiv"></div>
 					<div id="labelsdiv" style="z-index:1; position:relative; bottom:40px; left:100px"></div>
 				</td>
-				<td style="width:490px" rowspan="2">
-					<h2 onclick="collapse('section_file')">File</h2>
+				<td style="width:99%" rowspan="2">
+					<h2 onclick="collapse('section_file')">1. File</h2>
 					<div id="section_file">
 							<h3>Current File</h3>
 							<div class="current_record">... none</div>
@@ -16,32 +16,37 @@
 							<h3 onclick="collapse('create_record')">Upload FLISE</h3>
 							{{=LOAD('default', 'file', ajax=True, target='create_record')}}
 					</div>
-					<hr />
-					<h2 onclick="collapse('edit_record')">Raw data description</h2>
-					<div id="edit_record" style="display:none;"> ... upload or select a file.</div>
-					<hr />
-					<h2 onclick="collapse('series_options');collapse('global_options')">Series Options</h2>
-					<div id="series_options" style="display:none;"> ... upload or select a file.</div>
-					<div id="global_options" style="display:none;"> </div>
-					<hr />
-					<h2 onclick="collapse('autoseg_options')">Auto-segmentation</h2>
-					<div id="autoseg_options" style="display:none;"> ... upload or select a file.</div>
-					<hr />
-					<h2 onclick="collapse('tools')">Tools</h2>
-					<div id="tools" style="display:none;"> ... upload or select a file.</div>
-					<hr />
-					<h2 onclick="collapse('deriv')">Preprocessing</h2>
-					<div id="deriv" style="display:none"> ... upload or select a file.</div>
-					<hr />
-					<h2>Temp div zone for interval manipulation</h2>
-					<div id="subinterval"> 
-						double click to select a zone
+					<div id="section_data" style="display:none">
+						<hr />
+						<h2 onclick="collapse('edit_record')">2. Raw data description</h2>
+						<div id="edit_record" style="display:none;"> ... upload or select a file.</div>
+						<hr />
+						<h2 onclick="collapse('series_options');collapse('global_options')">3. Series Options</h2>
+						<div id="series_options" style="display:none;"> ... upload or select a file.</div>
+						<div id="global_options" style="display:none;"> </div>
+						<hr />
+						<h2 onclick="collapse('autoseg_options');collapse('tools')">4. Auto-segmentation</h2>
+						<div id="autoseg_options" style="display:none;"> ... upload or select a file.</div>
+						<hr />
+						<h2 onclick="collapse('tools')">5. Tools for segmentation</h2>
+						<div id="tools" style="display:none;"> ... upload or select a file.</div>
+						<hr />
+						<h2 onclick="collapse('deriv')">6. Preprocessing</h2>
+						<div id="deriv" style="display:none"> ... upload or select a file.</div>
+						<hr />
+						<h2 onclick="collapse('export')">7. Export (per segment)</h2>
+						<div id="export" style="display:none"> ... upload or select a file.</div>
+						<hr />
+						<h2>Temp div zone for interval manipulation</h2>
+						<div id="subinterval"> 
+							double click to select a zone
+						</div>
 					</div>
 				</td>
 			</tr>
 			<tr>
 				<td>
-					<div id="graphdiv2"></div>
+					<div id="graphdiv2" style="cursor:crosshair"></div>
 				</td>
 			</tr>
 		</table>

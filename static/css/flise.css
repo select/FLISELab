@@ -85,7 +85,7 @@ background: url('../icons/tool-palette.png');
 	height: 33px;
 	display: inline-block;
 }
-#toolbar {		
+.toolbar {		
 	position: relative;
 	display: inline-block;
 }

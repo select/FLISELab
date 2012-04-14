@@ -43,6 +43,10 @@ if($.cookie('flise_js_options')== null) $.cookie('flise_js_options', 'a=10', { e
 function init_files(){
 	//Select a file (click behavior)
 	$('.flise_file .select').click(function(){
+		//Show data extraction zone
+		$('#edit_record').slideUp();
+		$('#section_data').parent().attr('style','width:490px');
+		$('#section_data').show('slow');
 		//Show which file is selected
 		cur_id = $(this).parent().attr('id');
 		$('.current_record').html($(this).html());
@@ -50,8 +54,8 @@ function init_files(){
 		//Rearrange which panel is developped or not
 		$('#my_records').slideUp();
 		$('#edit_record').slideDown();
-		$('#series_options').slideDown();
-		$('#global_options').slideDown();
+		$('#series_options').slideUp();
+		$('#global_options').slideUp();
 		$('#section_file').slideToggle();
 		
 		//Load Raw Data Description Panel
@@ -193,6 +197,7 @@ function init_files(){
 						traditional: true
 					});
 				});
+				$('#series_options').slideDown();
 			});
 			
 			//Load global series options and create corresponding panel
@@ -298,6 +303,7 @@ function init_files(){
 					smooth_val = parseFloat($(this).attr("value"));
 					if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
 				});
+				$('#global_options').slideDown();
 			});
 			
 			// Load autosegmentation panel
@@ -351,8 +357,17 @@ function init_files(){
 				//Load the panel
 				$('#tools').append(data);
 				
-				//Initialize default tool
-				change_tool(document.getElementById("tool_"+tool));
+				//Load Tool Export panel
+				$.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {
+					//Reset panel
+					$('#export').html('');
+					//Load the panel
+					$('#export').append(data);
+					
+					//Initialize default tool
+					change_tool(document.getElementById("tool_"+tool));
+				});
+				
 				//Undo button (see button Revert in Autosegmentation panel)
 				$('#revert_tool').unbind('click');
 				$('#revert_tool').click(function(){

@@ -406,15 +406,22 @@ function init_files(){
 					var porder = parseFloat($("#order").attr("value"));
 					//Shape data to smooth/derivate
 					var data2derive=[];
+					var Tsamp=(graph_data[1][0]-graph_data[0][0]);
+					var iDpass=0;
 					for (var iD=0; iD<dataT.length; iD++){
-						//TODO if (Math.ceil((dataT[iD][1]-dataT[iD][0])/(graph_data[1][0]-graph_data[0][0]))<=(2*lochw+1)){continue;}
+						//prevent small intervals to be passed
+						if (Math.ceil((dataT[iD][1]-dataT[iD][0])/Tsamp)<=(2*lochw+1)){
+							iDpass++;
+							continue;
+						}
+						//collect interval
 						data2derive.push([]);
 						for (var iS=1; iS<graph_data[0].length;iS++){
-							data2derive[iD].push([]);
-							data2derive[iD][iS-1]=[];
+							data2derive[iD-iDpass].push([]);
+							data2derive[iD-iDpass][iS-1]=[];
 							for (var iP=0; iP<graph_data.length;iP++){
 								if ((graph_data[iP][0]>=dataT[iD][0])&&(graph_data[iP][0]<=dataT[iD][1])){
-									data2derive[iD][iS-1].push(graph_data[iP][iS]);
+									data2derive[iD-iDpass][iS-1].push(graph_data[iP][iS]);
 								}
 							}
 						}
@@ -437,15 +444,22 @@ function init_files(){
 									data2plot[iP].push(null);
 								}
 							}
+							var Tsamp=(graph_data[1][0]-graph_data[0][0]);
+							var iIpass=0;
 							for (var iI=0; iI<dataT.length; iI++){
+								//prevent small intervals to be passed
+								if (Math.ceil((dataT[iI][1]-dataT[iI][0])/Tsamp)<=(2*lochw+1)){
+									iIpass++;
+									continue;
+								}
 								//find index when graph_data[iP][0]==dataT[iI][0]
 								for (iP=0; iP<graph_data.length;iP++){
 									if (graph_data[iP][0]==dataT[iI][0]){break;}
 								}
 								//place values
-								for (iS=0; iS<result[iI].length;iS++){
-									for (var iP2=0; iP2<result[iI][iS].length;iP2++){
-										data2plot[iP+iP2][iS+1]=result[iI][iS][iP2];
+								for (iS=0; iS<result[iI-iIpass].length;iS++){
+									for (var iP2=0; iP2<result[iI-iIpass][iS].length;iP2++){
+										data2plot[iP+iP2][iS+1]=result[iI-iIpass][iS][iP2];
 									}
 								}
 							}

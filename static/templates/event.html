@@ -1,0 +1,45 @@
+<table>
+	<tr>
+		<th>Time point: </th>
+		<td>
+			%time%
+		</td>
+	</tr>
+	<tr>
+		<th>Series: </th>
+		<td>
+			%series_name%
+		</td>
+	</tr>
+	<tr>
+		<th>Type</th>
+		<td>
+			<select id="event_type" style="width:100px">
+			  <option value="comment">comment</option>
+			  %options%
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<th>Species:</th>
+		<td>select %select_species% or <input class="new_species" type="text" style="width:100px" value=""/> <input type="submit" value="add" class="add_species"/> </td>
+	</tr>
+	<tr>
+		<th>Volume</th>
+		<td>
+			<input name="event_volume" type="text" value="%volume%" style="width:100px"/>(Unit)
+		</td>
+	</tr>
+	<tr>
+		<th>Concentration</th>
+		<td>
+			<input name="event_concentration" type="text" value="%concentration%" style="width:100px"/>(Unit)
+		</td>
+	</tr>
+	<tr>
+		<th>Comment</th>
+		<td>
+			<textarea name="event_comment" rows="4">%comment%</textarea>
+		</td>
+	</tr>
+</table>

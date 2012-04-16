@@ -229,27 +229,27 @@ function init_files(){
 				//OD input
 				$('input[name="od"]').unbind('change');
 				$('input[name="od"]').change(function(){
-					//Save new strain reference
+					//Save OD
 					$.ajax({
 						url: '{{=URL("store_option")}}',
 						data: {record_id:cur_id, var_name:'optical_density', val: $(this).val()},
 						traditional: true
 					});
 				});
-				//Strain reference input
+				//Dilution factor input
 				$('input[name="dilutionf"]').unbind('change');
 				$('input[name="dilutionf"]').change(function(){
-					//Save new strain reference
+					//Save dilution factor
 					$.ajax({
 						url: '{{=URL("store_option")}}',
 						data: {record_id:cur_id, var_name:'dilution_factor', val: $(this).val()},
 						traditional: true
 					});
 				});
-				//Strain reference input
+				//Cell diameter input
 				$('input[name="celldiameter"]').unbind('change');
 				$('input[name="celldiameter"]').change(function(){
-					//Save new strain reference
+					//Save cell diameter
 					$.ajax({
 						url: '{{=URL("store_option")}}',
 						data: {record_id:cur_id, var_name:'cell_diameter', val: $(this).val()},
@@ -1471,6 +1471,212 @@ function add2cut(X) {
 	unifyT();
 }
 
+function add2event(context,g){
+	var p
+	var distance
+	var selectedPoint = null;
+	// Find out if the click occurs on a point.
+	var closestIdx = -1;
+	var closestDistance = Number.MAX_VALUE;
+	// check if the click was on a particular point.
+	for (var i = 0; i < g.selPoints_.length; i++) {
+		p = g.selPoints_[i];
+		distance = Math.pow(p.canvasx - context.dragStartX, 2) + Math.pow(p.canvasy - context.dragStartY, 2);
+		if (!isNaN(distance) && (closestIdx == -1 || distance < closestDistance)) {
+			closestDistance = distance;
+			closestIdx = i;
+		}
+	}
+	// Allow any click within two pixels of the dot.
+	var radius = g.attr_('highlightCircleSize') + 2;
+	if (closestDistance <= radius * radius) {
+		selectedPoint = g.selPoints_[closestIdx];
+	}
+	
+	var time = g.selPoints_[closestIdx].xval;
+	var series_id = -1;
+	var series_name = 'all';
+	var volume = '';
+	var concentration = '';
+	var comment = '';
+	var type = 'comment';
+	if (selectedPoint) {
+		series_id = closestIdx;
+		series_name = selectedPoint.name;
+	}
+	
+	$.ajax({
+		url: '{{=URL("store_event.json")}}',
+		data: {flise_record_id:cur_id, time:time, series_id:series_id},
+		traditional: true,
+		success: function(data){
+			if (Object.getOwnPropertyNames(data).length === 0){
+				//create it
+				$.ajax({
+					url: '{{=URL("store_event.json")}}',
+					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'type', val: type},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_event.json")}}',
+					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'series_name', val: series_name},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_event.json")}}',
+					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'volume', val: volume},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_event.json")}}',
+					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'concentration', val: concentration},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_event.json")}}',
+					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'comment', val: comment},
+					traditional: true
+				});
+				//and display it (or them if it concerns all)
+				var anns = g.annotations();
+				if (series_id==-1){
+					for (var i = 0; i < g.selPoints_.length; i++) {
+						if (!(g.selPoints_[i].annotation)){
+							anns.push({
+								series: g.selPoints_[i].name,
+								xval: time,
+								icon: '/flise/static/icons/mark-event.png',
+								width: 16,
+								height: 16,
+								tickHeight: 2,
+								text: type
+							});
+						}
+					}
+				} else {
+					if (!(selectedPoint.annotation)){
+						var ann = {
+							series: series_name,
+							xval: time,
+							icon: '/flise/static/icons/mark-event.png',
+							width: 16,
+							height: 16,
+							tickHeight: 2,
+							text: type
+						};
+						anns.push(ann);
+					}
+				}
+				g.setAnnotations(anns);
+			} else {
+				//load values
+				type = data['type'];
+				series_name = data['series_name'];
+				volume = data['volume'];
+				concentration = data['concentration'];
+				comment = data['comment'];
+			}
+			//Create corresponding panel
+			$.get('{{=URL(request.application, 'static/templates','event.html')}}', function(htmlstr) {
+				//Reset the panel
+				$('#event').html('');
+				//Adapt panel HTML
+				var st = htmlstr;
+				var stopt;
+				if (series_id == -1){
+					stopt='<option value="wash">wash</option> <option value="injection">injection</option>';
+				} else {
+					stopt='<option value="calibration">calibration</option>';
+				}
+				st = st.replace(/%time%/,time);
+				st = st.replace(/%series_name%/,series_name);
+				st = st.replace(/%volume%/, volume)
+				st = st.replace(/%concentration%/, concentration);
+				st = st.replace(/%comment%/, comment);
+				st = st.replace(/%options%/, stopt);
+				$('#event').append(st);
+				
+				//Select
+				$('#event_type > option[value='+type+']').attr('selected','selected');
+				$('#event_type').unbind('change');
+				$('#event_type').change(function(){
+					//Save type
+					$.ajax({
+						url: '{{=URL("store_event.json")}}',
+						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'type', val: $(this).val()},
+						traditional: true
+					});
+					//Update hidden fields
+					$('input[name="event_volume"]').parent().parent().show();
+					$('input[name="event_concentration"]').parent().parent().show();
+					switch($(this).val())
+					{
+					case 'comment':
+					  $('input[name="event_volume"]').parent().parent().hide();
+					  $('input[name="event_concentration"]').parent().parent().hide();
+					  break;
+					case 'wash':
+					  $('input[name="event_concentration"]').parent().parent().hide();
+					  break;
+					case 'calibration':
+					  $('input[name="event_volume"]').parent().parent().hide();
+					  break;
+					default:
+					  break;
+					}
+				});
+				//Volume reference input
+				$('input[name="event_volume"]').unbind('change');
+				$('input[name="event_volume"]').change(function(){
+					//Save volume
+					$.ajax({
+						url: '{{=URL("store_event.json")}}',
+						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'volume', val: $(this).val()},
+						traditional: true
+					});
+				});
+				//Concentration reference input
+				$('input[name="event_concentration"]').unbind('change');
+				$('input[name="event_concentration"]').change(function(){
+					//Save concentration
+					$.ajax({
+						url: '{{=URL("store_event.json")}}',
+						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'concentration', val: $(this).val()},
+						traditional: true
+					});
+				});
+				//Comment free text area
+				$('textarea[name="event_comment"]').unbind('change');
+				$('textarea[name="event_comment"]').change(function(){
+					//Save comment
+					$.ajax({
+						url: '{{=URL("store_event.json")}}',
+						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'comment', val: $(this).val()},
+						traditional: true
+					});
+				});
+				
+				//Hide fields according to type
+				switch(type)
+				{
+				case 'comment':
+				  $('input[name="event_volume"]').parent().parent().hide();
+				  $('input[name="event_concentration"]').parent().parent().hide();
+				  break;
+				case 'wash':
+				  $('input[name="event_concentration"]').parent().parent().hide();
+				  break;
+				case 'calibration':
+				  $('input[name="event_volume"]').parent().parent().hide();
+				  break;
+				default:
+				  break;
+				}
+			});
+		}
+	});
+}
+
 function createGraph(graph_data, labels){
 	if (g==undefined){
 		g = new Dygraph(document.getElementById("graphdiv"), graph_data,
@@ -1484,17 +1690,7 @@ function createGraph(graph_data, labels){
 						if (tool == 'zoom') {
 							Dygraph.defaultInteractionModel.mousedown(event, g, context);
 						} else {
-							// prevents mouse drags from selecting page text.
-							if (event.preventDefault) {
-								event.preventDefault();  // Firefox, Chrome, etc.
-							} else {
-								event.returnValue = false;  // IE
-								event.cancelBubble = true;
-							}
-							context.px = Dygraph.findPosX(g.canvas_);
-							context.py = Dygraph.findPosY(g.canvas_);
-							context.dragStartX = g.dragGetX_(event, context);
-							context.dragStartY = g.dragGetY_(event, context);
+							context.initializeMouseDown(event, g, context);
 							if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
 								isSelecting = true; 
 							} else {
@@ -1502,7 +1698,7 @@ function createGraph(graph_data, labels){
 									add2cut(getX(context.dragStartX, g));
 								} else {
 									if (tool=='event'){
-										add2event(getX(context.dragStartX, g));
+										add2event(context, g);
 									} else {
 										interval2export(getX(context.dragStartX, g));
 									}

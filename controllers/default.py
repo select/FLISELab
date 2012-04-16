@@ -75,6 +75,25 @@ def store_subint_option():
     else:
         return dict()
 
+def store_event():
+    response.generic_patterns = ['json']
+    flise_record_id = request.vars.flise_record_id
+    time = float(request.vars.time)
+    series_id = int(request.vars.series_id)
+    record = db(db.event.time == time)(db.event.flise_file_id == flise_record_id)(db.event.series_id == series_id).select().first()
+    if request.vars.var_name:
+        var_name = request.vars.var_name
+        val = request.vars.val
+        if record:
+            record.update_record(**{var_name: val})
+        else:
+            record = db.event.insert(flise_file_id=flise_record_id, time=time, series_id=series_id)
+            record.update_record(**{var_name: val})
+    if record:
+        return dict([(field,record[field]) for field in db.event.fields])
+    else:
+        return dict()
+
 def get_data():
     response.generic_patterns = ['html', 'json']
     record = db.flise_file[int(request.args(0))]

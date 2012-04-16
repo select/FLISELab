@@ -71,10 +71,6 @@ use_janrain(auth,filename='private/janrain.key')
 ## >>> rows=db(db.mytable.myfield=='value').select(db.mytable.ALL)
 ## >>> for row in rows: print row.id, row.myfield
 #########################################################################
-db.define_table('species',
-        Field('name'),
-        Field('measured', 'boolean', default = True)
-        )
 db.define_table('strain',
         Field('name'),
         #Field('pymantis_id', 'integer'),
@@ -113,17 +109,19 @@ db.define_table('subintervals',
         )
 db.define_table('calibration',
         Field('subinterval_id', db.subintervals),
-        Field('species_id', db.species),
+        #Field('species_id', db.species),
         Field('offset', 'double'),
         Field('gain', 'double'),
         )
 db.define_table('event',
-        Field('series_id', db.flise_file, requires = IS_EMPTY_OR(IS_IN_DB(db, 'flise_file.id'))),
+        Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
         Field('time', 'double'),
-        Field('type', requires = IS_IN_SET('wash calibration injection'.split())),
-        Field('species_id', db.species, label="Injected species"),
+        Field('type', requires = IS_IN_SET('wash calibration injection comment'.split())),
+        Field('series_id', 'integer'),
+        Field('series_name', 'text'),
         Field('concentration', 'double'),
         Field('volume', 'double'),
+        Field('comment', 'text', readable = False, writable = False),
         )
 JS = lambda x: SCRIPT(x, _type="text/javascript")
 

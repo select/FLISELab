@@ -36,11 +36,6 @@
 						<hr />
 						<h2 onclick="collapse('export')">7. Export (per segment)</h2>
 						<div id="export" style="display:none"> ... upload or select a file.</div>
-						<hr />
-						<h2>Temp div zone for event</h2>
-						<div id="event"> 
-							... click with event tool (for calibration or comment, it must be a point on a series).
-						</div>
 					</div>
 				</td>
 			</tr>
@@ -51,7 +46,8 @@
 			</tr>
 		</table>
       <div style="display: none" id="species_store">{{=LOAD('default', 'species')}}</div>
-        <div id="subinterval"> double click to select a zone </div>
+		<div id="subinterval"> ... click with export tool to select a segmentation zone. </div>
+		<div id="event"> ... click with event tool (for calibration or comment, it must be a point on a series).</div>
 		<script type="text/javascript">
 		{{include 'default/script.js'}}
 		</script>

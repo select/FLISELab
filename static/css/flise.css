@@ -10,6 +10,10 @@
     color: white;
     display: none;
 }
+#event {
+    color: white;
+    display: none;
+}
 /**********************************/
 #create_record {
     display: none;

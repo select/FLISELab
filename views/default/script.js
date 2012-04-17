@@ -1057,11 +1057,12 @@ function interval2export(pos) {
 					});
 				});
 				//Calibration
-                modal = $("#subinterval").modal({
-                    overlayClose:true,
-                    opacity:20,
-                });
 				
+				//Make popup
+				modal = $("#subinterval").modal({
+					overlayClose:true,
+					opacity:20,
+				});
 			});
 		}
 	});
@@ -1796,6 +1797,12 @@ function add2event(context,g){
 						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'comment', val: $(this).val()},
 						traditional: true
 					});
+				});
+				
+				//Show options
+				modal = $("#event").modal({
+					overlayClose:true,
+					opacity:20,
 				});
 				
 				//Hide fields according to type

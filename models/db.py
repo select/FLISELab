@@ -131,7 +131,8 @@ db.define_table('flise_file',
         Field('dropT', 'text', readable = False, writable = False),#pickle
         Field('cutT', 'text', readable = False, writable = False),#pickle
         Field('nocutT', 'text', readable = False, writable = False),#pickle
-        Field('event_id', 'list:reference event', readable = False, writable = False),
+        Field('eventT', 'text', readable = False, writable = False),#pickle
+        #Field('event_id', 'list:reference event', readable = False, writable = False),
         )
 db.define_table('subintervals',
         Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
@@ -142,7 +143,6 @@ db.define_table('subintervals',
         Field('optical_density', 'double', readable = False, writable = False),
         Field('dilution_factor', 'double', readable = False, writable = False),
         Field('cell_diameter', 'double', readable = False, writable = False),
-
         #Field('species_id', db.species),
         Field('offset', 'list:string'),#JSON list of doubles
         Field('gain', 'list:string'),#JSON list of doubles

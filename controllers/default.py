@@ -102,6 +102,15 @@ def store_event():
     else:
         return dict()
 
+def del_event():
+    response.generic_patterns = ['json']
+    flise_record_id = request.vars.flise_record_id
+    time = float(request.vars.time)
+    series_id = int(request.vars.series_id)
+    record = db(db.event.time == time)(db.event.flise_file_id == flise_record_id)(db.event.series_id == series_id).select().first()
+    if record:
+        record.delete()
+
 def get_data():
     response.generic_patterns = ['html', 'json']
     record = db.flise_file[int(request.args(0))]

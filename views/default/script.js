@@ -63,15 +63,19 @@ function init_files(){
 		
 		//Load time-series and associated data, then display graph and initiate callbacks			
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
+			//Load raw data
 			graph_data = data.result;
-			//TODO FALKO: Load positions from stored previously entered values (if any), or leave empty
+			//Load segmentation variables
+			cutT = undefined; //Array of time point
+			nocutT = undefined; //Array of Array([start,end])
+			dropT = undefined; //Array of Array([start,end])
+			eventT = undefined; //Array or list
 			//Present state
-            cutT = undefined; nocutT = undefined; dropT = undefined;
-            get_set_flisefile_option(cur_id, 'cutT')
-            get_set_flisefile_option(cur_id, 'nocutT')
-            get_set_flisefile_option(cur_id, 'dropT')
-            console.log('init cutT: '+JSON.stringify(cutT))
-			eventT = [];//Array or list
+			get_set_flisefile_option(cur_id, 'cutT');
+			get_set_flisefile_option(cur_id, 'nocutT');
+			get_set_flisefile_option(cur_id, 'dropT');
+			get_set_flisefile_option(cur_id, 'eventT');
+				//console.log('init cutT: '+JSON.stringify(cutT));
 			//Previous state
 			prevcutT = [];
 			prevnocutT = [];
@@ -80,7 +84,7 @@ function init_files(){
 			//Reset the global graph object "g"
 			g=undefined;
 			g2=undefined;
-			//Create "g"
+			//Create "g": main series plot
 			createGraph(graph_data, data.labels);
 			//Initiate graph underlaycallback based on cutT, etc...
 			unifyT();
@@ -117,7 +121,7 @@ function init_files(){
 				//Series name input
 				$('select[name="select_species"]').unbind('change');
 				$('select[name="select_species"]').change(function(){
-               console.log('triggered select_species');
+               //console.log('triggered select_species');
 					var items = [];
 					$('select[name="select_species"]').each(function(){
                         if (! $(this).val() ) items.push('Species');
@@ -1155,7 +1159,25 @@ function save2undo(){
 	$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 	$("#autoseg").removeAttr("disabled").removeAttr("style");
 }
-	
+
+function get_set_flisefile_option(record_id, var_name){
+    var data = {record_id:record_id, var_name:var_name};
+    if(window[var_name] != undefined){
+        data.val = JSON.stringify(window[var_name]);
+    }
+    $.ajax({
+        dataType: 'json',
+        async: false,
+        url: '{{=URL('store_option.json')}}',
+        data: data,
+        success: function(data){
+            if (window[var_name] == undefined){
+                if (data != null) window[var_name] = JSON.parse(data);
+                else window[var_name] = [];
+            }
+        }
+    });
+}
 
 function unifyT() {
 	//Drop tool defines intervals to ignore (data to trash), therefore it has priority (one cannot insert a cut point or a nocut interval in a drop zone)
@@ -1227,7 +1249,6 @@ function unifyT() {
 		}
 	}
 	
-	
 	g.updateOptions({
 		file: graph_data, 
 		underlayCallback: function(canvas, area, g) {
@@ -1260,29 +1281,10 @@ function unifyT() {
 			}
 		}
 	});
-    //save dropT, cutT, nocutT to db.flise_file
-    get_set_flisefile_option(cur_id, 'cutT');
-    get_set_flisefile_option(cur_id, 'nocutT');
-    get_set_flisefile_option(cur_id, 'dropT');
-    
-}
-function get_set_flisefile_option(record_id, var_name){
-    var data = {record_id:record_id, var_name:var_name};
-    if(window[var_name] != undefined){
-        data.var_value = window[var_name]
-    }
-    $.ajax({
-        dataType: 'json',
-        async: false,
-        url: '{{=URL('store_option.json')}}',
-        data: data,
-        success: function(data){
-            if (window[var_name] == undefined){
-                if (data != null) window[var_name] = data;
-                else window[var_name] = [];
-            }
-        }
-    });
+	//save dropT, cutT, nocutT to db.flise_file
+	get_set_flisefile_option(cur_id, 'cutT');
+	get_set_flisefile_option(cur_id, 'nocutT');
+	get_set_flisefile_option(cur_id, 'dropT');
 }
 
 function add2nocut(startX, endX) {
@@ -1462,7 +1464,40 @@ function erase(startX, endX) {
 			iN--;
 		}
 	}
-	//EVENT is missing here
+	for (var iE=0; iE<eventT.length; iE++) {
+		if ((eventT[iE]>=startX)&&(eventT[iE]<=endX)){
+			//remove from db
+			for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
+				$.ajax({
+					url: '{{=URL("store_event.json")}}',
+					data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+					traditional: true,
+					success: function(data){
+						if (!(Object.getOwnPropertyNames(data).length === 0)){
+							//remove it
+							$.ajax({
+								url: '{{=URL("del_event.json")}}',
+								data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+								traditional: true
+							});
+						}
+					}
+				});
+			}
+			//remove from g
+			var anns = g.annotations();
+			for (var iA=0;iA<anns.length;iA++){
+				if (anns[iA].xval==eventT[iE]){
+					anns.splice(iA,1);
+					iA--;
+				}
+			}
+			g.setAnnotations(anns);
+			//remove from eventT
+			eventT.splice(iE,1);
+			iE--;
+		}
+	}
 	unifyT();
 }
 
@@ -1565,7 +1600,42 @@ function add2event(context,g){
 					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'comment', val: comment},
 					traditional: true
 				});
-				//and display it (or them if it concerns all)
+				//and add it to the eventT (eventT behaves as a list to remember locally where the event are, even if the events/annotations are stored in db, and in the graph indirectly as well.): so, it is redendant (bad baaaad!), but conveniant (to be managed as cutT for instance).
+				//save2undo(); //for the moment we don't undo event addition
+				//If array is empty, initialize
+				if (eventT.length==0){
+					eventT.push(time);
+				} else {
+					var flag_exist = true;
+					//Check if it already exists
+					for (i=0; i<eventT.length; i++) {
+						if (eventT[i]==time){
+							flag_exist = false;
+						}
+					}
+					//Otherwise insert it while preserving the increasing order
+					if (flag_exist){
+						var flag = true;
+						if (time<eventT[0]){
+							eventT.splice(0,0,time);
+							flag = false;
+						} else {
+							for (i=1; i<eventT.length; i++) {
+								if ((time>eventT[i-1])&&(time<eventT[i])){
+									eventT.splice(i,0,time);
+									flag = false;
+									break;
+								}
+							}
+						}
+						if (flag){
+							eventT.push(time);
+						}
+					}
+				}
+				//save eventT db.flise_file
+				get_set_flisefile_option(cur_id, 'eventT');
+				//and display event marker (or them if it concerns all series)
 				var anns = g.annotations();
 				if (series_id==-1){
 					for (var i = 0; i < g.selPoints_.length; i++) {

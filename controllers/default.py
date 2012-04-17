@@ -195,24 +195,34 @@ def get_savgol():
     return dict(result = result)
 
 def export_spreadsheet():
+    #print 'called export_spreadsheet ',request.vars.data
     export_format = request.vars.format
     from gluon.contrib import simplejson
     try:
-        header = simplejson.loads(request.vars.header)
-        data = simplejson.loads(request.vars.data)
+        data_object = simplejson.loads(request.vars.data)
     except:
         import sys
         raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
-    import tablib
-    data = tablib.core.Dataset(headers=header)
-    data.extend(data)
+    import tablib.core
+    databook = tablib.core.Databook()
+    for name, data in data_object.iteritems():
+        #print 'not using transmitted data header: ',data['header']
+        if False and data['header']:
+            dataset = tablib.core.Dataset(headers = data['header'])
+        else:
+            dataset = tablib.core.Dataset()
+        for row in data['data']:
+            if row:
+                dataset.append(row)
+        #dataset.extend(data['data'])
+        databook.add_sheet(dataset)
     if export_format in 'yaml csv xls xlsx':
         import gluon.contenttype
         import os.path
         response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
         response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
         #response.write(getattr(data,export_format), escape=False)
-        return getattr(data,export_format)
+        return getattr(databook,export_format)
     return ''
 
 def user():

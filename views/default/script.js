@@ -84,6 +84,7 @@ function init_files(){
 			g=undefined;
 			g2=undefined;
 			//Create "g": main series plot
+            graph_labels = data.labels
 			createGraph(graph_data, data.labels);
 			//Initiate graph underlaycallback based on cutT, etc...
 			unifyT();
@@ -989,9 +990,29 @@ function interval2export(pos) {
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				//spreadsheet export test
 				$('#export2excel').click(function(){
-						 alert('rock');
-						 $('#json2spreadsheet_form').html(" <input type='hidden' value='"+JSON.stringify(data.labels)+"' name='header'/> <input type='hidden' value='"+JSON.stringify(graph_data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
-						 $('#json2spreadsheet_form').submit();
+                    var raw_data = [];
+                    for (var i_count=Math.floor( intStart); i_count<=intEnd; ++i_count) raw_data.push(graph_data[i_count]);
+                    console.log(JSON.stringify(raw_data));
+                    var data = {'1 Paramters': { header:[], 
+                                    data: [
+                                    ['Name',$('input[name="sub_name"]').val()],
+                                    ['Strain',$('input[name="sub_strain_ref"]').val()],
+                                    ['Optical density',$('input[name="sub_od"]').val()],
+                                    ['Dilution factor',$('input[name="sub_dilutionf"]').val()],
+                                    ['Cell diameter',$('input[name="sub_celldiameter"]').val()],
+                                    ['Comments',$('input[name="sub_comments"]').val()],
+                                    ['Calibration','']
+                                    ]
+                                },
+                                '2 Raw Data': { header:graph_labels, 
+                                    data: raw_data
+                                },
+                                '3 Processed Data': { header:graph_labels, 
+                                    data: [graph_data[0]]
+                                }
+                            }
+                     $('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
+                     $('#json2spreadsheet_form').submit();
 				});	
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				

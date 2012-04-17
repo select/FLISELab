@@ -23,6 +23,42 @@ else:
 response.generic_patterns = ['*'] if request.is_local else []
 
 #########################################################################
+#this is a config helper 
+db.define_table('config',
+        Field('section'),
+        Field('option'),
+        Field('value')
+        )
+class Config:
+    '''configure general things needed'''
+
+    def __init__(self):
+        self.create('pymantis','url','http://pymantis.org/pymantis_server/tlc/records/Demo_Table')
+        self.create('pymantis','login','user:password')
+    def get(self, section, option):
+        '''get a value'''
+        record = db(db.config.option == option)(db.config.section == section).select(db.config.value).first()
+        if record:
+            return record.value.strip()
+
+    def create(self, section, option, value):
+        '''create value if it does not exist'''
+        if not db(db.config.option == option)(db.config.section == section).count():
+            db.config.insert(section = section, option = option, value = value)
+
+    def set(self, section, option, value):
+        '''set or update a value'''
+        record = db(db.config.option == option)(db.config.section == section).select().first()
+        if record:
+            #record.update_record(value = value)
+            db.config[record.id] = dict(section = section, option = option, value = value)
+        else:
+            db.config.insert(section = section, option = option, value = value)
+    def write(self):
+        pass
+app_config = Config()
+#########################################################################
+#########################################################################
 ## Here is sample code if you need for
 ## - email capabilities
 ## - authentication (registration, login, logout, ... )
@@ -92,9 +128,9 @@ db.define_table('flise_file',
         Field('cell_diameter', 'double', readable = False, writable = False),
         Field('disp_smooth', 'boolean', readable = False, writable = False),
         Field('disp_smooth_value', 'integer', readable = False, writable = False),
-        Field('segment_drop', 'text', readable = False, writable = False),#pickle
-        Field('segment_cut', 'text', readable = False, writable = False),#pickle
-        Field('segment_nocut', 'text', readable = False, writable = False),#pickle
+        Field('dropT', 'text', readable = False, writable = False),#pickle
+        Field('cutT', 'text', readable = False, writable = False),#pickle
+        Field('nocutT', 'text', readable = False, writable = False),#pickle
         Field('event_id', 'list:reference event', readable = False, writable = False),
         )
 db.define_table('subintervals',
@@ -106,12 +142,10 @@ db.define_table('subintervals',
         Field('optical_density', 'double', readable = False, writable = False),
         Field('dilution_factor', 'double', readable = False, writable = False),
         Field('cell_diameter', 'double', readable = False, writable = False),
-        )
-db.define_table('calibration',
-        Field('subinterval_id', db.subintervals),
+
         #Field('species_id', db.species),
-        Field('offset', 'double'),
-        Field('gain', 'double'),
+        Field('offset', 'list:string'),#JSON list of doubles
+        Field('gain', 'list:string'),#JSON list of doubles
         )
 db.define_table('event',
         Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),

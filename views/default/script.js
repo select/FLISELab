@@ -64,11 +64,13 @@ function init_files(){
 		//Load time-series and associated data, then display graph and initiate callbacks			
 		$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 			graph_data = data.result;
-			//TO FALKO: Load positions from stored previously entered values (if any), or leave empty
+			//TODO FALKO: Load positions from stored previously entered values (if any), or leave empty
 			//Present state
-			cutT = [];//Array or list
-			nocutT = [];//Array of Array([start,end])
-			dropT = [];//Array of Array([start,end])
+            cutT = undefined; nocutT = undefined; dropT = undefined;
+            get_set_flisefile_option(cur_id, 'cutT')
+            get_set_flisefile_option(cur_id, 'nocutT')
+            get_set_flisefile_option(cur_id, 'dropT')
+            console.log('cutT: '+JSON.stringify(cutT))
 			eventT = [];//Array or list
 			//Previous state
 			prevcutT = [];
@@ -1009,6 +1011,10 @@ function interval2export(pos) {
 					});
 				});
 				//Calibration
+                modal = $("#subinterval").modal({
+                    overlayClose:true,
+                    opacity:20,
+                });
 				
 			});
 		}
@@ -1254,7 +1260,27 @@ function unifyT() {
 			}
 		}
 	});
-	
+    //save dropT, cutT, nocutT to db.flise_file
+    get_set_flisefile_option(cur_id, 'cutT')
+    get_set_flisefile_option(cur_id, 'nocutT')
+    get_set_flisefile_option(cur_id, 'dropT')
+}
+function get_set_flisefile_option(record_id, var_name){
+    var data = {record_id:record_id, var_name:var_name};
+    if(window[var_name] != undefined){
+        data.var_value = window[var_name]
+    }
+    $.ajax({
+        dataType: 'json',
+        async: false,
+        url: '{{=URL('store_option.json')}}',
+        data: data,
+        success: function(data){
+            if (data != null) window[var_name] = data;
+            else window[var_name] = [];
+            console.log(var_name+' should be: '+JSON.stringify(window[var_name]));
+        }
+    });
 }
 
 function add2nocut(startX, endX) {

@@ -20,6 +20,7 @@ def index():
     response.files.append(URL(request.application, 'static/colorpicker', 'jquery.colorPicker.js'))
     response.files.append(URL(request.application, 'static/colorpicker', 'colorPicker.css'))
     response.files.append(URL(request.application, 'static/css', 'flise.css'))
+    response.files.append(URL(request.application, 'static/js', 'jquery.simplemodal.1.4.1.min.js'))
     #import os
     #data = open(os.path.join(request.folder, 'private', 'FLISE', 'data.csv')).readlines()
     #data = '\\n'.join([l[:-1] for l in data])
@@ -52,10 +53,17 @@ def file():
     return TAG[''](JS(response.headers['web2py-component-command']) if response.headers.has_key('web2py-component-command') else '', form)
 
 def store_option():
+    response.generic_patterns = ['html', 'json']
     record_id = request.vars.record_id
     var_name = request.vars.var_name
-    val = request.vars.val
-    db.flise_file[int(record_id)].update_record(**{var_name: val})
+    if request.vars.val:
+        val = request.vars.val
+        db.flise_file[int(record_id)].update_record(**{var_name: val})
+    if request.extension == 'json':
+        from gluon.contrib import simplejson
+        return simplejson.dumps(getattr(db.flise_file[int(record_id)], var_name))
+    else:
+        return getattr(db.flise_file[int(record_id)], var_name)
 
 def store_subint_option():
     response.generic_patterns = ['json']

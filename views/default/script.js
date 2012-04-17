@@ -1000,7 +1000,7 @@ function interval2export(pos) {
                         }
                     }
                     //for (var i_count=Math.floor( intStart); i_count<=intEnd; ++i_count) raw_data.push(graph_data[i_count]);//does not work
-                    var data = {'1 Paramters': { header:[], 
+                    var data = {'1 Parameters': { header:[], 
                                     data: [
                                     ['Name',$('input[name="sub_name"]').val()],
                                     ['Strain',$('input[name="sub_strain_ref"]').val()],
@@ -1018,7 +1018,7 @@ function interval2export(pos) {
                                     data: [graph_data[0]]
                                 }
                             }
-                    $('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
+                    $('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xls' name='format'/> ");
                     $('#json2spreadsheet_form').submit();
 				});	
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx

@@ -899,10 +899,11 @@ function autoseg(data){
 function interval2export(pos) {
 	//Find interval
 	var flag = true;
+    var intStart, intEnd;
 	for (iD=0; iD<dataT.length; iD++){
 		if ((dataT[iD][0]<pos)&&(dataT[iD][1]>pos)){
-			var intStart=dataT[iD][0];
-			var intEnd=dataT[iD][1];
+			intStart=dataT[iD][0];
+			intEnd=dataT[iD][1];
 			flag = false;
 			break;
 		}
@@ -988,11 +989,16 @@ function interval2export(pos) {
 				$('#subinterval').append(st);
 				
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-				//spreadsheet export test
+				//spreadsheet export
 				$('#export2excel').click(function(){
                     var raw_data = [];
-                    for (var i_count=Math.floor( intStart); i_count<=intEnd; ++i_count) raw_data.push(graph_data[i_count]);
-                    console.log(JSON.stringify(raw_data));
+                    for (var i=0; i<graph_data.length; ++i){
+                        if ((graph_data[i][0]>=intStart) && (graph_data[i][0]<=intEnd)){
+                            raw_data.push(graph_data[i]);
+                            //console.log(graph_data[i][0]); 
+                        }
+                    }
+                    //for (var i_count=Math.floor( intStart); i_count<=intEnd; ++i_count) raw_data.push(graph_data[i_count]);//does not work
                     var data = {'1 Paramters': { header:[], 
                                     data: [
                                     ['Name',$('input[name="sub_name"]').val()],
@@ -1011,8 +1017,8 @@ function interval2export(pos) {
                                     data: [graph_data[0]]
                                 }
                             }
-                     $('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
-                     $('#json2spreadsheet_form').submit();
+                    $('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xlsx' name='format'/> ");
+                    $('#json2spreadsheet_form').submit();
 				});	
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				

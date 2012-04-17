@@ -80,6 +80,7 @@ function init_files(){
 			prevnocutT = [];
 			prevdropT = [];
 			preveventT = [];
+			dataT = [];
 			//Reset the global graph object "g"
 			g=undefined;
 			g2=undefined;
@@ -1286,6 +1287,7 @@ function unifyT() {
 		}
 	}
 	//Data zones are intervals between drop zones and cuts.
+	var prevdataT = dataT;
 	dataT = [];
 	dataT.push([0]);
 	for (iD=0; iD<dropT.length; iD++) {
@@ -1318,6 +1320,34 @@ function unifyT() {
 			iD--;
 		}
 	}
+	//Delete subintervals that have been modified
+	for (var iP=0; iP<prevdataT.length; iP++){
+		//find difference between prevdataT and dataT
+		flag=true;
+		for (iD=0; iD<dataT.length; iD++) {
+			if ((dataT[iD][0]==prevdataT[iP][0])&&(dataT[iD][1]==prevdataT[iP][1])){
+				flag = false;
+				break;
+			}
+		}
+		if (flag){
+			$.ajax({
+				url: '{{=URL("store_subint_option.json")}}',
+				data: {flise_record_id:cur_id, interval_time:prevdataT[iP][0]+':'+prevdataT[iP][1]},
+				traditional: true,
+				success: function(data){
+					if (!(Object.getOwnPropertyNames(data).length === 0)){
+						//remove it
+						$.ajax({
+							url: '{{=URL("del_subint.json")}}',
+							data: {flise_record_id:data['flise_file_id'], interval_time:data['extract_time']},
+							traditional: true
+						});
+					}
+				}
+			});
+		}
+	}		
 	
 	g.updateOptions({
 		file: graph_data, 

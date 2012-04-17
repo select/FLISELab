@@ -83,6 +83,14 @@ def store_subint_option():
     else:
         return dict()
 
+def del_subint():
+    response.generic_patterns = ['json']
+    flise_record_id = request.vars.flise_record_id
+    interval_time = request.vars.interval_time
+    sel_set = db(db.subintervals.extract_time == interval_time)(db.subintervals.flise_file_id == flise_record_id)
+    if sel_set:
+        sel_set.delete()
+
 def store_event():
     response.generic_patterns = ['json']
     flise_record_id = request.vars.flise_record_id

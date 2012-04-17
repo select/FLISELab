@@ -46,6 +46,7 @@
 			</tr>
 		</table>
       <div style="display: none" id="species_store">{{=LOAD('default', 'species')}}</div>
+      <div style="display: none" id="strains_store">{{=LOAD('default', 'strains')}}</div>
 		<div id="subinterval"> ... click with export tool to select a segmentation zone. </div>
 		<div id="event"> ... click with event tool (for calibration or comment, it must be a point on a series).</div>
         <form id="json2spreadsheet_form" style="display:none" method="POST" target="_blank" action="{{=URL('default', 'export_spreadsheet')}}"></form>

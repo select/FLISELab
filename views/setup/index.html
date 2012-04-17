@@ -16,6 +16,9 @@ Setup pyMantis location for synchronization of the strain database.
 <h2>Sync pyMantis Strains</h2>
 <a class="button" id='sync'>sync</a>
 <div id="sync_res"></div>
+<h2>Import pyMantis Strains</h2>
+Log into pyMantis and go to the <a href="http://translucent-network.org/pyMantis/tlc/records.json/Strain">pyMantis Strain export in JSON format</a>. Copy the output to the form below and submit it.
+{{=LOAD('setup', 'import_pymantis_strains', ajax=True)}}
 <br />
 <br />
 <br />

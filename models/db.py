@@ -109,7 +109,7 @@ use_janrain(auth,filename='private/janrain.key')
 #########################################################################
 db.define_table('strain',
         Field('name'),
-        #Field('pymantis_id', 'integer'),
+        Field('identifier', 'integer')
         )
 db.define_table('flise_file',
         Field('name'),

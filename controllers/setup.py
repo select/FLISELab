@@ -94,6 +94,19 @@ def sync_pymantis_strains():
     #-----------------------------------------------------
     return outcontents
 
+def import_pymantis_strains():
+    form = form_factory(Field('json_strains','text', label='JSON Strain Data', requires=IS_NOT_EMPTY()))
+    if form.accepts(request.vars, keepvalues=True):
+        from gluon.contrib import simplejson
+        strain_table = simplejson.loads(form.vars.json_strains)
+        for row in strain_table['table']:
+            identifier = row[0]
+            name = row[1]
+            if not db(db.strain.name == name)(db.strain.identifier == identifier).count():
+                db.strain.insert(name=name, identifier=identifier)
+    return form
+
+
 def first_user():
     '''
     check if there is a user in the db

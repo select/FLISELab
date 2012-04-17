@@ -167,6 +167,9 @@ def species():
                 species.add(species_item)
     return SELECT([OPTION('')]+[OPTION(x,_value=x) for x in species], _name="select_species", _style="width:100px")
 
+def strains():
+    return SELECT([OPTION('')]+[OPTION(record.name,_value=record.identifier) for record in db(db.strain.id>0).select()], _name="select_strain", _style="width:100px")
+
 def global_options():
     response.generic_patterns = ['json']
     record = db.flise_file[int(request.args(0))]

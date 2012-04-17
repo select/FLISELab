@@ -973,7 +973,7 @@ function interval2export(pos) {
 				st = st.replace(/%start%/,intStart);
 				st = st.replace(/%end%/,intEnd);
 				st = st.replace(/%name%/, name)
-				st = st.replace(/%strain_ref%/, strain_ref);
+				st = st.replace(/%strain_ref%/, $('#strains_store').html());
 				st = st.replace(/%comments%/, comments);
 				st = st.replace(/%od%/, od);
 				st = st.replace(/%dilutionf%/, dilutionf);
@@ -988,6 +988,9 @@ function interval2export(pos) {
 				}
 				st = st.replace(/%caloptions%/,'');
 				$('#subinterval').append(st);
+                $('#subinterval select[name="select_strain"][value='+strain_ref+']').attr('selected','selected');
+                //jQuery('input.integer').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
+                //jQuery('input.double,input.decimal').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-\.,]|[\-](?=.)|[\.,](?=[0-9]*[\.,])/g,'').reverse();});
 				
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				//spreadsheet export
@@ -996,19 +999,17 @@ function interval2export(pos) {
                     for (var i=0; i<graph_data.length; ++i){
                         if ((graph_data[i][0]>=intStart) && (graph_data[i][0]<=intEnd)){
                             raw_data.push(graph_data[i]);
-                            //console.log(graph_data[i][0]); 
                         }
                     }
-                    //for (var i_count=Math.floor( intStart); i_count<=intEnd; ++i_count) raw_data.push(graph_data[i_count]);//does not work
                     var data = {'1 Parameters': { header:[], 
                                     data: [
-                                    ['Name',$('input[name="sub_name"]').val()],
-                                    ['Strain',$('input[name="sub_strain_ref"]').val()],
-                                    ['Optical density',$('input[name="sub_od"]').val()],
-                                    ['Dilution factor',$('input[name="sub_dilutionf"]').val()],
-                                    ['Cell diameter',$('input[name="sub_celldiameter"]').val()],
-                                    ['Comments',$('input[name="sub_comments"]').val()],
-                                    ['Calibration','']
+                                    ['Name',$('input[name="sub_name"]').val(), ' '],
+                                    ['Strain',$('#subinterval select[name="select_strain"]').val(), $('#subinterval option:selected').html()],
+                                    ['Optical density',$('input[name="sub_od"]').val(), ' '],
+                                    ['Dilution factor',$('input[name="sub_dilutionf"]').val(), ' '],
+                                    ['Cell diameter',$('input[name="sub_celldiameter"]').val(), ' '],
+                                    ['Comments',$('input[name="sub_comments"]').val(), ' '],
+                                    ['Calibration','', ' ']
                                     ]
                                 },
                                 '2 Raw Data': { header:graph_labels, 

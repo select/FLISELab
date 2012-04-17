@@ -128,10 +128,10 @@ db.define_table('flise_file',
         Field('cell_diameter', 'double', readable = False, writable = False),
         Field('disp_smooth', 'boolean', readable = False, writable = False),
         Field('disp_smooth_value', 'integer', readable = False, writable = False),
-        Field('dropT', 'text', readable = False, writable = False),#pickle
-        Field('cutT', 'text', readable = False, writable = False),#pickle
-        Field('nocutT', 'text', readable = False, writable = False),#pickle
-        Field('eventT', 'text', readable = False, writable = False),#pickle
+        Field('dropT', 'text', readable = False, writable = False),#JSON
+        Field('cutT', 'text', readable = False, writable = False),#JSON
+        Field('nocutT', 'text', readable = False, writable = False),#JSON
+        Field('eventT', 'text', readable = False, writable = False),#JSON
         #Field('event_id', 'list:reference event', readable = False, writable = False),
         )
 db.define_table('subintervals',

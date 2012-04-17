@@ -107,9 +107,9 @@ def del_event():
     flise_record_id = request.vars.flise_record_id
     time = float(request.vars.time)
     series_id = int(request.vars.series_id)
-    record = db(db.event.time == time)(db.event.flise_file_id == flise_record_id)(db.event.series_id == series_id).select().first()
-    if record:
-        record.delete()
+    sel_set = db(db.event.time == time)(db.event.flise_file_id == flise_record_id)(db.event.series_id == series_id)
+    if sel_set:
+        sel_set.delete()
 
 def get_data():
     response.generic_patterns = ['html', 'json']

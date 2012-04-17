@@ -75,7 +75,6 @@ function init_files(){
 			get_set_flisefile_option(cur_id, 'nocutT');
 			get_set_flisefile_option(cur_id, 'dropT');
 			get_set_flisefile_option(cur_id, 'eventT');
-				//console.log('init cutT: '+JSON.stringify(cutT));
 			//Previous state
 			prevcutT = [];
 			prevnocutT = [];
@@ -88,6 +87,46 @@ function init_files(){
 			createGraph(graph_data, data.labels);
 			//Initiate graph underlaycallback based on cutT, etc...
 			unifyT();
+			//Display events if they are some
+			var anns = g.annotations(); //=[];
+			for (var iE=0; iE<eventT.length; iE++) {
+				for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
+					$.ajax({
+						url: '{{=URL("store_event.json")}}',
+						data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+						traditional: true,
+						success: function(data){
+							if (!(Object.getOwnPropertyNames(data).length === 0)){
+								//add it to g annotations
+								if (data['series_id']==-1){
+									for (var i = 0; i < g.colors_.length; i++) {
+										anns.push({
+											series: g.user_attrs_['labels'][i+1],
+											xval: data['time'],
+											icon: '/flise/static/icons/mark-event.png',
+											width: 16,
+											height: 16,
+											tickHeight: 2,
+											text: data['type']
+										});
+									}
+								} else {
+									anns.push({
+										series: data['series_name'],
+										xval: data['time'],
+										icon: '/flise/static/icons/mark-event.png',
+										width: 16,
+										height: 16,
+										tickHeight: 2,
+										text: data['type']
+									});
+								}
+							}
+						}
+					});
+				}
+			}
+			g.setAnnotations(anns);
 			
 			//Load series options and create corresponding panel
 			$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
@@ -203,6 +242,9 @@ function init_files(){
 						traditional: true
 					});
 				});
+				//now that the series have a correct naming, disp event
+				g.setAnnotations(g.annotations());
+				//disp panel
 				$('#series_options').slideDown();
 			});
 			
@@ -1467,17 +1509,17 @@ function erase(startX, endX) {
 	for (var iE=0; iE<eventT.length; iE++) {
 		if ((eventT[iE]>=startX)&&(eventT[iE]<=endX)){
 			//remove from db
-			for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
+			for (var iS=-1;iS<graph_data[0].length-1;iS++){
 				$.ajax({
 					url: '{{=URL("store_event.json")}}',
-					data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+					data: {flise_record_id:cur_id, time:eventT[iE], series_id:iS},
 					traditional: true,
 					success: function(data){
 						if (!(Object.getOwnPropertyNames(data).length === 0)){
 							//remove it
 							$.ajax({
 								url: '{{=URL("del_event.json")}}',
-								data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+								data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id']},
 								traditional: true
 							});
 						}
@@ -1499,6 +1541,8 @@ function erase(startX, endX) {
 		}
 	}
 	unifyT();
+	//save eventT to db.flise_file
+	get_set_flisefile_option(cur_id, 'eventT');
 }
 
 function add2cut(X) {

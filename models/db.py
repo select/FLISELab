@@ -117,7 +117,6 @@ db.define_table('flise_file',
         Field('sampling_time', 'double', default=0.5, label='Sampling Time (s)'),
         Field('created_on', 'date', default = request.now),
         #Field('created_by', db.auth_user),
-        #Field('series_species_id', 'list:reference species', readable = False, writable = False),
         Field('series_species', 'list:string', readable = False, writable = False),
         Field('series_colors', 'list:string', readable = False, writable = False),
         Field('series_show', 'list:string', readable = False, writable = False),
@@ -132,7 +131,6 @@ db.define_table('flise_file',
         Field('cutT', 'text', readable = False, writable = False),#JSON
         Field('nocutT', 'text', readable = False, writable = False),#JSON
         Field('eventT', 'text', readable = False, writable = False),#JSON
-        #Field('event_id', 'list:reference event', readable = False, writable = False),
         )
 db.define_table('subintervals',
         Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
@@ -143,7 +141,6 @@ db.define_table('subintervals',
         Field('optical_density', 'double', readable = False, writable = False),
         Field('dilution_factor', 'double', readable = False, writable = False),
         Field('cell_diameter', 'double', readable = False, writable = False),
-        #Field('species_id', db.species),
         Field('offset', 'list:string'),#JSON list of doubles
         Field('gain', 'list:string'),#JSON list of doubles
         )

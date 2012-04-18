@@ -206,6 +206,7 @@ class Savgol:
             nleft = abs(int(nleft))
             nright = abs(int(nright))
             order = abs(int(order))
+            deriv = abs(int(deriv``))
         except ValueError, msg:
             raise ValueError("nleft, nright and order have to be of type int")
         if nleft < 0 or nright < 0 or nleft+nright < 1:

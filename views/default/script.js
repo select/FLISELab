@@ -4,6 +4,8 @@ var g;//Graph variable (from dygraph)
 var g2;//Graph variable for preprocessing result
 var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
 var cur_id;//ID of the Flise-file
+$('#create_record').slideDown();
+$('.current_record').hide();
 
 //Global variables to save
 var cutT;
@@ -51,8 +53,9 @@ function init_files(){
 		cur_id = $(this).parent().attr('id');
 		$('.current_record').html($(this).html());
 		$('.current_record').attr('id', cur_id);
+		$('.current_record').show();
 		//Rearrange which panel is developped or not
-		$('#my_records').slideUp();
+		$('#create_record').slideUp();
 		$('#edit_record').slideDown();
 		$('#series_options').slideUp();
 		$('#global_options').slideUp();
@@ -85,7 +88,7 @@ function init_files(){
 			g=undefined;
 			g2=undefined;
 			//Create "g": main series plot
-            graph_labels = data.labels
+               graph_labels = data.labels;
 			createGraph(graph_data, data.labels);
 			//Initiate graph underlaycallback based on cutT, etc...
 			unifyT();
@@ -138,12 +141,11 @@ function init_files(){
 				var colors = data.color;
 				//If not previously defined, use the default color from dygraph
 				if (data.color == null) colors = g.colors_;
-				g.updateOptions({'colors':colors, 'file': graph_data, 'visibility': data.show});
+				g.updateOptions({'colors':colors, 'visibility': data.show});
 				//Adapt panel HTML
 				for (var i = 0;i<data.num_series;i++){
 					var st = series_template;
 					st = st.replace(/%select_species%/, $('#species_store > div').html());
-					//st = st.replace(/name="select_species"/, 'id="select_species'+i+'"');
 					if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 					else st = st.replace(/%show%/, '');
 					st = st.replace(/%color%/, colors[i]);
@@ -162,7 +164,6 @@ function init_files(){
 				//Series name input
 				$('select[name="select_species"]').unbind('change');
 				$('select[name="select_species"]').change(function(){
-               //console.log('triggered select_species');
 					var items = [];
 					$('select[name="select_species"]').each(function(){
                         if (! $(this).val() ) items.push('Species');
@@ -211,7 +212,7 @@ function init_files(){
 						}
 					}
 					items.splice(0,0,"Time");
-					g.updateOptions({'labels':items, 'file': graph_data});
+					g.updateOptions({'labels':items});
 				});
 				//Color picker creation
 				$('input[name="color"]').colorPicker();
@@ -256,23 +257,26 @@ function init_files(){
 				$('#global_options').html('');
 				//Adapt panel HTML
 				var st = global_template;
-				st = st.replace(/%strain_ref%/, data.strain);
+				//st = st.replace(/%strain_ref%/, data.strain);
+				st = st.replace(/%strain_ref%/, $('#strains_store > div').html());
 				st = st.replace(/%comments%/, data.comments);
-				if(data.smooth == true) st = st.replace(/%smooth%/, 'checked');
+				if (data.smooth == true) st = st.replace(/%smooth%/, 'checked');
 				else st = st.replace(/%smooth%/, '');
 				st = st.replace(/%smooth_value%/, data.smooth_value);
-				if(data.od == 0) st = st.replace(/%od%/, '');
+				if(data.od == null) st = st.replace(/%od%/, '');
 				else st = st.replace(/%od%/, data.od);
 				st = st.replace(/%dilutionf%/, data.dilution);
 				st = st.replace(/%celldiameter%/, data.celld);
 				$('#global_options').append('<table>'+st+'</table>');
+				$('select[name="select_strain"]').attr('name','select_strain_global');
+				if (!(data.strain_id==null)) $('select[name="select_strain_global"] option[value="'+data.strain_id+'"]').attr('selected', 'selected');
 				//Strain reference input
-				$('input[name="strain_ref"]').unbind('change');
-				$('input[name="strain_ref"]').change(function(){
+				$('select[name="select_strain_global"]').unbind('change');
+				$('select[name="select_strain_global"]').change(function(){
 					//Save new strain reference
 					$.ajax({
 						url: '{{=URL("store_option")}}',
-						data: {record_id:cur_id, var_name:'***', val: $(this).val()}, //FALKO: here we need to retrieve strain_id
+						data: {record_id:cur_id, var_name:'strain_id', val: parseInt($(this).val())}, //BUG
 						traditional: true
 					});
 				});
@@ -651,7 +655,7 @@ function array2col(arrayOfArray, colNum){
 
 function autoseg(data){
 	//Load slider values
-	var w = parseFloat($("#locw").attr("value")); //Number of points to the right and to the left to consider: must be a positive integer
+	var w = parseFloat($("#locw").attr("value")); //Number of points to the right and to the left to consider: must be a positive 
 	
 	var dataLocVar = new Array();
 	var x = listMath([1, 2, 3]);//whatever, just to initialize
@@ -911,7 +915,7 @@ function interval2export(pos) {
 	}
 	if (flag) return;
 	
-	var strain_ref = $('input[name="strain_ref"]').val();
+	var strain_ref = $('select[name="select_strain_global"]').val();
 	var comments = $('textarea[name="comments"]').val();
 	var od = $('input[name="od"]').val();
 	var dilutionf = $('input[name="dilutionf"]').val();
@@ -988,8 +992,8 @@ function interval2export(pos) {
 				}
 				st = st.replace(/%caloptions%/,'');
 				$('#subinterval').append(st);
-                $('#subinterval select[name="select_strain"][value='+strain_ref+']').attr('selected','selected');
-                //jQuery('input.integer').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
+            $('#subinterval select[name="select_strain"][value='+strain_ref+']').attr('selected','selected');
+                //jQuery('input.').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
                 //jQuery('input.double,input.decimal').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-\.,]|[\-](?=.)|[\.,](?=[0-9]*[\.,])/g,'').reverse();});
 				
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx

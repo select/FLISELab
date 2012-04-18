@@ -157,8 +157,6 @@ def series_options():
     return dict(name = name, color = color, show = show_bool, num_series = num_series)
 
 def species():
-    #if request.vars.new_species:
-    #    db.species.insert(name = request.vars.new_species, measured = True)
     records = db(db.flise_file.id>0).select(db.flise_file.series_species)
     species = set()
     for record in records:
@@ -168,29 +166,29 @@ def species():
     return SELECT([OPTION('')]+[OPTION(x,_value=x) for x in species], _name="select_species", _style="width:100px")
 
 def strains():
-    return SELECT([OPTION('')]+[OPTION(record.name,_value=record.identifier) for record in db(db.strain.id>0).select()], _name="select_strain", _style="width:100px")
+    return SELECT([OPTION('')]+[OPTION(record.name,_value=record.identifier) for record in db(db.strain.id>0).select()], _name="select_strain", _style="width:150px")
 
 def global_options():
     response.generic_patterns = ['json']
     record = db.flise_file[int(request.args(0))]
     def get_defaults():
-        strain = 1 #'BN-1???'
+        strain = None #'BN-1???'
         comments = 'General description, or any particular problem with the series...'
         smooth = False
         smooth_value = 10
-        OD = 0
+        OD = None
         dilution = 50
         cell_diameter = 4.5
         return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value, OD = OD, dilution = dilution, celld = cell_diameter)
     defaults = get_defaults()
-    strain = record.strain_id or defaults["strain"]
+    strain_id = record.strain_id or defaults["strain"]
     comments = record.comments or defaults["comments"]
     smooth = record.disp_smooth or defaults["smooth"]
     smooth_value = record.disp_smooth_value or defaults["smooth_value"]
     OD = record.optical_density or defaults["OD"]
     dilution = record.dilution_factor or defaults["dilution"]
     cell_diameter = record.cell_diameter or defaults["celld"]
-    return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value, od = OD, dilution = dilution, celld = cell_diameter)
+    return dict(strain_id = strain_id, comments = comments, smooth = smooth, smooth_value = smooth_value, od = OD, dilution = dilution, celld = cell_diameter)
 
 def get_savgol():
     response.generic_patterns = ['json']

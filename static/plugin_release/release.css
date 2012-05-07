@@ -1,0 +1,11 @@
+#create_release_table td {
+    padding: 3px;
+}
+#download_table td {
+    padding-right: 50px;
+    padding-top: 20px;
+    font-size: 17px;
+}
+#versionstring{
+    display: inline;
+}

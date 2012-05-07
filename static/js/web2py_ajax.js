@@ -6,6 +6,7 @@ function popup(url) {
 function collapse(id) { jQuery('#'+id).slideToggle(); }
 function fade(id,value) { if(value>0) jQuery('#'+id).hide().fadeIn('slow'); else jQuery('#'+id).show().fadeOut('slow'); }
 function ajax(u,s,t) {
+    $('#'+target).prepend('<img src="'+loading_gif+'" alt="loading" id="loading_image"/>');
     query = '';
     if (typeof s == "string") {
         d = jQuery(s).serialize();
@@ -102,6 +103,7 @@ function web2py_ajax_page(method,action,data,target) {
     });
 }
 function web2py_component(action,target) {
+  $('#'+target).prepend('<img src="'+loading_gif+'" alt="loading" id="loading_image"/>');
   jQuery(function(){ web2py_ajax_page('get',action,null,target); });
 }
 function web2py_comet(url,onmessage,onopen,onclose) {

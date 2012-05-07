@@ -86,7 +86,7 @@
 
     <div id="container">                        
       
-        {{=SPAN( A('config', _href=URL('setup', 'index')), _class='auth_navbar')}} {{try:}}{{=auth.navbar(action=URL('default','user'))}}{{except:pass}}
+        {{=SPAN( A('config', _href=URL('setup', 'index')), ' | ', A('up/pck', _href=URL('plugin_release', 'status')) , _class='auth_navbar')}} {{try:}}{{=auth.navbar(action=URL('default','user'))}}{{except:pass}}
     
     <div id="header"> <!-- header and login nav -->
       {{block header}} <!-- this is default header -->

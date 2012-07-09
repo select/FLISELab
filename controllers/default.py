@@ -10,278 +10,280 @@
 #########################################################################
 
 def index():
-    """
-    example action using the internationalization operator T and flash
-    rendered by views/default/index.html or views/generic.html
-    """
-    response.files.append(URL(request.application, 'static/dygraphs', 'dygraph-dev.js'))
-    response.files.append(URL(request.application, 'static/html5slider', 'html5slider.js'))      #to REMOVE in the end
-    response.files.append(URL(request.application, 'static/js', 'jquery.confirm.js'))
-    response.files.append(URL(request.application, 'static/colorpicker', 'jquery.colorPicker.js'))
-    response.files.append(URL(request.application, 'static/colorpicker', 'colorPicker.css'))
-    response.files.append(URL(request.application, 'static/css', 'flise.css'))
-    response.files.append(URL(request.application, 'static/js', 'jquery.simplemodal.1.4.1.min.js'))
-    #import os
-    #data = open(os.path.join(request.folder, 'private', 'FLISE', 'data.csv')).readlines()
-    #data = '\\n'.join([l[:-1] for l in data])
-    #return dict(data = data)
-    return dict(data = '')
+	"""
+	example action using the internationalization operator T and flash
+	rendered by views/default/index.html or views/generic.html
+	"""
+	response.files.append(URL(request.application, 'static/dygraphs', 'dygraph-dev.js'))
+	response.files.append(URL(request.application, 'static/html5slider', 'html5slider.js'))      #to REMOVE in the end
+	response.files.append(URL(request.application, 'static/js', 'jquery.confirm.js'))
+	response.files.append(URL(request.application, 'static/colorpicker', 'jquery.colorPicker.js'))
+	response.files.append(URL(request.application, 'static/colorpicker', 'colorPicker.css'))
+	response.files.append(URL(request.application, 'static/css', 'flise.css'))
+	response.files.append(URL(request.application, 'static/js', 'jquery.simplemodal.1.4.1.min.js'))
+	#import os
+	#data = open(os.path.join(request.folder, 'private', 'FLISE', 'data.csv')).readlines()
+	#data = '\\n'.join([l[:-1] for l in data])
+	#return dict(data = data)
+	return dict(data = '')
 
 def files():
-    records = db(db.flise_file.id>0).select()
-    items = []
-    for record in records:
-        filename, file = db.flise_file.file.retrieve(record.file)
-        items.append(LI(DIV(record.name if record.name else filename, _class="select"), DIV('delete', _class="del"), _class='flise_file', _id=record.id))
-    return TAG[''](JS('init_files();'),UL(items, _id="flise_files"))
+	records = db(db.flise_file.id>0).select()
+	items = []
+	for record in records:
+		filename, file = db.flise_file.file.retrieve(record.file)
+		items.append(LI(DIV(record.name if record.name else filename, _class="select"), DIV('delete', _class="del"), _class='flise_file', _id=record.id))
+	return TAG[''](JS('init_files();'),UL(items, _id="flise_files"))
 
 def file():
-    if request.vars.delr:
-        #FIXME add authentication here
-        del db.flise_file[int(request.vars.delr)]
-        return ''
-    def on_accept(form):
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");init_file(%s,"%s");' % (URL(r=request, f='files'),form.vars.name, form.vars.id, form.vars.name)
-    if request.args(0):
-        db.flise_file.file.readable, db.flise_file.file.writable = False, False
-        form = crud.update(db.flise_file, request.args(0), onaccept=on_accept, deletable=False)
-        submit = form.element("input",_type="submit")
-        submit["_value"] = "update"
-    else:
-        db.flise_file.created_on.writable = False
-        form = crud.create(db.flise_file, onaccept=on_accept)
-    return TAG[''](JS(response.headers['web2py-component-command']) if response.headers.has_key('web2py-component-command') else '', form)
+	if request.vars.delr:
+		#FIXME add authentication here
+		del db.flise_file[int(request.vars.delr)]
+		return ''
+	def on_accept(form):
+		response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");init_file(%s,"%s");' % (URL(r=request, f='files'),form.vars.name, form.vars.id, form.vars.name)
+	if request.args(0):
+		db.flise_file.file.readable, db.flise_file.file.writable = False, False
+		form = crud.update(db.flise_file, request.args(0), onaccept=on_accept, deletable=False)
+		submit = form.element("input",_type="submit")
+		submit["_value"] = "update"
+	else:
+		db.flise_file.created_on.writable = False
+		form = crud.create(db.flise_file, onaccept=on_accept)
+	return TAG[''](JS(response.headers['web2py-component-command']) if response.headers.has_key('web2py-component-command') else '', form)
 
 def store_option():
-    response.generic_patterns = ['html', 'json']
-    record_id = request.vars.record_id
-    var_name = request.vars.var_name
-    if request.vars.val:
-        val = request.vars.val
-        db.flise_file[int(record_id)].update_record(**{var_name: val})
-    if request.extension == 'json':
-        from gluon.contrib import simplejson
-        return simplejson.dumps(getattr(db.flise_file[int(record_id)], var_name))
-    else:
-        return getattr(db.flise_file[int(record_id)], var_name)
+	response.generic_patterns = ['html', 'json']
+	record_id = request.vars.record_id
+	var_name = request.vars.var_name
+	if request.vars.val:
+		val = request.vars.val
+		db.flise_file[int(record_id)].update_record(**{var_name: val})
+	if request.extension == 'json':
+		from gluon.contrib import simplejson
+		return simplejson.dumps(getattr(db.flise_file[int(record_id)], var_name))
+	else:
+		return getattr(db.flise_file[int(record_id)], var_name)
 
 def store_subint_option():
-    response.generic_patterns = ['json']
-    flise_record_id = request.vars.flise_record_id
-    interval_time = request.vars.interval_time
-    record = db(db.subintervals.extract_time == interval_time)(db.subintervals.flise_file_id == flise_record_id).select().first()
-    if request.vars.var_name:
-        var_name = request.vars.var_name
-        val = request.vars.val
-        if record:
-            record.update_record(**{var_name: val})
-        else:
-            record = db.subintervals.insert(flise_file_id=flise_record_id, extract_time=interval_time)
-            record.update_record(**{var_name: val})
-    if record:
-        return dict([(field,record[field]) for field in db.subintervals.fields])
-    else:
-        return dict()
+	response.generic_patterns = ['json']
+	flise_record_id = request.vars.flise_record_id
+	interval_time = request.vars.interval_time
+	record = db(db.subintervals.extract_time == interval_time)(db.subintervals.flise_file_id == flise_record_id).select().first()
+	if request.vars.var_name:
+		var_name = request.vars.var_name
+		val = request.vars.val
+		if record:
+			record.update_record(**{var_name: val})
+		else:
+			record = db.subintervals.insert(flise_file_id=flise_record_id, extract_time=interval_time)
+			record.update_record(**{var_name: val})
+	if record:
+		return dict([(field,record[field]) for field in db.subintervals.fields])
+	else:
+		return dict()
 
 def del_subint():
-    response.generic_patterns = ['json']
-    flise_record_id = request.vars.flise_record_id
-    interval_time = request.vars.interval_time
-    sel_set = db(db.subintervals.extract_time == interval_time)(db.subintervals.flise_file_id == flise_record_id)
-    if sel_set:
-        sel_set.delete()
+	response.generic_patterns = ['json']
+	flise_record_id = request.vars.flise_record_id
+	interval_time = request.vars.interval_time
+	sel_set = db(db.subintervals.extract_time == interval_time)(db.subintervals.flise_file_id == flise_record_id)
+	if sel_set:
+		sel_set.delete()
 
 def store_event():
-    response.generic_patterns = ['json']
-    flise_record_id = request.vars.flise_record_id
-    time = float(request.vars.time)
-    series_id = int(request.vars.series_id)
-    record = db(db.event.time == time)(db.event.flise_file_id == flise_record_id)(db.event.series_id == series_id).select().first()
-    if request.vars.var_name:
-        var_name = request.vars.var_name
-        val = request.vars.val
-        if record:
-            record.update_record(**{var_name: val})
-        else:
-            record = db.event.insert(flise_file_id=flise_record_id, time=time, series_id=series_id)
-            record.update_record(**{var_name: val})
-    if record:
-        return dict([(field,record[field]) for field in db.event.fields])
-    else:
-        return dict()
+	response.generic_patterns = ['json']
+	flise_record_id = request.vars.flise_record_id
+	time = float(request.vars.time)
+	series_id = int(request.vars.series_id)
+	record = db(db.event.time == time)(db.event.flise_file_id == flise_record_id)(db.event.series_id == series_id).select().first()
+	if request.vars.var_name:
+		var_name = request.vars.var_name
+		val = request.vars.val
+		if record:
+			record.update_record(**{var_name: val})
+		else:
+			record = db.event.insert(flise_file_id=flise_record_id, time=time, series_id=series_id)
+			record.update_record(**{var_name: val})
+	if record:
+		return dict([(field,record[field]) for field in db.event.fields])
+	else:
+		return dict()
 
 def del_event():
-    response.generic_patterns = ['json']
-    flise_record_id = request.vars.flise_record_id
-    time = float(request.vars.time)
-    series_id = int(request.vars.series_id)
-    sel_set = db(db.event.time == time)(db.event.flise_file_id == flise_record_id)(db.event.series_id == series_id)
-    if sel_set:
-        sel_set.delete()
+	response.generic_patterns = ['json']
+	flise_record_id = request.vars.flise_record_id
+	time = float(request.vars.time)
+	series_id = int(request.vars.series_id)
+	sel_set = db(db.event.time == time)(db.event.flise_file_id == flise_record_id)(db.event.series_id == series_id)
+	if sel_set:
+		sel_set.delete()
 
 def get_data():
-    response.generic_patterns = ['html', 'json']
-    record = db.flise_file[int(request.args(0))]
-    filename, raw_file = db.flise_file.file.retrieve(record.file)
-    import csv
-    reader = list(csv.reader(raw_file, delimiter="\t"))
-    csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
-    labels = record.series_species if record.series_species else ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
-    timepoint = [line[-1] for line in reader]
-    labels = ['Time']+labels
-    if request.extension == 'json':
-        return dict(result=csv_data, labels=labels, timepoint=timepoint)
-    #not really working so better not use it
-    data = '\\n'.join([','.join([str(x) for x in line]) for line in csv_data])
-    return data
+	response.generic_patterns = ['html', 'json']
+	record = db.flise_file[int(request.args(0))]
+	filename, raw_file = db.flise_file.file.retrieve(record.file)
+	import csv
+	reader = list(csv.reader(raw_file, delimiter="\t"))
+	csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
+	labels = record.series_species if record.series_species else ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
+	timepoint = [line[-1] for line in reader]
+	labels = ['Time']+labels
+	if request.extension == 'json':
+		return dict(result=csv_data, labels=labels, timepoint=timepoint)
+	#not really working so better not use it
+	data = '\\n'.join([','.join([str(x) for x in line]) for line in csv_data])
+	return data
 
 def series_options():
-    response.generic_patterns = ['json']
-    record = db.flise_file[int(request.args(0))]
-    def get_defaults():
-        filename, raw_file = db.flise_file.file.retrieve(record.file)
-        import csv
-        reader = list(csv.reader(raw_file, delimiter="\t"))
-        num_series = len(reader[0])-1
-        name = ['Species%s'%i for i in range(num_series)]
-        color = ['#0000ff', '#ff0000', '#008000', '#ff6600']
-        show = ['true' for i in range(num_series)]
-        return dict(name = name, color = color, show = show, num_series = num_series)
-    defaults = get_defaults()
-    name = record.series_species or defaults["name"]
-    num_series = len(name) or defaults["num_series"]
-    color = record.series_colors or defaults["color"]
-    show = record.series_show or defaults["show"]
-    #convert to boolean
-    show_bool = [s in ['true','True','1'] for s in show]
-    return dict(name = name, color = color, show = show_bool, num_series = num_series)
+	response.generic_patterns = ['json']
+	record = db.flise_file[int(request.args(0))]
+	def get_defaults():
+		filename, raw_file = db.flise_file.file.retrieve(record.file)
+		import csv
+		reader = list(csv.reader(raw_file, delimiter="\t"))
+		num_series = len(reader[0])-1
+		name = ['Species%s'%i for i in range(num_series)]
+		#color = None
+		colors = ['#0000ff', '#ff0000', '#008000', '#ff6600', '#008080', '#333300'] #Default colors
+		color = [colors[i] for i in range(min(num_series,len(colors)))]+[None for i in range(max(num_series-len(colors),0))]
+		show = ['true' for i in range(num_series)]
+		return dict(name = name, color = color, show = show, num_series = num_series)
+	defaults = get_defaults()
+	name = record.series_species or defaults["name"]
+	num_series = len(name) or defaults["num_series"]
+	color = record.series_colors or defaults["color"]
+	show = record.series_show or defaults["show"]
+	#convert to boolean
+	show_bool = [s in ['true','True','1'] for s in show]
+	return dict(name = name, color = color, show = show_bool, num_series = num_series)
 
 def species():
-    records = db(db.flise_file.id>0).select(db.flise_file.series_species)
-    species = set()
-    for record in records:
-        if record.series_species:
-            for species_item in record.series_species:
-                species.add(species_item)
-    return SELECT([OPTION('')]+[OPTION(x,_value=x) for x in species], _name="select_species", _style="width:100px")
+	records = db(db.flise_file.id>0).select(db.flise_file.series_species)
+	species = set()
+	for record in records:
+		if record.series_species:
+			for species_item in record.series_species:
+				species.add(species_item)
+	return SELECT([OPTION('')]+[OPTION(x,_value=x) for x in species], _name="select_species", _style="width:100px")
 
 def strains():
-    return SELECT([OPTION('')]+[OPTION(record.name,_value=record.identifier) for record in db(db.strain.id>0).select()], _name="select_strain", _style="width:150px")
+	return SELECT([OPTION('')]+[OPTION(record.name,_value=record.identifier) for record in db(db.strain.id>0).select()], _name="select_strain", _style="width:150px")
 
 def global_options():
-    response.generic_patterns = ['json']
-    record = db.flise_file[int(request.args(0))]
-    def get_defaults():
-        strain = None #'BN-1???'
-        comments = 'General description, or any particular problem with the series...'
-        smooth = False
-        smooth_value = 10
-        OD = None
-        dilution = 50
-        cell_diameter = 4.5
-        return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value, OD = OD, dilution = dilution, celld = cell_diameter)
-    defaults = get_defaults()
-    strain_id = record.strain_id or defaults["strain"]
-    comments = record.comments or defaults["comments"]
-    smooth = record.disp_smooth or defaults["smooth"]
-    smooth_value = record.disp_smooth_value or defaults["smooth_value"]
-    OD = record.optical_density or defaults["OD"]
-    dilution = record.dilution_factor or defaults["dilution"]
-    cell_diameter = record.cell_diameter or defaults["celld"]
-    return dict(strain_id = strain_id, comments = comments, smooth = smooth, smooth_value = smooth_value, od = OD, dilution = dilution, celld = cell_diameter)
+	response.generic_patterns = ['json']
+	record = db.flise_file[int(request.args(0))]
+	def get_defaults():
+		strain = None #'BN-1???'
+		comments = 'General description, or any particular problem with the series...'
+		smooth = False
+		smooth_value = 10
+		OD = None
+		dilution = 50
+		cell_diameter = 4.5
+		return dict(strain = strain, comments = comments, smooth = smooth, smooth_value = smooth_value, OD = OD, dilution = dilution, celld = cell_diameter)
+	defaults = get_defaults()
+	strain_id = record.strain_id or defaults["strain"]
+	comments = record.comments or defaults["comments"]
+	smooth = record.disp_smooth or defaults["smooth"]
+	smooth_value = record.disp_smooth_value or defaults["smooth_value"]
+	OD = record.optical_density or defaults["OD"]
+	dilution = record.dilution_factor or defaults["dilution"]
+	cell_diameter = record.cell_diameter or defaults["celld"]
+	return dict(strain_id = strain_id, comments = comments, smooth = smooth, smooth_value = smooth_value, od = OD, dilution = dilution, celld = cell_diameter)
 
 def get_savgol():
-    response.generic_patterns = ['json']
-    import savgol
-    myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), int(request.vars.deriv))
-    from gluon.contrib import simplejson
-    data2derive = simplejson.loads(request.vars.data)
-    result = []
-    for iI in range(len(data2derive)):
-        result.append([])
-        for iS in range(len(data2derive[iI])):
-            result[iI].append(myinstance.filterTS(data2derive[iI][iS]))
-    return dict(result = result)
+	response.generic_patterns = ['json']
+	import savgol
+	myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), int(request.vars.deriv))
+	from gluon.contrib import simplejson
+	data2derive = simplejson.loads(request.vars.data)
+	result = []
+	for iI in range(len(data2derive)):
+		result.append([])
+		for iS in range(len(data2derive[iI])):
+			result[iI].append(myinstance.filterTS(data2derive[iI][iS]))
+	return dict(result = result)
 
 def export_spreadsheet():
-    #print 'called export_spreadsheet ',request.vars.data
-    export_format = request.vars.format
-    from gluon.contrib import simplejson
-    try:
-        data_object = simplejson.loads(request.vars.data)
-    except:
-        import sys
-        raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
-    import tablib.core
-    databook = tablib.core.Databook()
-    for name, data in data_object.iteritems():
-        #print 'not using transmitted data header: ',data['header']
-        if False and data['header']:
-            dataset = tablib.core.Dataset(headers = data['header'])
-        else:
-            dataset = tablib.core.Dataset()
-        for row in data['data']:
-            if row:
-                dataset.append(row)
-        #dataset.extend(data['data'])
-        databook.add_sheet(dataset)
-    if export_format in 'yaml csv xls xlsx':
-        import gluon.contenttype
-        import os.path
-        response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
-        response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
-        #response.write(getattr(data,export_format), escape=False)
-        return getattr(databook,export_format)
-    return ''
+	#print 'called export_spreadsheet ',request.vars.data
+	export_format = request.vars.format
+	from gluon.contrib import simplejson
+	try:
+		data_object = simplejson.loads(request.vars.data)
+	except:
+		import sys
+		raise HTTP(500, 'Deserializing JSON input failed: %s'%sys.exc_info()[1])
+	import tablib.core
+	databook = tablib.core.Databook()
+	for name, data in data_object.iteritems():
+		#print 'not using transmitted data header: ',data['header']
+		if False and data['header']:
+			dataset = tablib.core.Dataset(headers = data['header'])
+		else:
+			dataset = tablib.core.Dataset()
+		for row in data['data']:
+			if row:
+				dataset.append(row)
+		#dataset.extend(data['data'])
+		databook.add_sheet(dataset)
+	if export_format in 'yaml csv xls xlsx':
+		import gluon.contenttype
+		import os.path
+		response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
+		response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
+		#response.write(getattr(data,export_format), escape=False)
+		return getattr(databook,export_format)
+	return ''
 
 def user():
-    """
-    exposes:
-    http://..../[app]/default/user/login
-    http://..../[app]/default/user/logout
-    http://..../[app]/default/user/register
-    http://..../[app]/default/user/profile
-    http://..../[app]/default/user/retrieve_password
-    http://..../[app]/default/user/change_password
-    use @auth.requires_login()
-        @auth.requires_membership('group name')
-        @auth.requires_permission('read','table name',record_id)
-    to decorate functions that need access control
-    """
-    return dict(form=auth())
+	"""
+	exposes:
+	http://..../[app]/default/user/login
+	http://..../[app]/default/user/logout
+	http://..../[app]/default/user/register
+	http://..../[app]/default/user/profile
+	http://..../[app]/default/user/retrieve_password
+	http://..../[app]/default/user/change_password
+	use @auth.requires_login()
+		@auth.requires_membership('group name')
+		@auth.requires_permission('read','table name',record_id)
+	to decorate functions that need access control
+	"""
+	return dict(form=auth())
 
 
 def download():
-    """
-    allows downloading of uploaded files
-    http://..../[app]/default/download/[filename]
-    """
-    return response.download(request,db)
+	"""
+	allows downloading of uploaded files
+	http://..../[app]/default/download/[filename]
+	"""
+	return response.download(request,db)
 
 
 def call():
-    """
-    exposes services. for example:
-    http://..../[app]/default/call/jsonrpc
-    decorate with @services.jsonrpc the functions to expose
-    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
-    """
-    return service()
+	"""
+	exposes services. for example:
+	http://..../[app]/default/call/jsonrpc
+	decorate with @services.jsonrpc the functions to expose
+	supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
+	"""
+	return service()
 
 
 @auth.requires_signature()
 def data():
-    """
-    http://..../[app]/default/data/tables
-    http://..../[app]/default/data/create/[table]
-    http://..../[app]/default/data/read/[table]/[id]
-    http://..../[app]/default/data/update/[table]/[id]
-    http://..../[app]/default/data/delete/[table]/[id]
-    http://..../[app]/default/data/select/[table]
-    http://..../[app]/default/data/search/[table]
-    but URLs bust be signed, i.e. linked with
-      A('table',_href=URL('data/tables',user_signature=True))
-    or with the signed load operator
-      LOAD('default','data.load',args='tables',ajax=True,user_signature=True)
-    """
-    return dict(form=crud())
+	"""
+	http://..../[app]/default/data/tables
+	http://..../[app]/default/data/create/[table]
+	http://..../[app]/default/data/read/[table]/[id]
+	http://..../[app]/default/data/update/[table]/[id]
+	http://..../[app]/default/data/delete/[table]/[id]
+	http://..../[app]/default/data/select/[table]
+	http://..../[app]/default/data/search/[table]
+	but URLs bust be signed, i.e. linked with
+	  A('table',_href=URL('data/tables',user_signature=True))
+	or with the signed load operator
+	  LOAD('default','data.load',args='tables',ajax=True,user_signature=True)
+	"""
+	return dict(form=crud())

@@ -126,7 +126,6 @@ def get_data():
     import csv
     reader = list(csv.reader(raw_file, delimiter="\t"))
     csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
-    #labels = [x.name for x in record.series_species_id.select()] or ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
     labels = record.series_species if record.series_species else ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
     timepoint = [line[-1] for line in reader]
     labels = ['Time']+labels
@@ -145,7 +144,7 @@ def series_options():
         reader = list(csv.reader(raw_file, delimiter="\t"))
         num_series = len(reader[0])-1
         name = ['Species%s'%i for i in range(num_series)]
-        color = None
+        color = ['#0000ff', '#ff0000', '#008000', '#ff6600']
         show = ['true' for i in range(num_series)]
         return dict(name = name, color = color, show = show, num_series = num_series)
     defaults = get_defaults()

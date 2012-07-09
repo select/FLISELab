@@ -630,7 +630,7 @@ function init_files(){
 	});
 	$('.del').confirm({
 		stopAfter:'ok',
-		wrapper: '<div class="del"></div>',
+		wrapper: '<div style="width:130px;background-color: orange;" class="del"></div>',
 		timeout:3000
 	}); 
 }

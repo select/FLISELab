@@ -29,7 +29,7 @@ h3[onclick]:hover, h2[onclick]:hover {
     position: relative;
 }
 .flise_file .del{
-    width: 20px;
+    width: 38px;
     height: 20px;
     display: none;
     float: right;

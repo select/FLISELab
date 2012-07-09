@@ -206,7 +206,7 @@ class Savgol:
             nleft = abs(int(nleft))
             nright = abs(int(nright))
             order = abs(int(order))
-            deriv = abs(int(deriv``))
+            deriv = abs(int(deriv))
         except ValueError, msg:
             raise ValueError("nleft, nright and order have to be of type int")
         if nleft < 0 or nright < 0 or nleft+nright < 1:
@@ -341,6 +341,8 @@ if __name__ == '__main__':
     from math import sin as _sin
     from random import random as _rand
     TS = [_rand()*0.05+_sin(2*3.14*j/(25+175*j/1000)) for j in range(1000)]
-    #print TS
+    print TS
+    SGfilter = Savgol(nleft=16, nright=16, order=4, deriv=0)
+    print SGfilter.filterTS(TS)
     SGfilter = Savgol(nleft=16, nright=16, order=4, deriv=1)
-    #print SGfilter.filterTS(TS)
+    print SGfilter.filterTS(TS)

@@ -146,7 +146,7 @@ body { font:13px/1.231 sans-serif; *font-size:small; } /* hack retained to prese
 /*table { font-size:inherit; font:100%; }*/
 
 select, input, textarea, button { font:99% sans-serif; }
-textarea { width: 600px; }
+/*textarea { width: 600px; }*/
 
 /* normalize monospace sizing
     * en.wikipedia.org/wiki/MediaWiki_talk:Common.css/Archive_11#Teletype_style_fix_for_Chrome

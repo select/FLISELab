@@ -41,7 +41,7 @@ def file():
         del db.flise_file[int(request.vars.delr)]
         return ''
     def on_accept(form):
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");' % (URL(r=request, f='files'),form.vars.name)
+        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");init_file(%s,"%s");' % (URL(r=request, f='files'),form.vars.name, form.vars.id, form.vars.name)
     if request.args(0):
         db.flise_file.file.readable, db.flise_file.file.writable = False, False
         form = crud.update(db.flise_file, request.args(0), onaccept=on_accept, deletable=False)
@@ -128,9 +128,10 @@ def get_data():
     csv_data = [[i*record.sampling_time]+[float(x) for x in line[:-1]] for i,line in enumerate(reader)]
     #labels = [x.name for x in record.series_species_id.select()] or ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
     labels = record.series_species if record.series_species else ['Species%s'%i for i,x in enumerate(csv_data[0][1:])]
+    timepoint = [line[-1] for line in reader]
     labels = ['Time']+labels
     if request.extension == 'json':
-        return dict(result=csv_data,labels = labels)
+        return dict(result=csv_data, labels=labels, timepoint=timepoint)
     #not really working so better not use it
     data = '\\n'.join([','.join([str(x) for x in line]) for line in csv_data])
     return data

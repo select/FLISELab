@@ -36,15 +36,40 @@ def files():
 	return TAG[''](JS('init_files();'),UL(items, _id="flise_files"))
 
 def file():
+	sampling_time_old = None
 	if request.vars.delr:
 		#FIXME add authentication here
 		del db.flise_file[int(request.vars.delr)]
 		return ''
+	def on_validate(form):
+		global sampling_time_old
+		sampling_time_old = db.flise_file[request.args(0)].sampling_time
 	def on_accept(form):
+		from gluon.contrib import simplejson
+		#update time of cutT, nocutT, dropT and evenT when sampling time is changed
+		sfactor = form.vars.sampling_time/sampling_time_old
+		dropT = [[x*sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)]
+		db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))
+		cutT = [x*sfactor for x in simplejson.loads(db.flise_file[form.vars.id].cutT)]
+		db.flise_file[form.vars.id].update_record(cutT=simplejson.dumps(cutT))
+		nocutT = [[x*sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].nocutT)]
+		db.flise_file[form.vars.id].update_record(nocutT=simplejson.dumps(nocutT))
+		eventT = [x*sfactor for x in simplejson.loads(db.flise_file[form.vars.id].eventT)]
+		db.flise_file[form.vars.id].update_record(eventT=simplejson.dumps(eventT))
+		for record in db(db.event.flise_file_id == form.vars.id).select():
+			time = record.time*sfactor
+			record.update_record(time=time)
+		for record in db(db.subintervals.flise_file_id == form.vars.id).select():
+			extract_time = record.extract_time
+			str_time = extract_time.split(':')
+			intStart = float(str_time[0])*sfactor
+			intEnd = float(str_time[1])*sfactor
+			extract_time = '%g:%g'%(intStart, intEnd)
+			record.update_record(extract_time=extract_time)
 		response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");init_file(%s,"%s");' % (URL(r=request, f='files'),form.vars.name, form.vars.id, form.vars.name)
 	if request.args(0):
 		db.flise_file.file.readable, db.flise_file.file.writable = False, False
-		form = crud.update(db.flise_file, request.args(0), onaccept=on_accept, deletable=False)
+		form = crud.update(db.flise_file, request.args(0), onaccept=on_accept, onvalidation=on_validate, deletable=False)
 		submit = form.element("input",_type="submit")
 		submit["_value"] = "update"
 	else:

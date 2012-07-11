@@ -1,48 +1,48 @@
 <table>
 	<tr>
-		<th>Interval</th>
+		<th align="right">Interval</th>
 		<td>
 			from %start% to %end%.
 		</td>
 	</tr>
 	<tr>
-		<th>Name</th>
+		<th align="right">Name</th>
 		<td>
-			<input name="sub_name" type="text" value="%name%"/>
+			<input name="sub_name" type="text" style="width:350px" value="%name%"/>
 		</td>
 	</tr>
 	<tr>
-		<th>Strain reference</th>
+		<th align="right">Strain reference</th>
 		<td>
 			%strain_ref%
 		</td>
 	</tr>
 	<tr>
-		<th>Optical density</th>
+		<th align="right">Optical density</th>
 		<td>
 			<input name="sub_od" type="text" value="%od%" style="width:100px" class'integer'/>(1.2 x 10^7 cells / OD-unit)
 		</td>
 	</tr>
 	<tr>
-		<th>Dilution factor</th>
+		<th align="right">Dilution factor</th>
 		<td>
 			<input name="sub_dilutionf" type="text" value="%dilutionf%" style="width:100px" class='integer'/>(for OD measurement)
 		</td>
 	</tr>
 	<tr>
-		<th>Cell diameter</th>
+		<th align="right">Cell diameter</th>
 		<td>
 			<input name="sub_celldiameter" type="text" value="%celldiameter%" style="width:100px" class='integer'/>(10^-6 m)
 		</td>
 	</tr>
 	<tr>
-		<th>Comments</th>
+		<th align="right">Comments</th>
 		<td>
-			<textarea name="sub_comments" rows="4">%comments%</textarea>
+			<textarea name="sub_comments" style="width:350px" rows="4">%comments%</textarea>
 		</td>
 	</tr>
 	<tr>
-		<th>Calibration</th>
+		<th align="right">Calibration</th>
 		<td>
 			<table>
 				%caloptions%

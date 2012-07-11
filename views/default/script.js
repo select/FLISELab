@@ -6,7 +6,7 @@ var g2;//Graph variable for preprocessing result
 var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
 var cur_id;//ID of the Flise-file
 $('#create_record').slideDown();
-$('.current_record').hide();
+$('.current_record').hide().prev().hide();
 
 //Global variables to save
 var cutT;
@@ -45,6 +45,7 @@ if($.cookie('flise_js_options')== null) $.cookie('flise_js_options', 'a=10', { e
 /**************** INIT ********************/
 function init_file(cur_id,name){
 	//Show data extraction zone
+	$('#my_records').slideUp();
 	$('#edit_record').slideUp();
 	$('#section_data').parent().attr('style','width:490px');
 	$('#section_data').show('slow');
@@ -52,7 +53,7 @@ function init_file(cur_id,name){
 	
 	$('.current_record').html(name);
 	$('.current_record').attr('id', cur_id);
-	$('.current_record').show();
+	$('.current_record').show().prev().show();
 	//Rearrange which panel is developped or not
 	$('#create_record').slideUp();
 	$('#edit_record').slideDown();
@@ -991,14 +992,14 @@ function interval2export(pos) {
 				//Series - Calibration
 				var stcal;
 				for (var i = 0;i<$('#series_options > table').size();i++){
-					stcal = '<tr><td style="color:%color%">%species%</td><td>Gain: <input name="sub_calgain" type="text" value="" style="width:60px"/></td><td>Offset: <input name="sub_caloffset" type="text" value="" style="width:60px"/></td></tr>';
+					stcal = '<tr><td style="color:%color%">%species%</td><td>Slope: <input name="sub_calslope" type="text" value="" style="width:60px"/></td><td>Intercept: <input name="sub_calintercept" type="text" value="" style="width:60px"/>(Volt)</td></tr>';
 					stcal = stcal.replace(/%species%/, $('#series'+i+' > tbody > tr > td > select').val());
 					stcal = stcal.replace(/%color%/, $('#series'+i+' > tbody > tr:eq(1) > td > table > tbody > tr > td > input').val());
 					st = st.replace(/%caloptions%/,stcal+'%caloptions%');
 				}
 				st = st.replace(/%caloptions%/,'');
 				$('#subinterval').append(st);
-            $('#subinterval select[name="select_strain"][value='+strain_ref+']').attr('selected','selected');
+				$('#subinterval select[name="select_strain"][value='+strain_ref+']').attr('selected','selected');
                 //jQuery('input.').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
                 //jQuery('input.double,input.decimal').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-\.,]|[\-](?=.)|[\.,](?=[0-9]*[\.,])/g,'').reverse();});
 				

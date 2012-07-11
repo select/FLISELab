@@ -153,8 +153,8 @@ db.define_table('subintervals',
         Field('optical_density', 'double', readable = False, writable = False),
         Field('dilution_factor', 'double', readable = False, writable = False),
         Field('cell_diameter', 'double', readable = False, writable = False),
-        Field('offset', 'list:string'),#JSON list of doubles
-        Field('gain', 'list:string'),#JSON list of doubles
+        Field('intercept', 'list:string'),#JSON list of doubles
+        Field('slope', 'list:string'),#JSON list of doubles
         )
 db.define_table('event',
         Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),

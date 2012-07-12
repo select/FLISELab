@@ -46,7 +46,7 @@ def file():
 		sampling_time_old = db.flise_file[request.args(0)].sampling_time
 	def on_accept(form):
 		from gluon.contrib import simplejson
-		#update time of cutT, nocutT, dropT and evenT when sampling time is changed
+		#update time of cutT, nocutT, dropT and evenT when sampling time is changed + subintervals definition
 		sfactor = form.vars.sampling_time/sampling_time_old
 		dropT = [[x*sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)]
 		db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))
@@ -67,14 +67,21 @@ def file():
 			extract_time = '%g:%g'%(intStart, intEnd)
 			record.update_record(extract_time=extract_time)
 		response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");init_file(%s,"%s");' % (URL(r=request, f='files'),form.vars.name, form.vars.id, form.vars.name)
+	def on_accept_create(form):
+		#import time
+		#from datetime import datetime
+		#record = db.flise_file[form.vars.id]
+		#filename, file = db.flise_file.file.retrieve(record.file)
+		#record.update_record(created_on=datetime.fromtimestamp(os.path.getctime(os.path.join(request.folder,'uploads',record.file))))
+		response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");init_file(%s,"%s");' % (URL(r=request, f='files'),form.vars.name, form.vars.id, form.vars.name)
 	if request.args(0):
 		db.flise_file.file.readable, db.flise_file.file.writable = False, False
 		form = crud.update(db.flise_file, request.args(0), onaccept=on_accept, onvalidation=on_validate, deletable=False)
 		submit = form.element("input",_type="submit")
 		submit["_value"] = "update"
 	else:
-		db.flise_file.created_on.writable = False
-		form = crud.create(db.flise_file, onaccept=on_accept)
+		db.flise_file.created_on.readable, db.flise_file.created_on.writable = False, False
+		form = crud.create(db.flise_file, onaccept=on_accept_create)
 	return TAG[''](JS(response.headers['web2py-component-command']) if response.headers.has_key('web2py-component-command') else '', form)
 
 def store_option():

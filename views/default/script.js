@@ -257,57 +257,108 @@ function init_file(cur_id,name){
 				g.updateOptions({'labels':items});
 				//Update series name db.event and series name in g annotations
 				for (var iE=0; iE<eventT.length; iE++) {
-					for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
-						$.ajax({
-							url: '{{=URL("store_event.json")}}',
-							data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
-							traditional: true,
-							success: function(data){
-								if (!(Object.getOwnPropertyNames(data).length === 0)){
-									//if found, update db.event
-									if (!(data['series_id']==-1)){
-										$.ajax({
-											url: '{{=URL("store_event.json")}}',
-											data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id'], var_name:'series_name', val: g.attr_('labels')[data['series_id']+1]},
-											traditional: true
-										});
-									}
-									//add it to g annotations
-									var anns = g.annotations();
-									if (data['series_id']==-1){
-										var flag = true;
-									} else {
-										var flag = false;
-									}
-									for (var iA = anns.length - 1; iA >= 0; iA--) {
-										if (anns[iA].xval == data['time']){
-											if (flag){
-												anns.splice(iA,1);
-												iA++;
-											} else {
-												if (anns[iA].series == data['series_name']) {
-													anns[iA].series = g.attr_('labels')[data['series_id']+1];
-												};
-											}
-										}
-									};
-									if (flag) {
-										for (var i = 0; i < g.colors_.length; i++) {
-											anns.push({
-												series: g.user_attrs_['labels'][i+1],
-												xval: data['time'],
-												icon: '/flise/static/icons/mark-event.png',
-												width: 16,
-												height: 16,
-												tickHeight: 2,
-												text: data['type']
+					if (!(iE == eventT.length-1)){
+						for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+								traditional: true,
+								success: function(data){
+									if (!(Object.getOwnPropertyNames(data).length === 0)){
+										//if found, update db.event
+										if (!(data['series_id']==-1)){
+											$.ajax({
+												url: '{{=URL("store_event.json")}}',
+												data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id'], var_name:'series_name', val: g.attr_('labels')[data['series_id']+1]},
+												traditional: true
 											});
 										}
+										//add it to g annotations
+										if (data['series_id']==-1){
+											var flag = true;
+										} else {
+											var flag = false;
+										}
+										for (var iA = g.annotations_.length - 1; iA >= 0; iA--) {
+											if (g.annotations_[iA].xval == data['time']){
+												if (flag){
+													g.annotations_.splice(iA,1);
+												} else {
+													if (g.annotations_[iA].series == data['series_name']) {
+														g.annotations_[iA].series = g.attr_('labels')[data['series_id']+1];
+													};
+												}
+											}
+										};
+										if (flag) {
+											for (var i = 0; i < g.colors_.length; i++) {
+												g.annotations_.push({
+													series: g.user_attrs_['labels'][i+1],
+													xval: data['time'],
+													icon: '/flise/static/icons/mark-event.png',
+													width: 16,
+													height: 16,
+													tickHeight: 2,
+													text: data['type']
+												});
+											}
+										}
 									}
-									g.setAnnotations(anns);
 								}
-							}
-						});
+							});
+						}
+					} else {
+						for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+								traditional: true,
+								success: function(data){
+									if (!(Object.getOwnPropertyNames(data).length === 0)){
+										//if found, update db.event
+										if (!(data['series_id']==-1)){
+											$.ajax({
+												url: '{{=URL("store_event.json")}}',
+												data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id'], var_name:'series_name', val: g.attr_('labels')[data['series_id']+1]},
+												traditional: true
+											});
+										}
+										//add it to g annotations
+										if (data['series_id']==-1){
+											var flag = true;
+										} else {
+											var flag = false;
+										}
+										for (var iA = g.annotations_.length - 1; iA >= 0; iA--) {
+											if (g.annotations_[iA].xval == data['time']){
+												if (flag){
+													g.annotations_.splice(iA,1);
+												} else {
+													if (g.annotations_[iA].series == data['series_name']) {
+														g.annotations_[iA].series = g.attr_('labels')[data['series_id']+1];
+													};
+												}
+											}
+										};
+										if (flag) {
+											for (var i = 0; i < g.colors_.length; i++) {
+												g.annotations_.push({
+													series: g.user_attrs_['labels'][i+1],
+													xval: data['time'],
+													icon: '/flise/static/icons/mark-event.png',
+													width: 16,
+													height: 16,
+													tickHeight: 2,
+													text: data['type']
+												});
+											}
+										}
+										//Update annotation display
+										g.setAnnotations(g.annotations_);
+									}
+								}
+							});
+						}
 					}
 				}
 			});

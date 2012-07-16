@@ -1964,7 +1964,25 @@ function add2event(context,g){
 					$.ajax({
 						url: '{{=URL("store_event.json")}}',
 						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'type', val: $(this).val()},
-						traditional: true
+						traditional: true,
+						success: function(data){
+							if (!(Object.getOwnPropertyNames(data).length === 0)){
+								//if found, modify g annotations text
+								for (var iA = g.annotations_.length - 1; iA >= 0; iA--) {
+									if (g.annotations_[iA].xval == data['time']){
+										if (data['series_id']==-1){
+											g.annotations_[iA].text = data['type'];
+										} else {
+											if (g.annotations_[iA].series == data['series_name']) {
+												g.annotations_[iA].text = data['type'];
+											};
+										}
+									}
+								};
+								//Update annotation display
+								g.setAnnotations(g.annotations_);
+							}
+						}
 					});
 					//Update hidden fields
 					$('input[name="event_volume"]').parent().parent().show();

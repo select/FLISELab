@@ -88,9 +88,47 @@ function init_file(cur_id,name){
 		//Reset the global graph object "g"
 		g=undefined;
 		g2=undefined;
-		//Create "g": main series plot
+		//Verif if same name is used, and thus update series name in g, and eventually add number if same name for several series
 		graph_labels = data.labels;
-		createGraph(graph_data, data.labels);
+		graph_labels.splice(0,1);
+		var listSim=[];
+		var flag=false;
+		var iL;
+		for (var i=0; i<graph_labels.length-1; i++){
+			//find if it belongs to one list of similarities
+			flag=false;
+			if (!(listSim==[])){
+				for (var iL1=0;iL1<listSim.length;iL1++){
+					for (var iL2=0;iL2<listSim[iL1].length;iL2++){
+						if (listSim[iL1][iL2]==i){
+							flag=true;
+							break;
+						}
+					}
+					if (flag){break;}
+				}
+			}
+			//if not...
+			if (!flag){
+				iL=listSim.length;
+				listSim[iL]=[i];
+				//find companions
+				for (var j=i+1; j<graph_labels.length; j++){
+					if (graph_labels[i]==graph_labels[j]){
+						listSim[iL].push(j);
+					}
+				}
+				//alter names with index so that graph labels are different
+				if (listSim[iL].length>1){
+					for (var j=0; j<listSim[iL].length; j++){
+						graph_labels[listSim[iL][j]]=graph_labels[listSim[iL][j]]+j;
+					}
+				}
+			}
+		}
+		graph_labels.splice(0,0,"Time");
+		//Create "g": main series plot
+		createGraph(graph_data, graph_labels);
 		//Initiate graph underlaycallback based on cutT, etc...
 		unifyT();
 		//Display events if they are some
@@ -141,7 +179,9 @@ function init_file(cur_id,name){
 			//Color choice for timeseries
 			var colors = data.color;
 			//If not previously defined, use the default color from dygraph
-			if (data.color == null) colors = g.colors_;
+			for (var i = colors.length - 1; i >= 0; i--) {
+				if (colors[i] == null) colors[i] = g.colors_[i];
+			};
 			g.updateOptions({'colors':colors, 'visibility': data.show});
 			//Adapt panel HTML
 			for (var i = 0;i<data.num_series;i++){
@@ -177,6 +217,7 @@ function init_file(cur_id,name){
 					data: {record_id:cur_id, var_name:'series_species', val: items},
 					traditional: true
 				});
+				//Update series name in g, and eventually add number if same name for several series
 				var listSim=[];
 				var flag=false;
 				var iL;
@@ -214,6 +255,61 @@ function init_file(cur_id,name){
 				}
 				items.splice(0,0,"Time");
 				g.updateOptions({'labels':items});
+				//Update series name db.event and series name in g annotations
+				for (var iE=0; iE<eventT.length; iE++) {
+					for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
+						$.ajax({
+							url: '{{=URL("store_event.json")}}',
+							data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+							traditional: true,
+							success: function(data){
+								if (!(Object.getOwnPropertyNames(data).length === 0)){
+									//if found, update db.event
+									if (!(data['series_id']==-1)){
+										$.ajax({
+											url: '{{=URL("store_event.json")}}',
+											data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id'], var_name:'series_name', val: g.attr_('labels')[data['series_id']+1]},
+											traditional: true
+										});
+									}
+									//add it to g annotations
+									var anns = g.annotations();
+									if (data['series_id']==-1){
+										var flag = true;
+									} else {
+										var flag = false;
+									}
+									for (var iA = anns.length - 1; iA >= 0; iA--) {
+										if (anns[iA].xval == data['time']){
+											if (flag){
+												anns.splice(iA,1);
+												iA++;
+											} else {
+												if (anns[iA].series == data['series_name']) {
+													anns[iA].series = g.attr_('labels')[data['series_id']+1];
+												};
+											}
+										}
+									};
+									if (flag) {
+										for (var i = 0; i < g.colors_.length; i++) {
+											anns.push({
+												series: g.user_attrs_['labels'][i+1],
+												xval: data['time'],
+												icon: '/flise/static/icons/mark-event.png',
+												width: 16,
+												height: 16,
+												tickHeight: 2,
+												text: data['type']
+											});
+										}
+									}
+									g.setAnnotations(anns);
+								}
+							}
+						});
+					}
+				}
 			});
 			//Color picker creation
 			$('input[name="color"]').colorPicker();
@@ -616,6 +712,7 @@ function init_file(cur_id,name){
 
 function init_files(){
 	//Select a file (click behavior)
+	$('.flise_file .select').unbind('click');
 	$('.flise_file .select').click(function(){
 		cur_id = $(this).parent().attr('id');
 		init_file(cur_id, $(this).html());

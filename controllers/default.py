@@ -73,6 +73,7 @@ def file():
 		#record = db.flise_file[form.vars.id]
 		#filename, file = db.flise_file.file.retrieve(record.file)
 		#record.update_record(created_on=datetime.fromtimestamp(os.path.getctime(os.path.join(request.folder,'uploads',record.file))))
+		##?-> http://stackoverflow.com/questions/946967/get-file-creation-time-with-python-on-mac
 		response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");$(".current_record").html("%s");init_file(%s,"%s");' % (URL(r=request, f='files'),form.vars.name, form.vars.id, form.vars.name)
 	if request.args(0):
 		db.flise_file.file.readable, db.flise_file.file.writable = False, False

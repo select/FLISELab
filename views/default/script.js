@@ -20,6 +20,7 @@ var prevnocutT;
 var prevdropT;
 var preveventT;
 var dataT;
+var event_del;
 var isSelecting;
 var isDrawing=false;
 var tool;
@@ -361,6 +362,12 @@ function init_file(cur_id,name){
 						}
 					}
 				}
+				//Update event_del[].series_name
+				for (var i = event_del.length - 1; i >= 0; i--) {
+					if (!(event_del[i].series_id == -1)) {
+						event_del[i].series_name=items[event_del[i].series_id+1];
+					};
+				};
 			});
 			//Color picker creation
 			$('input[name="color"]').colorPicker();
@@ -577,8 +584,125 @@ function init_file(cur_id,name){
 				cutT = prevcutT.slice();
 				nocutT = prevnocutT.slice();
 				dropT = prevdropT.slice();
-				eventT = preveventT.slice();
 				unifyT();
+				// remove added evenT
+				var flag
+				for (var iE=0; iE<eventT.length; iE++) {
+					flag = true;
+					for (var iP = preveventT.length - 1; iP >= 0; iP--) {
+						if (preveventT[iP] == eventT[iE]){
+							flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
+							break;
+						}
+					};
+					if (flag){
+						//remove from db
+						for (var iS=-1;iS<graph_data[0].length-1;iS++){
+							//loop to find the correct series: drawback = if several events at the same time index, all of them could be removed, but in fact, since we can only undo once, none of them are to be removed. (BUG)
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:cur_id, time:eventT[iE], series_id:iS},
+								traditional: true,
+								success: function(data){
+									if (!(Object.getOwnPropertyNames(data).length === 0)){
+										//remove it
+										$.ajax({
+											url: '{{=URL("del_event.json")}}',
+											data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id']},
+											traditional: true
+										});
+									}
+								}
+							});
+						}
+						//remove from g
+						var anns = g.annotations();
+						for (var iA=0;iA<anns.length;iA++){
+							if (anns[iA].xval==eventT[iE]){
+								anns.splice(iA,1);
+								iA--;
+							}
+						}
+						g.setAnnotations(anns);
+						//remove from eventT
+						eventT.splice(iE,1);
+						iE--;
+					}
+				}
+				// add removed evenT
+				var flag_exist
+				var anns = g.annotations();
+				for (var iP = preveventT.length - 1; iP >= 0; iP--) {
+					flag = true;
+					for (var iE=0; iE<eventT.length; iE++) {
+						if (preveventT[iP] == eventT[iE]){
+							flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
+							break;
+						}
+					};
+					if (flag){
+						//add db
+						for (var iE = event_del.length - 1; iE >= 0; iE--) {
+							if (event_del[iE].time == preveventT[iP]){
+								//create it
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'type', val: event_del[iE].type},
+									traditional: true
+								});
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'series_name', val: event_del[iE].series_name},
+									traditional: true
+								});
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'volume', val: event_del[iE].volume},
+									traditional: true
+								});
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'concentration', val: event_del[iE].concentration},
+									traditional: true
+								});
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'comment', val: event_del[iE].comment},
+									traditional: true
+								});
+								//add to g
+								if (event_del[iE].series_id==-1){
+									for (var i = 0; i < g.colors_.length; i++) {
+										anns.push({
+											series: g.user_attrs_['labels'][i+1],
+											xval: event_del[iE].time,
+											icon: '/flise/static/icons/mark-event.png',
+											width: 16,
+											height: 16,
+											tickHeight: 2,
+											text: event_del[iE].type
+										});
+									}
+								} else {
+									anns.push({
+										series: g.user_attrs_['labels'][event_del[iE].series_id+1],
+										xval: event_del[iE].time,
+										icon: '/flise/static/icons/mark-event.png',
+										width: 16,
+										height: 16,
+										tickHeight: 2,
+										text: event_del[iE].type
+									});
+								}
+								event_del.splice(iE,1);
+							}
+						};
+					}
+				}
+				g.setAnnotations(anns);
+				//save eventT to db.flise_file
+				eventT = preveventT.slice();
+				get_set_flisefile_option(cur_id, 'eventT');
 			});
 			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 		});
@@ -1724,6 +1848,7 @@ function erase(startX, endX) {
 			iN--;
 		}
 	}
+	event_del = [];
 	for (var iE=0; iE<eventT.length; iE++) {
 		if ((eventT[iE]>=startX)&&(eventT[iE]<=endX)){
 			//remove from db
@@ -1734,6 +1859,8 @@ function erase(startX, endX) {
 					traditional: true,
 					success: function(data){
 						if (!(Object.getOwnPropertyNames(data).length === 0)){
+							//store for undo
+							event_del.push(data);
 							//remove it
 							$.ajax({
 								url: '{{=URL("del_event.json")}}',
@@ -1863,7 +1990,7 @@ function add2event(context,g){
 					traditional: true
 				});
 				//and add it to the eventT (eventT behaves as a list to remember locally where the event are, even if the events/annotations are stored in db, and in the graph indirectly as well.): so, it is redendant (bad baaaad!), but conveniant (to be managed as cutT for instance).
-				//save2undo(); //for the moment we don't undo event addition
+				save2undo();
 				//If array is empty, initialize
 				if (eventT.length==0){
 					eventT.push(time);

@@ -85,6 +85,7 @@ function init_file(cur_id,name){
 		prevnocutT = [];
 		prevdropT = [];
 		preveventT = [];
+		event_del = [];
 		dataT = [];
 		//Reset the global graph object "g"
 		g=undefined;
@@ -430,8 +431,8 @@ function init_file(cur_id,name){
 			$('select[name="select_strain_global"]').change(function(){
 				//Save new strain reference
 				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'strain_id', val: parseInt($(this).val())}, //BUG
+					url: '{{=URL("store_strain")}}',
+					data: {record_id:cur_id, val: $(this).val()},
 					traditional: true
 				});
 			});
@@ -1256,7 +1257,8 @@ function interval2export(pos) {
 				st = st.replace(/%start%/,intStart);
 				st = st.replace(/%end%/,intEnd);
 				st = st.replace(/%name%/, name)
-				st = st.replace(/%strain_ref%/, $('#strains_store').html());
+				st = st.replace(/%strain_ref%/, $('#strains_store > div').html());
+				st = st.replace('select_strain_global', 'sub_select_strain');
 				st = st.replace(/%comments%/, comments);
 				st = st.replace(/%od%/, od);
 				st = st.replace(/%dilutionf%/, dilutionf);
@@ -1271,7 +1273,7 @@ function interval2export(pos) {
 				}
 				st = st.replace(/%caloptions%/,'');
 				$('#subinterval').append(st);
-				$('#subinterval select[name="select_strain"][value='+strain_ref+']').attr('selected','selected');
+				$('#subinterval select[name="sub_select_strain"] option[value="'+strain_ref+'"]').attr('selected','selected');
                 //jQuery('input.').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
                 //jQuery('input.double,input.decimal').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-\.,]|[\-](?=.)|[\.,](?=[0-9]*[\.,])/g,'').reverse();});
 				
@@ -1287,7 +1289,7 @@ function interval2export(pos) {
 					var data = {'1 Parameters': { header:[], 
 									data: [
 									['Name',$('input[name="sub_name"]').val(), ' '],
-									['Strain',$('#subinterval select[name="select_strain"]').val(), $('#subinterval option:selected').html()],
+									['Strain',$('#subinterval select[name="sub_select_strain"]').val(), $('#subinterval option:selected').html()],
 									['Optical density',$('input[name="sub_od"]').val(), ' '],
 									['Dilution factor',$('input[name="sub_dilutionf"]').val(), ' '],
 									['Cell diameter',$('input[name="sub_celldiameter"]').val(), ' '],
@@ -1307,7 +1309,7 @@ function interval2export(pos) {
 				});	
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				
-				//Strain reference input
+				//Name input
 				$('input[name="sub_name"]').unbind('change');
 				$('input[name="sub_name"]').change(function(){
 					// TODO: first check this name does not exist already for this FLISE file?
@@ -1319,8 +1321,8 @@ function interval2export(pos) {
 					});
 				});
 				//Strain reference input
-				$('input[name="sub_strain_ref"]').unbind('change');
-				$('input[name="sub_strain_ref"]').change(function(){
+				$('select[name="sub_select_strain"]').unbind('change');
+				$('select[name="sub_select_strain"]').change(function(){
 					//Save new strain reference
 					$.ajax({
 						url: '{{=URL("store_subint_option.json")}}',
@@ -1331,27 +1333,27 @@ function interval2export(pos) {
 				//OD input
 				$('input[name="sub_od"]').unbind('change');
 				$('input[name="sub_od"]').change(function(){
-					//Save new strain reference
+					//Save new OD
 					$.ajax({
 						url: '{{=URL("store_subint_option.json")}}',
 						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'optical_density', val: $(this).val()},
 						traditional: true
 					});
 				});
-				//Strain reference input
+				//Dilution factor input
 				$('input[name="sub_dilutionf"]').unbind('change');
 				$('input[name="sub_dilutionf"]').change(function(){
-					//Save new strain reference
+					//Save new dilution factor
 					$.ajax({
 						url: '{{=URL("store_subint_option.json")}}',
 						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'dilution_factor', val: $(this).val()},
 						traditional: true
 					});
 				});
-				//Strain reference input
+				//Cell diameter input
 				$('input[name="sub_celldiameter"]').unbind('change');
 				$('input[name="sub_celldiameter"]').change(function(){
-					//Save new strain reference
+					//Save new cell diameter
 					$.ajax({
 						url: '{{=URL("store_subint_option.json")}}',
 						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'cell_diameter', val: $(this).val()},

@@ -98,6 +98,11 @@ def store_option():
 	else:
 		return getattr(db.flise_file[int(record_id)], var_name)
 
+def store_strain():
+	record_id = request.vars.record_id
+	if request.vars.val:
+		db.flise_file[int(record_id)].update_record(strain_id=request.vars.val)
+
 def store_subint_option():
 	response.generic_patterns = ['json']
 	flise_record_id = request.vars.flise_record_id
@@ -201,7 +206,7 @@ def species():
 	return SELECT([OPTION('')]+[OPTION(x,_value=x) for x in species], _name="select_species", _style="width:100px")
 
 def strains():
-	return SELECT([OPTION('')]+[OPTION(record.name,_value=record.identifier) for record in db(db.strain.id>0).select()], _name="select_strain", _style="width:150px")
+	return SELECT([OPTION('')]+[OPTION(record.name,_value=record.id) for record in db(db.strain.id>0).select()], _name="select_strain", _style="width:150px")
 
 def global_options():
 	response.generic_patterns = ['json']

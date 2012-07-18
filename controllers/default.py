@@ -105,6 +105,7 @@ def store_strain():
 
 def store_subint_option():
 	response.generic_patterns = ['json']
+	from gluon.contrib import simplejson
 	flise_record_id = request.vars.flise_record_id
 	interval_time = request.vars.interval_time
 	record = db(db.subintervals.extract_time == interval_time)(db.subintervals.flise_file_id == flise_record_id).select().first()
@@ -117,7 +118,7 @@ def store_subint_option():
 			record = db.subintervals.insert(flise_file_id=flise_record_id, extract_time=interval_time)
 			record.update_record(**{var_name: val})
 	if record:
-		return dict([(field,record[field]) for field in db.subintervals.fields])
+		return simplejson.dumps(dict([(field,record[field]) for field in db.subintervals.fields]))
 	else:
 		return dict()
 

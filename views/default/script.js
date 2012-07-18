@@ -1201,6 +1201,8 @@ function interval2export(pos) {
 	var dilutionf = $('input[name="dilutionf"]').val();
 	var celldiameter = $('input[name="celldiameter"]').val();
 	var name = '';
+	var calintercept = [];
+	var calslope = [];
 	
 	$.ajax({
 		url: '{{=URL("store_subint_option.json")}}',
@@ -1239,6 +1241,20 @@ function interval2export(pos) {
 					data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'cell_diameter', val: celldiameter},
 					traditional: true
 				});
+				for (var i = $('#series_options > table').size()-1; i >= 0; i--) {
+					calintercept.push(undefined);
+					calslope.push(undefined);
+				}
+				$.ajax({
+					url: '{{=URL("store_subint_option.json")}}',
+					data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'intercept', val: calintercept},
+					traditional: true
+				});
+				$.ajax({
+					url: '{{=URL("store_subint_option.json")}}',
+					data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'slope', val: calslope},
+					traditional: true
+				});
 			} else {
 				//load values
 				strain_ref = subintervals_data['strain_id'];
@@ -1247,6 +1263,8 @@ function interval2export(pos) {
 				od = subintervals_data['optical_density'];
 				dilutionf = subintervals_data['dilution_factor'];
 				celldiameter = subintervals_data['cell_diameter'];
+				calintercept = subintervals_data['intercept'];
+				calslope = subintervals_data['slope'];
 			}
 			//Temp subinterval options and create corresponding panel
 			$.get('{{=URL(request.application, 'static/templates','subinterval.html')}}', function(htmlstr) {
@@ -1266,16 +1284,24 @@ function interval2export(pos) {
 				//Series - Calibration
 				var stcal;
 				for (var i = 0;i<$('#series_options > table').size();i++){
-					stcal = '<tr><td style="color:%color%">%species%</td><td>Slope: <input name="sub_calslope" type="text" value="" style="width:60px"/></td><td>Intercept: <input name="sub_calintercept" type="text" value="" style="width:60px"/>(Volt)</td></tr>';
+					stcal = '<tr><td style="color:%color%">%species%</td><td>Slope: <input name="sub_calslope" type="text" value="%slope%" style="width:60px"/></td><td>Intercept: <input name="sub_calintercept" type="text" value="%intercept%" style="width:60px"/>(Volt)</td></tr>';
 					stcal = stcal.replace(/%species%/, $('#series'+i+' > tbody > tr > td > select').val());
 					stcal = stcal.replace(/%color%/, $('#series'+i+' > tbody > tr:eq(1) > td > table > tbody > tr > td > input').val());
+					if (calslope[i]==undefined) {
+						stcal = stcal.replace(/%slope%/,'');
+					} else {
+						stcal = stcal.replace(/%slope%/,calslope[i]);
+					}
+					if (calintercept[i]==undefined) {
+						stcal = stcal.replace(/%intercept%/,'');
+					} else {
+						stcal = stcal.replace(/%intercept%/,calintercept[i]);
+					}
 					st = st.replace(/%caloptions%/,stcal+'%caloptions%');
 				}
 				st = st.replace(/%caloptions%/,'');
 				$('#subinterval').append(st);
 				$('#subinterval select[name="sub_select_strain"] option[value="'+strain_ref+'"]').attr('selected','selected');
-                //jQuery('input.').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
-                //jQuery('input.double,input.decimal').live('keyup', function(){this.value=this.value.reverse().replace(/[^0-9\-\.,]|[\-](?=.)|[\.,](?=[0-9]*[\.,])/g,'').reverse();});
 				
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				//spreadsheet export
@@ -1371,7 +1397,31 @@ function interval2export(pos) {
 					});
 				});
 				//Calibration
-				
+				//BUG: if one enter only 1 value for instance for the second series and none for the first, only one value is stored and therefore is passed for the first series.
+				$('input[name="sub_calintercept"]').change(function(){
+					var items = [];
+					$('input[name="sub_calintercept"]').each(function(){
+						items.push($(this).val());
+					});
+					//Save intercept change
+					$.ajax({
+						url: '{{=URL("store_subint_option.json")}}',
+						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'intercept', val: items},
+						traditional: true
+					});
+				});
+				$('input[name="sub_calslope"]').change(function(){
+					var items = [];
+					$('input[name="sub_calslope"]').each(function(){
+						items.push($(this).val());
+					});
+					//Save slope change
+					$.ajax({
+						url: '{{=URL("store_subint_option.json")}}',
+						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'slope', val: items},
+						traditional: true
+					});
+				});
 				//Make popup
 				modal = $("#subinterval").modal({
 					overlayClose:true,

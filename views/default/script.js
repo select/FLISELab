@@ -90,6 +90,8 @@ function init_file(cur_id,name){
 		//Reset the global graph object "g"
 		g=undefined;
 		g2=undefined;
+		$('#graphdiv2').hide();
+		$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
 		//Verif if same name is used, and thus update series name in g, and eventually add number if same name for several series
 		graph_labels = data.labels;
 		graph_labels.splice(0,1);
@@ -131,6 +133,7 @@ function init_file(cur_id,name){
 		graph_labels.splice(0,0,"Time");
 		//Create "g": main series plot
 		createGraph(graph_data, graph_labels);
+		g.resize(window.innerWidth-510, (window.innerHeight-90));
 		//Initiate graph underlaycallback based on cutT, etc...
 		unifyT();
 		//Display events if they are some

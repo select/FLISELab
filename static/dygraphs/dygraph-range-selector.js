@@ -245,7 +245,15 @@ DygraphRangeSelector.prototype.initInteraction_ = function() {
         return e.srcElement == self.iePanOverlay_;
     } else {
       // Getting clientX directly from the event is not accurate enough :(
-      var clientX = self.canvasRect_.x + (e.layerX != undefined ? e.layerX : e.offsetX);
+      //OLD : var clientX = self.canvasRect_.x + (e.layerX != undefined ? e.layerX : e.offsetX);
+      //START NEW (fix from https://github.com/danvk/dygraphs/commit/e46e3d09ab519d3c154eca0df217b921d0e5b500 mentionned http://code.google.com/p/dygraphs/issues/detail?id=267&can=1&q=layerX&colspec=ID%20Type%20Status%20Priority%20Stars%20Milestone%20Owner%20Summary)
+      var clientX;
+      if (e.offsetX != undefined) {
+        clientX = self.canvasRect_.x + e.offsetX;
+      } else {
+        clientX = e.clientX;
+      }
+      //END NEW
       var zoomHandleStatus = self.getZoomHandleStatus_();
       return (clientX > zoomHandleStatus.leftHandlePos && clientX < zoomHandleStatus.rightHandlePos);
     }

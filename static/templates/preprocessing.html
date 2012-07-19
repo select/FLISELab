@@ -1,12 +1,18 @@
-					<h3>Savitzky-Golay filter</h3>
+					<h3>Savitzky-Golay differentiation [<a onclick="$('#SG_info').toggle('slow')">?</a>]</h3>
+					<div id="SG_info" style="font-size:smaller"><p> <span style="font-weight:bold">Reference:</span>   Savitzky, A.; Golay, M.J.E. (1964). "Smoothing and Differentiation of Data by Simplified Least Squares Procedures". Analytical Chemistry 36 (8): 1627–1639. <a href="http://dx.doi.org/10.1021%2Fac60214a047" class="href">DOI:10.1021/ac60214a047</a></p>
+					<p>Smoothing and differentiating by convolution is performed for aesthetic reasons. Fitting models to smoothed data might be misleading since the convolution alters the distribution of <em>noise</em>, and the differentiation process amplifies high-frequency noise. </p></div>
 					<table>
 							<tr>
-									<th>Local half window size</th>
-									<td><input type="range" min="6" max="60" value="40" step="1" class="savgol_slider" id="lochw"/> <span/></td>
+								<th>Local half window size</th>
+								<td><input type="range" min="6" max="60" value="40" step="1" class="savgol_slider" id="lochw"/> <span/></td>
 							</tr>
 							<tr>
-									<th>Order of the polynomial</th>
-									<td><input type="range" min="2" max="8" value="4" step="1" class="savgol_slider" id="order"/> <span/></td>
+								<th>Order of the polynomial</th>
+								<td><input type="range" min="2" max="8" value="4" step="1" class="savgol_slider" id="order"/> <span/></td>
+							</tr>
+							<tr>
+								<th>Overlay smoothed data</th>
+								<td><input type="checkbox" id="overlay"></td>
 							</tr>
 					</table>
 					<input id="preproc" type="submit" value="Extract, process and plot"/>

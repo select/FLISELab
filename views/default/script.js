@@ -1,6 +1,7 @@
 /************ GLOBAL VAR ******************/
 var graph_data = [];//Data to be displayed and processed
 var graph_time = [];//Data for the original recorded time
+var graph_labels;//Labels adapted
 var g;//Graph variable (from dygraph)
 var g2;//Graph variable for preprocessing result
 var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
@@ -210,23 +211,23 @@ function init_file(cur_id,name){
 			//Series name input
 			$('select[name="select_species"]').unbind('change');
 			$('select[name="select_species"]').change(function(){
-				var items = [];
+				graph_labels = [];
 				$('select[name="select_species"]').each(function(){
-					if (! $(this).val() ) items.push('Species');
-					else items.push($(this).val());
+					if (! $(this).val() ) graph_labels.push('Species');
+					else graph_labels.push($(this).val());
 				});
-				items = items.slice(0,-1)
+				graph_labels = graph_labels.slice(0,-1)
 				//Save new series name
 				$.ajax({
 					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'series_species', val: items},
+					data: {record_id:cur_id, var_name:'series_species', val: graph_labels},
 					traditional: true
 				});
 				//Update series name in g, and eventually add number if same name for several series
 				var listSim=[];
 				var flag=false;
 				var iL;
-				for (var i=0; i<items.length-1; i++){
+				for (var i=0; i<graph_labels.length-1; i++){
 					//find if it belongs to one list of similarities
 					flag=false;
 					if (!(listSim==[])){
@@ -245,21 +246,21 @@ function init_file(cur_id,name){
 						iL=listSim.length;
 						listSim[iL]=[i];
 						//find companions
-						for (var j=i+1; j<items.length; j++){
-							if (items[i]==items[j]){
+						for (var j=i+1; j<graph_labels.length; j++){
+							if (graph_labels[i]==graph_labels[j]){
 								listSim[iL].push(j);
 							}
 						}
 						//alter names with index so that graph labels are different
 						if (listSim[iL].length>1){
 							for (var j=0; j<listSim[iL].length; j++){
-								items[listSim[iL][j]]=items[listSim[iL][j]]+j;
+								graph_labels[listSim[iL][j]]=graph_labels[listSim[iL][j]]+j;
 							}
 						}
 					}
 				}
-				items.splice(0,0,"Time");
-				g.updateOptions({'labels':items});
+				graph_labels.splice(0,0,"Time");
+				g.updateOptions({'labels':graph_labels});
 				//Update series name db.event and series name in g annotations
 				for (var iE=0; iE<eventT.length; iE++) {
 					if (!(iE == eventT.length-1)){
@@ -486,7 +487,7 @@ function init_file(cur_id,name){
 			else g.updateOptions({file: graph_data, rollPeriod: 1});
 			//Activate smoothing (only on "g")
 			$('input[name="smooth"]').unbind('click');
-				$('input[name="smooth"]').click(function(){
+			$('input[name="smooth"]').click(function(){
 				//Save checked state
 				$.ajax({
 					url: '{{=URL("store_option")}}',
@@ -717,6 +718,7 @@ function init_file(cur_id,name){
 			$('#deriv').html('');
 			//Load panel
 			$('#deriv').append(data);
+			$('#SG_info').hide();
 			//Value next to slider
 			$('input[class="savgol_slider"]').each(function(){
 				$(this).parent().find('span').html($(this).val());
@@ -796,8 +798,8 @@ function init_file(cur_id,name){
 						//Plot
 						$('#graphdiv2').show();
 						var derivlabels=['Time'];
-						for (var i=0; i<g.colors_.length; i++){
-							derivlabels.push('Deriv'+i);
+						for (var i=0; i<graph_labels.length; i++){
+							derivlabels.push('SG1_'+graph_labels[i+1]);
 						}
 						g2 = new Dygraph(document.getElementById("graphdiv2"), data2plot,
 							{
@@ -873,6 +875,73 @@ function init_file(cur_id,name){
 						$("#preproc").attr("value", "Extract, reprocess and plot").removeAttr("disabled").removeAttr("style");
 					}
 				});
+				//Get the smoothed data and overlay
+				if ($("#overlay").is(':checked')){
+					//Force to remove Dygraph smoothing
+					if ($('input[name="smooth"]').is(':checked')){
+						g.updateOptions({rollPeriod: 1});
+						$('input[name="smooth"]').attr('checked', false);
+						$.ajax({
+							url: '{{=URL("store_option")}}',
+							data: {record_id:cur_id, var_name:'disp_smooth', val: $('input[name="smooth"]').is(':checked')},
+							traditional: true
+						});
+					}
+					$.ajax({
+						url: '{{=URL('get_savgol.json')}}',
+						data: {w:lochw,order:porder,deriv:0,data:JSON.stringify(data2derive)},
+						traditional: true,
+						type: 'POST',
+						success: function(data){
+							var result = data.result;
+							//Shape data to plot
+							var data2plot=[];
+							var nS = graph_data[0].length;
+							for (var iP=0; iP<graph_data.length;iP++){
+								data2plot.push([graph_data[iP][0]]);//recopy time
+								//recopy graph_data points
+								for (var iS=1; iS<nS;iS++){
+									data2plot[iP].push([graph_data[iP][iS]]);
+								}
+								//initialize to null
+								for (var iS=1; iS<nS;iS++){
+									data2plot[iP].push(null);
+								}
+							}
+							var Tsamp=(graph_data[1][0]-graph_data[0][0]);
+							var iIpass=0;
+							for (var iI=0; iI<dataT.length; iI++){
+								//prevent small intervals to be passed
+								if (Math.ceil((dataT[iI][1]-dataT[iI][0])/Tsamp)<=(2*lochw+1)){
+									iIpass++;
+									continue;
+								}
+								//find index when graph_data[iP][0]==dataT[iI][0]
+								for (iP=0; iP<graph_data.length;iP++){
+									if (graph_data[iP][0]==dataT[iI][0]){break;}
+								}
+								//place values
+								for (iS=0; iS<result[iI-iIpass].length;iS++){
+									for (var iP2=0; iP2<result[iI-iIpass][iS].length;iP2++){
+										data2plot[iP+iP2][iS+nS]=result[iI-iIpass][iS][iP2];
+									}
+								}
+							}
+							//Plot in g
+							var colors = g.colors_.slice();
+							var labels = graph_labels.slice();
+							for (var iS =  1; iS < nS; iS++) {
+								colors.push("#000000");
+								labels.push('SG0_'+graph_labels[iS]);
+							};
+							g.updateOptions({ 
+								file: data2plot,
+								labels: labels,
+								colors: colors
+							});
+						}
+					});
+				}
 			});
 			$('#preproc_close').unbind('click');
 			$('#preproc_close').click(function(){
@@ -881,6 +950,11 @@ function init_file(cur_id,name){
 				g2=undefined;
 				$('#graphdiv2').hide();
 				$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
+				g.updateOptions({ 
+					file: graph_data,
+					labels: graph_labels,
+					colors: g.colors_.slice(0,graph_labels.length)
+				});
 				g.resize(window.innerWidth-510, (window.innerHeight-90));
 			});
 			//Default button unabling

@@ -501,11 +501,11 @@ function init_file(cur_id,name){
 			$('input[name="smooth_val"]').unbind();
 			//Value next to slider
 			$('input[name="smooth_val"]').each(function(){
-				$(this).parent().find('span').html($(this).val());
+				$(this).parent().find('span').eq(0).html($(this).val());
 			});
 			//Update smooth value
 			$('input[name="smooth_val"]').change(function(){
-				$(this).parent().find('span').html($(this).val());
+				$(this).parent().find('span').eq(0).html($(this).val());
 			});
 			$('input[name="smooth_val"]').mouseup(function(){
 				//Save new smooth_value
@@ -880,7 +880,8 @@ function init_file(cur_id,name){
 					//Force to remove Dygraph smoothing
 					if ($('input[name="smooth"]').is(':checked')){
 						g.updateOptions({rollPeriod: 1});
-						$('input[name="smooth"]').attr('checked', false);
+						$('input[name="smooth"]').attr('checked', false).attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+						$('input[name="smooth_val"]').parent().find('span').eq(1).html('(disabled to overlay)');
 						$.ajax({
 							url: '{{=URL("store_option")}}',
 							data: {record_id:cur_id, var_name:'disp_smooth', val: $('input[name="smooth"]').is(':checked')},
@@ -956,6 +957,8 @@ function init_file(cur_id,name){
 					colors: g.colors_.slice(0,graph_labels.length)
 				});
 				g.resize(window.innerWidth-510, (window.innerHeight-90));
+				$('input[name="smooth_val"]').parent().find('span').eq(1).html('');
+				$('input[name="smooth"]').removeAttr("disabled").removeAttr("style");
 			});
 			//Default button unabling
 			$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");

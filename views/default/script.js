@@ -519,19 +519,44 @@ function init_file(cur_id,name){
 			});
 			$('#global_options').slideDown();
 		});
-		
-		// Load autosegmentation panel
-		$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
-			//Reset the panel
-			$('#autoseg_options').html('');
-			//Create panel
-			$('#autoseg_options').append(data);
+	});
+
+	// Load autosegmentation panel
+	$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
+		var autoseg_str = data;
+		//Reset the panel
+		$('#autoseg_options').html('');
+		//Create panel
+		$.getJSON('{{=URL('autoseg_options.json')}}/'+cur_id,function(data){
+			autoseg_str = autoseg_str.replace(/%autoseg_win%/, data.autoseg_win);
+			autoseg_str = autoseg_str.replace(/%autoseg_fuse%/, data.autoseg_fuse);
+			$('#autoseg_options').append(autoseg_str);
+			//Unbind
+			$('input[class="segmentation_slider"]').unbind();
 			//Value next to slider
 			$('input[class="segmentation_slider"]').each(function(){
 				$(this).parent().find('span').html($(this).val());
 			});
+			//When slider moves, update displayed value
 			$('input[class="segmentation_slider"]').change(function(){
 				$(this).parent().find('span').html($(this).val());
+			});
+			//Update in db
+			$('#locw').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'autoseg_win', val: $(this).val()},
+					traditional: true
+				});
+			});
+			$('#fusw').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'autoseg_fuse', val: $(this).val()},
+					traditional: true
+				});
 			});
 			//Autosegmentation start button
 			// -here: when we launch autosegmentation, the button is disabled, as well as the Undo button from Tools panel, and only the Revert button is unabled.
@@ -559,138 +584,128 @@ function init_file(cur_id,name){
 			$("#autoseg").removeAttr("disabled").removeAttr("style");
 			$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 		});
+	});
+	
+	//Load Tools panel
+	$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
+		//Initialize tool variables
+		isSelecting = false;
+		tool = 'zoom';//Default tool
 		
-		//Load Tools panel
-		$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
-			//Initialize tool variables
-			isSelecting = false;
-			tool = 'zoom';//Default tool
-			
+		//Reset panel
+		$('#tools').html('');
+		//Load the panel
+		$('#tools').append(data);
+		
+		//Load Tool Export panel
+		$.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {
 			//Reset panel
-			$('#tools').html('');
+			$('#export').html('');
 			//Load the panel
-			$('#tools').append(data);
+			$('#export').append(data);
 			
-			//Load Tool Export panel
-			$.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {
-				//Reset panel
-				$('#export').html('');
-				//Load the panel
-				$('#export').append(data);
-				
-				//Initialize default tool
-				change_tool(document.getElementById("tool_"+tool));
-			});
-			
-			//Undo button (see button Revert in Autosegmentation panel)
-			$('#revert_tool').unbind('click');
-			$('#revert_tool').click(function(){
-				$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				cutT = prevcutT.slice();
-				nocutT = prevnocutT.slice();
-				dropT = prevdropT.slice();
-				unifyT();
-				// remove added evenT
-				var flag
-				for (var iE=0; iE<eventT.length; iE++) {
-					flag = true;
-					for (var iP = preveventT.length - 1; iP >= 0; iP--) {
-						if (preveventT[iP] == eventT[iE]){
-							flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
-							break;
+			//Initialize default tool
+			change_tool(document.getElementById("tool_"+tool));
+		});
+		
+		//Undo button (see button Revert in Autosegmentation panel)
+		$('#revert_tool').unbind('click');
+		$('#revert_tool').click(function(){
+			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+			cutT = prevcutT.slice();
+			nocutT = prevnocutT.slice();
+			dropT = prevdropT.slice();
+			unifyT();
+			// remove added evenT
+			var flag
+			for (var iE=0; iE<eventT.length; iE++) {
+				flag = true;
+				for (var iP = preveventT.length - 1; iP >= 0; iP--) {
+					if (preveventT[iP] == eventT[iE]){
+						flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
+						break;
+					}
+				};
+				if (flag){
+					//remove from db
+					for (var iS=-1;iS<graph_data[0].length-1;iS++){
+						//loop to find the correct series: drawback = if several events at the same time index, all of them could be removed, but in fact, since we can only undo once, none of them are to be removed. (BUG)
+						$.ajax({
+							url: '{{=URL("store_event.json")}}',
+							data: {flise_record_id:cur_id, time:eventT[iE], series_id:iS},
+							traditional: true,
+							success: function(data){
+								if (!(Object.getOwnPropertyNames(data).length === 0)){
+									//remove it
+									$.ajax({
+										url: '{{=URL("del_event.json")}}',
+										data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id']},
+										traditional: true
+									});
+								}
+							}
+						});
+					}
+					//remove from g
+					var anns = g.annotations();
+					for (var iA=0;iA<anns.length;iA++){
+						if (anns[iA].xval==eventT[iE]){
+							anns.splice(iA,1);
+							iA--;
 						}
-					};
-					if (flag){
-						//remove from db
-						for (var iS=-1;iS<graph_data[0].length-1;iS++){
-							//loop to find the correct series: drawback = if several events at the same time index, all of them could be removed, but in fact, since we can only undo once, none of them are to be removed. (BUG)
+					}
+					g.setAnnotations(anns);
+					//remove from eventT
+					eventT.splice(iE,1);
+					iE--;
+				}
+			}
+			// add removed evenT
+			var flag_exist
+			var anns = g.annotations();
+			for (var iP = preveventT.length - 1; iP >= 0; iP--) {
+				flag = true;
+				for (var iE=0; iE<eventT.length; iE++) {
+					if (preveventT[iP] == eventT[iE]){
+						flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
+						break;
+					}
+				};
+				if (flag){
+					//add db
+					for (var iE = event_del.length - 1; iE >= 0; iE--) {
+						if (event_del[iE].time == preveventT[iP]){
+							//create it
 							$.ajax({
 								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:cur_id, time:eventT[iE], series_id:iS},
-								traditional: true,
-								success: function(data){
-									if (!(Object.getOwnPropertyNames(data).length === 0)){
-										//remove it
-										$.ajax({
-											url: '{{=URL("del_event.json")}}',
-											data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id']},
-											traditional: true
-										});
-									}
-								}
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'type', val: event_del[iE].type},
+								traditional: true
 							});
-						}
-						//remove from g
-						var anns = g.annotations();
-						for (var iA=0;iA<anns.length;iA++){
-							if (anns[iA].xval==eventT[iE]){
-								anns.splice(iA,1);
-								iA--;
-							}
-						}
-						g.setAnnotations(anns);
-						//remove from eventT
-						eventT.splice(iE,1);
-						iE--;
-					}
-				}
-				// add removed evenT
-				var flag_exist
-				var anns = g.annotations();
-				for (var iP = preveventT.length - 1; iP >= 0; iP--) {
-					flag = true;
-					for (var iE=0; iE<eventT.length; iE++) {
-						if (preveventT[iP] == eventT[iE]){
-							flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
-							break;
-						}
-					};
-					if (flag){
-						//add db
-						for (var iE = event_del.length - 1; iE >= 0; iE--) {
-							if (event_del[iE].time == preveventT[iP]){
-								//create it
-								$.ajax({
-									url: '{{=URL("store_event.json")}}',
-									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'type', val: event_del[iE].type},
-									traditional: true
-								});
-								$.ajax({
-									url: '{{=URL("store_event.json")}}',
-									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'series_name', val: event_del[iE].series_name},
-									traditional: true
-								});
-								$.ajax({
-									url: '{{=URL("store_event.json")}}',
-									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'volume', val: event_del[iE].volume},
-									traditional: true
-								});
-								$.ajax({
-									url: '{{=URL("store_event.json")}}',
-									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'concentration', val: event_del[iE].concentration},
-									traditional: true
-								});
-								$.ajax({
-									url: '{{=URL("store_event.json")}}',
-									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'comment', val: event_del[iE].comment},
-									traditional: true
-								});
-								//add to g
-								if (event_del[iE].series_id==-1){
-									for (var i = 0; i < g.colors_.length; i++) {
-										anns.push({
-											series: g.user_attrs_['labels'][i+1],
-											xval: event_del[iE].time,
-											icon: '/flise/static/icons/mark-event.png',
-											width: 16,
-											height: 16,
-											tickHeight: 2,
-											text: event_del[iE].type
-										});
-									}
-								} else {
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'series_name', val: event_del[iE].series_name},
+								traditional: true
+							});
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'volume', val: event_del[iE].volume},
+								traditional: true
+							});
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'concentration', val: event_del[iE].concentration},
+								traditional: true
+							});
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'comment', val: event_del[iE].comment},
+								traditional: true
+							});
+							//add to g
+							if (event_del[iE].series_id==-1){
+								for (var i = 0; i < g.colors_.length; i++) {
 									anns.push({
-										series: g.user_attrs_['labels'][event_del[iE].series_id+1],
+										series: g.user_attrs_['labels'][i+1],
 										xval: event_del[iE].time,
 										icon: '/flise/static/icons/mark-event.png',
 										width: 16,
@@ -699,32 +714,82 @@ function init_file(cur_id,name){
 										text: event_del[iE].type
 									});
 								}
-								event_del.splice(iE,1);
+							} else {
+								anns.push({
+									series: g.user_attrs_['labels'][event_del[iE].series_id+1],
+									xval: event_del[iE].time,
+									icon: '/flise/static/icons/mark-event.png',
+									width: 16,
+									height: 16,
+									tickHeight: 2,
+									text: event_del[iE].type
+								});
 							}
-						};
-					}
+							event_del.splice(iE,1);
+						}
+					};
 				}
-				g.setAnnotations(anns);
-				//save eventT to db.flise_file
-				eventT = preveventT.slice();
-				get_set_flisefile_option(cur_id, 'eventT');
-			});
-			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+			}
+			g.setAnnotations(anns);
+			//save eventT to db.flise_file
+			eventT = preveventT.slice();
+			get_set_flisefile_option(cur_id, 'eventT');
 		});
-		
-		//Load preprocessing panel
-		$.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
-			//Reset panel
-			$('#deriv').html('');
-			//Load panel
-			$('#deriv').append(data);
+		$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+	});
+	
+	//Load preprocessing panel
+	$.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
+		var sg_str = data;
+		//Reset panel
+		$('#deriv').html('');
+		//Load panel
+		$.getJSON('{{=URL('sg_options.json')}}/'+cur_id,function(data){
+			//Load values
+			sg_str = sg_str.replace(/%sg_win%/, data.sg_win);
+			sg_str = sg_str.replace(/%sg_order%/, data.sg_order);
+			if(data.sg_overlay == true){
+				sg_str = sg_str.replace(/%sg_overlay%/, 'checked');
+			} else {
+				sg_str = sg_str.replace(/%sg_overlay%/, '');
+			}
+			//Write panel
+			$('#deriv').append(sg_str);
+			//Hide info
 			$('#SG_info').hide();
 			//Value next to slider
+			$('input[class="savgol_slider"]').unbind();
 			$('input[class="savgol_slider"]').each(function(){
 				$(this).parent().find('span').html($(this).val());
 			});
 			$('input[class="savgol_slider"]').change(function(){
 				$(this).parent().find('span').html($(this).val());
+			});
+			//Update in db
+			$('#lochw').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'sg_win', val: $(this).val()},
+					traditional: true
+				});
+			});
+			$('#order').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'sg_order', val: $(this).val()},
+					traditional: true
+				});
+			});
+			//Check box to activate or not overlay of smoothed data on original series
+			$('#overlay').unbind('click');
+			$('#overlay').click(function(){
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'sg_overlay', val: $(this).is(':checked')},
+					traditional: true
+				});
 			});
 			//Force local window to be big enought for polynomial order: min loc half window (lochw) of size 6 and max polynomial order (porder) of 10 insures that porder<2*lochw.
 			//Preprocessing button

@@ -4,15 +4,15 @@
 					<table>
 							<tr>
 								<th>Local half window size</th>
-								<td><input type="range" min="6" max="60" value="40" step="1" class="savgol_slider" id="lochw"/> <span/></td>
+								<td><input type="range" min="6" max="60" value="%sg_win%" step="1" class="savgol_slider" id="lochw"/> <span/></td>
 							</tr>
 							<tr>
 								<th>Order of the polynomial</th>
-								<td><input type="range" min="2" max="8" value="4" step="1" class="savgol_slider" id="order"/> <span/></td>
+								<td><input type="range" min="2" max="8" value="%sg_order%" step="1" class="savgol_slider" id="order"/> <span/></td>
 							</tr>
 							<tr>
 								<th>Overlay smoothed data</th>
-								<td><input type="checkbox" id="overlay"></td>
+								<td><input type="checkbox" id="overlay" %sg_overlay%></td>
 							</tr>
 					</table>
 					<input id="preproc" type="submit" value="Extract, process and plot"/>

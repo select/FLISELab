@@ -2268,7 +2268,7 @@ function add2event(context,g){
 				var st = htmlstr;
 				var stopt;
 				if (series_id == -1){
-					stopt='<option value="wash">wash</option> <option value="injection">injection</option>';
+					stopt='<option value="wash">wash</option> <option value="injection">injection</option> <option value="dilution">dilution</option> <option value="removal">removal</option>';
 				} else {
 					stopt='<option value="calibration">calibration</option>';
 				}
@@ -2309,18 +2309,29 @@ function add2event(context,g){
 						}
 					});
 					//Update hidden fields
+					$('input[name="add_solution"]').parent().parent().show();
 					$('input[name="event_volume"]').parent().parent().show();
 					$('input[name="event_concentration"]').parent().parent().show();
 					switch($(this).val())
 					{
 					case 'comment':
+					  $('input[name="add_solution"]').parent().parent().hide();
 					  $('input[name="event_volume"]').parent().parent().hide();
 					  $('input[name="event_concentration"]').parent().parent().hide();
 					  break;
 					case 'wash':
 					  $('input[name="event_concentration"]').parent().parent().hide();
 					  break;
+					case 'removal':
+					  $('input[name="add_solution"]').parent().parent().hide();
+					  $('input[name="event_concentration"]').parent().parent().hide();
+					  break;
+					case 'dilution':
+					  $('input[name="add_solution"]').parent().parent().hide();
+					  $('input[name="event_concentration"]').parent().parent().hide();
+					  break;
 					case 'calibration':
+					  $('input[name="add_solution"]').parent().parent().hide();
 					  $('input[name="event_volume"]').parent().parent().hide();
 					  break;
 					default:
@@ -2357,24 +2368,32 @@ function add2event(context,g){
 						traditional: true
 					});
 				});
-				
 				//Show options
 				modal = $("#event").modal({
 					overlayClose:true,
 					opacity:20,
 				});
-				
 				//Hide fields according to type
 				switch(type)
 				{
 				case 'comment':
+				  $('input[name="add_solution"]').parent().parent().hide();
 				  $('input[name="event_volume"]').parent().parent().hide();
 				  $('input[name="event_concentration"]').parent().parent().hide();
 				  break;
 				case 'wash':
 				  $('input[name="event_concentration"]').parent().parent().hide();
 				  break;
+				case 'removal':
+				  $('input[name="add_solution"]').parent().parent().hide();
+				  $('input[name="event_concentration"]').parent().parent().hide();
+				  break;
+				case 'dilution':
+				  $('input[name="add_solution"]').parent().parent().hide();
+				  $('input[name="event_concentration"]').parent().parent().hide();
+				  break;
 				case 'calibration':
+				  $('input[name="add_solution"]').parent().parent().hide();
 				  $('input[name="event_volume"]').parent().parent().hide();
 				  break;
 				default:

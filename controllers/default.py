@@ -184,6 +184,9 @@ def species():
 def strains():
 	return SELECT([OPTION('')]+[OPTION(record.name,_value=record.id) for record in db(db.strain.id>0).select()], _name="select_strain", _style="width:150px")
 
+def solutions():
+	return SELECT([OPTION('')]+[OPTION(record.name,_value=record.id) for record in db(db.solution.id>0).select()], _name="select_solution", _style="width:150px")
+
 def store_option():
 	response.generic_patterns = ['html', 'json']
 	record_id = request.vars.record_id

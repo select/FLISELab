@@ -1,3 +1,4 @@
+<div style="color: red, text-font: smaller, text-align: center" id="event_warning">Please correct the fields in red...</div>
 <table>
 	<tr>
 		<th align="left">Time point: </th>
@@ -22,7 +23,7 @@
 	</tr>
 	<tr>
 		<th align="left">Solution:</th>
-		<td>select %select_solution% or <input type="submit" value="add new solution" name="add_solution"/> </td>
+		<td>select %select_solution% <input type="submit" value="edit" name="edit_solution"/> or <input type="submit" value="add new solution" name="add_solution"/> </td>
 	</tr>
 	<tr>
 		<th align="left">Volume:</th>
@@ -43,4 +44,4 @@
 		</td>
 	</tr>
 </table>
-<div style="font-size:smaller">Note: press [Esc] when finished (don't forget to leave all fields so that they are saved).</div>
+<div style="text-align: right"><input type="submit" value="Cancel" id="event_cancel"/> <input type="submit" value="Done" id="event_done"/></div>

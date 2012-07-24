@@ -161,21 +161,23 @@ db.define_table('subintervals',
         Field('intercept', 'list:string'),#JSON list of doubles
         Field('slope', 'list:string'),#JSON list of doubles
         )
+db.define_table('solution',
+        Field('name'),
+        Field('components_name', 'list:string', readable = False, writable = False),
+        Field('components_ratio', 'list:string', readable = False, writable = False),
+        )
 db.define_table('event',
         Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
         Field('time', 'double'),
         Field('type', requires = IS_IN_SET('wash calibration injection comment dilution removal'.split())),
         Field('series_id', 'integer'),
         Field('series_name', 'text'),
+        Field('solution_id', db.solution, readable = False, writable = False),
         Field('concentration', 'double'),
         Field('volume', 'double'),
         Field('comment', 'text', readable = False, writable = False),
         )
-db.define_table('solution',
-        Field('name'),
-        Field('components_name', 'list:string', readable = False, writable = False),
-        Field('components_ratio', 'list:string', readable = False, writable = False),
-        )
+
 JS = lambda x: SCRIPT(x, _type="text/javascript")
 
 def parse_raw_flise(raw_file):

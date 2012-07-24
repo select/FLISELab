@@ -591,6 +591,7 @@ function init_file(cur_id,name){
 		//Initialize tool variables
 		isSelecting = false;
 		tool = 'zoom';//Default tool
+		tool = 'event';
 		
 		//Reset panel
 		$('#tools').html('');
@@ -686,11 +687,20 @@ function init_file(cur_id,name){
 								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'series_name', val: event_del[iE].series_name},
 								traditional: true
 							});
+							if (!(event_del[iE].solution_id == null)){
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'solution_id', val: event_del[iE].solution_id},
+									traditional: true
+								});
+							}
+							if (event_del[iE].volume == null) {event_del[iE].volume=''};
 							$.ajax({
 								url: '{{=URL("store_event.json")}}',
 								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'volume', val: event_del[iE].volume},
 								traditional: true
 							});
+							if (event_del[iE].concentration == null) {event_del[iE].concentration=''};
 							$.ajax({
 								url: '{{=URL("store_event.json")}}',
 								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'concentration', val: event_del[iE].concentration},
@@ -2124,12 +2134,13 @@ function add2event(context,g){
 	var p
 	var distance
 	var selectedPoint = null;
+	var selectedPoints = g.selPoints_;
 	// Find out if the click occurs on a point.
 	var closestIdx = -1;
 	var closestDistance = Number.MAX_VALUE;
 	// check if the click was on a particular point.
-	for (var i = 0; i < g.selPoints_.length; i++) {
-		p = g.selPoints_[i];
+	for (var i = 0; i < selectedPoints.length; i++) {
+		p = selectedPoints[i];
 		distance = Math.pow(p.canvasx - context.dragStartX, 2) + Math.pow(p.canvasy - context.dragStartY, 2);
 		if (!isNaN(distance) && (closestIdx == -1 || distance < closestDistance)) {
 			closestDistance = distance;
@@ -2139,12 +2150,13 @@ function add2event(context,g){
 	// Allow any click within two pixels of the dot.
 	var radius = g.attr_('highlightCircleSize') + 2;
 	if (closestDistance <= radius * radius) {
-		selectedPoint = g.selPoints_[closestIdx];
+		selectedPoint = selectedPoints[closestIdx];
 	}
 	
-	var time = g.selPoints_[closestIdx].xval;
+	var time = selectedPoints[closestIdx].xval;
 	var series_id = -1;
 	var series_name = 'all';
+	var solution_id = null;
 	var volume = '';
 	var concentration = '';
 	var comment = '';
@@ -2159,106 +2171,19 @@ function add2event(context,g){
 		data: {flise_record_id:cur_id, time:time, series_id:series_id},
 		traditional: true,
 		success: function(data){
-			if (Object.getOwnPropertyNames(data).length === 0){
-				//create it
-				$.ajax({
-					url: '{{=URL("store_event.json")}}',
-					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'type', val: type},
-					traditional: true
-				});
-				$.ajax({
-					url: '{{=URL("store_event.json")}}',
-					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'series_name', val: series_name},
-					traditional: true
-				});
-				$.ajax({
-					url: '{{=URL("store_event.json")}}',
-					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'volume', val: volume},
-					traditional: true
-				});
-				$.ajax({
-					url: '{{=URL("store_event.json")}}',
-					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'concentration', val: concentration},
-					traditional: true
-				});
-				$.ajax({
-					url: '{{=URL("store_event.json")}}',
-					data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'comment', val: comment},
-					traditional: true
-				});
-				//and add it to the eventT (eventT behaves as a list to remember locally where the event are, even if the events/annotations are stored in db, and in the graph indirectly as well.): so, it is redendant (bad baaaad!), but conveniant (to be managed as cutT for instance).
-				save2undo();
-				//If array is empty, initialize
-				if (eventT.length==0){
-					eventT.push(time);
-				} else {
-					var flag_exist = true;
-					//Check if it already exists
-					for (i=0; i<eventT.length; i++) {
-						if (eventT[i]==time){
-							flag_exist = false;
-						}
-					}
-					//Otherwise insert it while preserving the increasing order
-					if (flag_exist){
-						var flag = true;
-						if (time<eventT[0]){
-							eventT.splice(0,0,time);
-							flag = false;
-						} else {
-							for (i=1; i<eventT.length; i++) {
-								if ((time>eventT[i-1])&&(time<eventT[i])){
-									eventT.splice(i,0,time);
-									flag = false;
-									break;
-								}
-							}
-						}
-						if (flag){
-							eventT.push(time);
-						}
-					}
-				}
-				//save eventT db.flise_file
-				get_set_flisefile_option(cur_id, 'eventT');
-				//and display event marker (or them if it concerns all series)
-				var anns = g.annotations();
-				if (series_id==-1){
-					for (var i = 0; i < g.selPoints_.length; i++) {
-						if (!(g.selPoints_[i].annotation)){
-							anns.push({
-								series: g.selPoints_[i].name,
-								xval: time,
-								icon: '/flise/static/icons/mark-event.png',
-								width: 16,
-								height: 16,
-								tickHeight: 2,
-								text: type
-							});
-						}
-					}
-				} else {
-					if (!(selectedPoint.annotation)){
-						var ann = {
-							series: series_name,
-							xval: time,
-							icon: '/flise/static/icons/mark-event.png',
-							width: 16,
-							height: 16,
-							tickHeight: 2,
-							text: type
-						};
-						anns.push(ann);
-					}
-				}
-				g.setAnnotations(anns);
-			} else {
+			var flag_add = true;
+			if (!(Object.getOwnPropertyNames(data).length === 0)){
 				//load values
 				type = data['type'];
 				series_name = data['series_name'];
 				volume = data['volume'];
 				concentration = data['concentration'];
 				comment = data['comment'];
+				solution_id = data['solution_id'];
+				if (volume == null) {volume=''};
+				if (concentration == null) {concentration=''};
+				//Set flag not to add annotation
+				flag_add = false;
 			}
 			//Create corresponding panel
 			$.get('{{=URL(request.application, 'static/templates','event.html')}}', function(htmlstr) {
@@ -2278,41 +2203,27 @@ function add2event(context,g){
 				st = st.replace(/%concentration%/, concentration);
 				st = st.replace(/%comment%/, comment);
 				st = st.replace(/%options%/, stopt);
+				st = st.replace(/%select_solution%/, $('#solutions_store > div').html());
 				$('#event').append(st);
-				
+				$('input[name="edit_solution"]').parent().find('select[name="select_solution"]').attr('name','event_select_solution');
+				$('input[name="edit_solution"]').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				$('#event_warning').hide();
+
 				//Select
+				if (!(solution_id==null)){
+					$('select[name="event_select_solution"] option[value="'+solution_id+'"]').attr('selected', 'selected');
+					$('input[name="edit_solution"]').removeAttr("disabled").removeAttr("style");
+				}
 				$('#event_type > option[value='+type+']').attr('selected','selected');
 				$('#event_type').unbind('change');
 				$('#event_type').change(function(){
 					//Save type
-					$.ajax({
-						url: '{{=URL("store_event.json")}}',
-						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'type', val: $(this).val()},
-						traditional: true,
-						success: function(data){
-							if (!(Object.getOwnPropertyNames(data).length === 0)){
-								//if found, modify g annotations text
-								for (var iA = g.annotations_.length - 1; iA >= 0; iA--) {
-									if (g.annotations_[iA].xval == data['time']){
-										if (data['series_id']==-1){
-											g.annotations_[iA].text = data['type'];
-										} else {
-											if (g.annotations_[iA].series == data['series_name']) {
-												g.annotations_[iA].text = data['type'];
-											};
-										}
-									}
-								};
-								//Update annotation display
-								g.setAnnotations(g.annotations_);
-							}
-						}
-					});
+					type = $(this).val();
 					//Update hidden fields
 					$('input[name="add_solution"]').parent().parent().show();
 					$('input[name="event_volume"]').parent().parent().show();
 					$('input[name="event_concentration"]').parent().parent().show();
-					switch($(this).val())
+					switch(type)
 					{
 					case 'comment':
 					  $('input[name="add_solution"]').parent().parent().hide();
@@ -2338,39 +2249,224 @@ function add2event(context,g){
 					  break;
 					}
 				});
+				//Solution input
+				$('select[name="event_select_solution"]').unbind('change');
+				$('select[name="event_select_solution"]').change(function(){
+					$('input[name="edit_solution"]').removeAttr("disabled").removeAttr("style");
+					//Save new solution reference
+					solution_id = $(this).val();
+					$('input[name="edit_solution"]').parent().parent().find('th').removeAttr('style');
+				});
 				//Volume reference input
 				$('input[name="event_volume"]').unbind('change');
 				$('input[name="event_volume"]').change(function(){
 					//Save volume
-					$.ajax({
-						url: '{{=URL("store_event.json")}}',
-						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'volume', val: $(this).val()},
-						traditional: true
-					});
+					volume = $(this).val();
+					$('input[name="event_volume"]').parent().parent().find('th').removeAttr('style');
+					if (isNaN(parseFloat(volume))){
+						$('input[name="event_volume"]').parent().parent().find('th').attr('style','color:red');
+					} else {
+						volume = String(parseFloat(volume));
+						$('input[name="event_volume"]').val(volume);
+					}
 				});
 				//Concentration reference input
 				$('input[name="event_concentration"]').unbind('change');
 				$('input[name="event_concentration"]').change(function(){
 					//Save concentration
-					$.ajax({
-						url: '{{=URL("store_event.json")}}',
-						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'concentration', val: $(this).val()},
-						traditional: true
-					});
+					concentration = $(this).val();
+					$('input[name="event_concentration"]').parent().parent().find('th').removeAttr('style');
+					if (isNaN(parseFloat(concentration))){
+						$('input[name="event_concentration"]').parent().parent().find('th').attr('style','color:red');
+					} else {
+						concentration = String(parseFloat(concentration));
+						$('input[name="event_concentration"]').val(concentration);
+					}
 				});
 				//Comment free text area
 				$('textarea[name="event_comment"]').unbind('change');
 				$('textarea[name="event_comment"]').change(function(){
 					//Save comment
-					$.ajax({
-						url: '{{=URL("store_event.json")}}',
-						data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'comment', val: $(this).val()},
-						traditional: true
-					});
+					comment = $(this).val();
 				});
+
+				//Set cancel function
+				$('#event_cancel').unbind('click');
+				$('#event_cancel').click(function(){
+					//Close without saving
+					$.modal.close();
+				});
+				//Set done function
+				$('#event_done').unbind('click');
+				$('#event_done').click(function(){
+					//Check that fields are correctly entered
+					var flag_ok = true;
+					var flag_ok_sol = true;
+					var flag_ok_vol = true;
+					var flag_ok_con = true;
+					//$('input[name="edit_solution"]').parent().parent().find('th').removeAttr('style');
+					if (solution_id == null){
+						flag_ok_sol = false;
+						$('input[name="edit_solution"]').parent().parent().find('th').attr('style','color:red');
+					}
+					//$('input[name="event_volume"]').parent().parent().find('th').removeAttr('style');
+					if (isNaN(parseFloat(volume))){
+						flag_ok_vol = false;
+						$('input[name="event_volume"]').parent().parent().find('th').attr('style','color:red');
+					}
+					//$('input[name="event_concentration"]').parent().parent().find('th').removeAttr('style');
+					if (isNaN(parseFloat(concentration))){
+						flag_ok_con = false;
+						$('input[name="event_concentration"]').parent().parent().find('th').attr('style','color:red');
+					}
+					switch(type)
+					{
+					case 'injection':
+					  if (!(flag_ok_sol && flag_ok_vol && flag_ok_con)) {flag_ok = false;};
+					  break;
+					case 'wash':
+					  if (!(flag_ok_sol && flag_ok_vol)) {flag_ok = false;};
+					  break;
+					case 'removal':
+					  if (!(flag_ok_vol)) {flag_ok = false;};
+					  break;
+					case 'dilution':
+					  if (!(flag_ok_vol)) {flag_ok = false;};
+					  break;
+					case 'calibration':
+					  if (!(flag_ok_con)) {flag_ok = false;};
+					  break;
+					default:
+					  break;
+					}
+					if (flag_ok) {
+						//Save
+						$.ajax({
+							url: '{{=URL("store_event.json")}}',
+							data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'type', val: type},
+							traditional: true
+						});
+						$.ajax({
+							url: '{{=URL("store_event.json")}}',
+							data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'series_name', val: series_name},
+							traditional: true
+						});
+						if (!(solution_id == null)){
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'solution_id', val: solution_id},
+								traditional: true
+							});
+						}
+						$.ajax({
+							url: '{{=URL("store_event.json")}}',
+							data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'volume', val: volume},
+							traditional: true
+						});
+						$.ajax({
+							url: '{{=URL("store_event.json")}}',
+							data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'concentration', val: concentration},
+							traditional: true
+						});
+						$.ajax({
+							url: '{{=URL("store_event.json")}}',
+							data: {flise_record_id:cur_id, time:time, series_id:series_id, var_name:'comment', val: comment},
+							traditional: true
+						});
+						//and add it to the eventT (eventT behaves as a list to remember locally where the event are, even if the events/annotations are stored in db, and in the graph indirectly as well.): so, it is redendant (bad baaaad!), but conveniant (to be managed as cutT for instance).
+						save2undo();
+						//If array is empty, initialize
+						if (eventT.length==0){
+							eventT.push(time);
+						} else {
+							var flag_exist = true;
+							//Check if it already exists
+							for (i=0; i<eventT.length; i++) {
+								if (eventT[i]==time){
+									flag_exist = false;
+								}
+							}
+							//Otherwise insert it while preserving the increasing order
+							if (flag_exist){
+								var flag = true;
+								if (time<eventT[0]){
+									eventT.splice(0,0,time);
+									flag = false;
+								} else {
+									for (i=1; i<eventT.length; i++) {
+										if ((time>eventT[i-1])&&(time<eventT[i])){
+											eventT.splice(i,0,time);
+											flag = false;
+											break;
+										}
+									}
+								}
+								if (flag){
+									eventT.push(time);
+								}
+							}
+						}
+						//save eventT db.flise_file
+						get_set_flisefile_option(cur_id, 'eventT');
+						//and display event marker (or them if it concerns all series)
+						var anns = g.annotations();
+						if (flag_add) {
+							// add to g annotations
+							if (series_id==-1){
+								for (var i = 0; i < selectedPoints.length; i++) {
+									if (!(selectedPoints[i].annotation)){
+										anns.push({
+											series: selectedPoints[i].name,
+											xval: time,
+											icon: '/flise/static/icons/mark-event.png',
+											width: 16,
+											height: 16,
+											tickHeight: 2,
+											text: type
+										});
+									}
+								}
+							} else {
+								if (!(selectedPoint.annotation)){
+									var ann = {
+										series: series_name,
+										xval: time,
+										icon: '/flise/static/icons/mark-event.png',
+										width: 16,
+										height: 16,
+										tickHeight: 2,
+										text: type
+									};
+									anns.push(ann);
+								}
+							}
+						} else {
+							//if it was already existing, we just need to update g annotations text
+							for (var iA = anns.length - 1; iA >= 0; iA--) {
+								if (anns[iA].xval == time){
+									if (series_id==-1){
+										anns[iA].text = type;
+									} else {
+										if (anns[iA].series == series_name) {
+											anns[iA].text = type;
+										};
+									}
+								}
+							};
+						};
+						g.setAnnotations(anns);
+
+						//Close model window
+						$.modal.close();
+					} else {
+						$('#event_warning').show();
+					};
+				});
+
 				//Show options
 				modal = $("#event").modal({
-					overlayClose:true,
+					overlayClose:false,
+					escClose:false,
 					opacity:20,
 				});
 				//Hide fields according to type

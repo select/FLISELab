@@ -260,6 +260,48 @@ def del_event():
 	if sel_set:
 		sel_set.delete()
 
+def store_solution():
+	response.generic_patterns = ['json']
+	solution_id = request.vars.solution_id
+	record = db(db.solution.id == solution_id).select().first()
+	if request.vars.var_name:
+		var_name = request.vars.var_name
+		val = request.vars.val
+		if record:
+			record.update_record(**{var_name: val})
+		else:
+			record = db.solution.insert()
+			record.update_record(**{var_name: val})
+	if record:
+		return dict([(field,record[field]) for field in db.solution.fields])
+	else:
+		return dict()
+
+def del_solution():
+	response.generic_patterns = ['json']
+	solution_id = request.vars.solution_id
+	flise_file_id = request.vars.flise_file_id
+	time = float(request.vars.time)
+	series_id = int(request.vars.series_id)
+	#check if it is not used in any other event whatever series
+	if db(db.event.solution_id == solution_id).count() == db(db.event.solution_id == solution_id)(db.event.flise_file_id == flise_file_id)(db.event.time == time)(db.event.series_id == series_id).count():
+		sel_set = db(db.event.solution_id == solution_id)(db.event.flise_file_id == flise_file_id)(db.event.time == time)(db.event.series_id == series_id)
+		if sel_set:
+			sel_set.delete()
+		sel_set = db(db.solution.id == solution_id)
+		if sel_set:
+			sel_set.delete()
+		series_name = []
+		sel_set = db(db.event.flise_file_id == flise_file_id)(db.event.time == time)
+		if sel_set:
+			for record in sel_set.select():
+				series_name.append(record.series_name)
+			return {"acceptDel":True, "series_name":series_name}
+		else:
+			return {"acceptDel":True, "series_name":[]}
+	else:
+		return {"acceptDel":False}
+
 def get_savgol():
 	response.generic_patterns = ['json']
 	import savgol
@@ -274,7 +316,6 @@ def get_savgol():
 	return dict(result = result)
 
 def export_spreadsheet():
-	#print 'called export_spreadsheet ',request.vars.data
 	export_format = request.vars.format
 	from gluon.contrib import simplejson
 	try:

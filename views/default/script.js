@@ -1578,7 +1578,7 @@ function interval2export(pos) {
 					});
 				});
 				//Make popup
-				modal = $("#subinterval").modal({
+				event_modal = $("#subinterval").modal({
 					overlayClose:true,
 					opacity:20,
 				});
@@ -2256,7 +2256,190 @@ function add2event(context,g){
 					//Save new solution reference
 					solution_id = $(this).val();
 					$('input[name="edit_solution"]').parent().parent().find('th').removeAttr('style');
+					if (solution_id == ''){
+						$('input[name="edit_solution"]').parent().parent().find('th').attr('style','color:red');
+						$('input[name="edit_solution"]').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+						solution_id = null;
+					}
 				});
+				//Solution edit
+				$('input[name="edit_solution"]').unbind('click');
+				$('input[name="edit_solution"]').click(function(){
+					//Close event modal window
+					$.modal.close();
+					//Create corresponding panel
+					$.get('{{=URL(request.application, 'static/templates','solution.html')}}', function(htmlstr) {
+						var stsol = htmlstr;
+						//Get the corresponding solution content
+						$.ajax({
+							url: '{{=URL("store_solution.json")}}',
+							data: {solution_id:solution_id},
+							traditional: true,
+							success: function(data){
+								var solution_name = '';
+								var solution_components = [];
+								var solution_ratios = [];
+								if (!(Object.getOwnPropertyNames(data).length === 0)){
+									//load values
+									solution_name = data['name'];
+									solution_components = data['components_name'];
+									solution_ratios = data['components_ratio'];
+								}
+								stsol = stsol.replace(/%name%/,solution_name);
+								var stcomp;
+								for (var i = 0; i < solution_components.length; i++) {
+									stcomp = '<tr><th align="left">Component '+String(i+1)+':</th><td style="text-align: left"> %component% </td> <td style="text-align: right"> Concentration ratio (from 0 to 1): <input class="component_ratio" type="text" style="width:40px" value="%ratio%"/></td> <td><input type="submit" value="remove" class="remove_component"/></td> </tr>    %stcomp%';
+									stcomp = stcomp.replace(/%component%/, solution_components[i]);
+									stcomp = stcomp.replace(/%ratio%/, solution_ratios[i]);
+									stsol = stsol.replace(/%stcomp%/,stcomp);
+								};
+								stsol = stsol.replace(/%stcomp%/,'');
+								//Reset the panel
+								$('#solution').html('');
+								//Adapt panel HTML
+								$('#solution').append(stsol);
+								$('#solution_warning').hide();
+								$('#solution_delete_refused').hide();
+								$('#solution_cancel').parent().attr('style','text-align:right');
+								//Set delete function
+								$('#solution_delete').unbind('click');
+								$('#solution_delete').click(function(){
+									$('#solution_delete_refused').hide();
+									//Delete confirm
+									$('#solution_delete').parent().parent().find('td').eq(0).find('span').html('<div style="color: orangeRed; font-size: smaller">Are you sure you want to delete this solution (current event erased)?</div>');
+									$('#solution_delete').parent().parent().find('td').eq(1).find('span').html('<input type="submit" value="Yes" id="solution_delete_confirm"/> <input type="submit" value="No" id="solution_delete_cancel"/>');
+									$('#solution_duplicate').hide();
+									$('#solution_delete').hide();
+									$('#solution_cancel').hide();
+									$('#solution_done').hide();
+									$('#solution_delete_cancel').unbind('click');
+									$('#solution_delete_cancel').click(function(){
+										$('#solution_delete').parent().parent().find('td').eq(0).find('span').html('');
+										$('#solution_delete').parent().parent().find('td').eq(1).find('span').html('');
+										$('#solution_delete').show();
+										$('#solution_duplicate').show();
+										$('#solution_cancel').show();
+										$('#solution_done').show();
+									});
+									$('#solution_delete_confirm').unbind('click');
+									$('#solution_delete_confirm').click(function(){
+										//Erase from db.solution only if the current event is the last to use this solution, or if no event uses this solution
+										$.ajax({
+											url: '{{=URL("del_solution.json")}}',
+											data: {solution_id:solution_id, flise_file_id:cur_id, series_id:series_id, time:time},
+											traditional: true,
+											success: function(data){
+												if (data['acceptDel']) {
+													//Close modal window
+													$.modal.close();
+													//Since current event might have been erased, we need to ensure it is not in the display, otherwise, by pressing 'Cancel' in the event panel, we may have trace of it in g.annotations and eventT
+													var flag = true;
+													var preserve_series_name = data['series_name'];
+													if (data['series_name'].length == 1){
+														if (data['series_name'][0] == 'all') {
+															preserve_series_name = graph_labels;
+														};
+													}
+													for (var iE=0; iE<eventT.length; iE++) {
+														if (eventT[iE]==time){
+
+															//remove from g
+															var anns = g.annotations();
+															for (var iA=0;iA<anns.length;iA++){
+																if (anns[iA].xval==time){
+																	flag = true;
+																	//find if it is not a series on which one should preserve the marker
+																	for (var iS = 0; iS < preserve_series_name.length; iS++) {
+																	 	if (preserve_series_name[iS] == anns[iA].series){flag = false;}
+																	};
+																	if (flag) {
+																		//if the event solution is reprecised then event created, one should replace the g.annotation markers
+																		flag_add = true;
+																		for (var i = selectedPoints.length - 1; i >= 0; i--) {
+																			selectedPoints[i].annotation = false;
+																		};
+																		//delete
+																		anns.splice(iA,1);
+																		iA--;
+																	};
+																}
+															}
+															g.setAnnotations(anns);
+															//remove from eventT
+															if (data['series_name'].length == 0) {
+																eventT.splice(iE,1);
+																//save eventT db.flise_file
+																get_set_flisefile_option(cur_id, 'eventT');
+															}
+															break;
+														}
+													}
+													//Come back to event modal and update it
+													window.setTimeout(function() {
+														event_modal = $("#event").modal({
+															overlayClose:false,
+															escClose:false,
+															persist:true,
+															opacity:20,
+														});
+														$('input[name="edit_solution"]').parent().parent().find('th').attr('style','color:red');
+														$('input[name="edit_solution"]').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+														$('select[name="event_select_solution"] option:selected').removeAttr('selected');
+														$('select[name="event_select_solution"] option[value="'+solution_id+'"]').remove();
+														$('select[name="select_solution"] option[value="'+solution_id+'"]').remove();
+														solution_id = null;
+													}, 30);
+												} else {
+													//Display refusal
+													$('#solution_delete_refused').show();
+													//Restore panel
+													$('#solution_delete').parent().parent().find('td').eq(0).find('span').html('');
+													$('#solution_delete').parent().parent().find('td').eq(1).find('span').html('');
+													$('#solution_delete').show();
+													$('#solution_duplicate').show();
+													$('#solution_cancel').show();
+													$('#solution_done').show();
+												};
+											}
+										});
+										
+									});
+								});
+								//Set cancel function
+								$('#solution_cancel').unbind('click');
+								$('#solution_cancel').click(function(){
+									//Close modal without saving
+									$.modal.close();
+									//Come back to event modal
+									window.setTimeout(function() {
+										event_modal = $("#event").modal({
+											overlayClose:false,
+											escClose:false,
+											persist:true,
+											opacity:20,
+										});
+									}, 30);
+								});
+								//Create solution modal window
+								window.setTimeout(function() {
+									solution_modal = $("#solution").modal({
+										overlayClose:false,
+										escClose:false,
+										opacity:20,
+										onOpen: function (dialog) {
+											dialog.overlay.fadeIn(100, function () {
+												dialog.container.fadeIn(5, function () {
+													dialog.data.fadeIn('fast');
+												});
+											});
+										},
+									})
+								}, 5);
+							}
+						});
+					});
+				});
+
 				//Volume reference input
 				$('input[name="event_volume"]').unbind('change');
 				$('input[name="event_volume"]').change(function(){
@@ -2464,9 +2647,10 @@ function add2event(context,g){
 				});
 
 				//Show options
-				modal = $("#event").modal({
+				event_modal = $("#event").modal({
 					overlayClose:false,
 					escClose:false,
+					persist:true,
 					opacity:20,
 				});
 				//Hide fields according to type

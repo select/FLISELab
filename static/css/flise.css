@@ -6,11 +6,7 @@
     padding:12px;
     }
 /**********************************/
-#subinterval {
-    color: white;
-    display: none;
-}
-#event {
+#event, #subinterval, #solution {
     color: white;
     display: none;
 }

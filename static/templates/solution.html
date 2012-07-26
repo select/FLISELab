@@ -1,24 +1,21 @@
+<div style="color: red; font-size: smaller; text-align: center" id="solution_warning">Please correct the fields in red...</div><div style="color: red; font-size: smaller; text-align: center" id="solution_delete_refused">Request for delete declined: this solution is used in some other event (eventually in a different file)...</div>
 <table>
 	<tr>
 		<th align="left">Name:</th>
-		<td colspan="2">
-			<input name="solution_name" type="text" value="%name%" style="width:200px"/>(Unit: L)
+		<td style="text-align: left" colspan="3">
+			<input name="solution_name" type="text" value="%name%" style="width:300px"/>
 		</td>
 	</tr>
+	%stcomp%
 	<tr>
-		<th align="left">Components:</th>
-		<td>
-			%component% <input type="submit" value="remove" class="remove_component"/>
+		<th align="left">New component?</th>
+		<td style="text-align: right" colspan="2">
+			Add from %select_ions% or <input class="new_component" type="text" style="width:150px" value=""/> 
 		</td>
-		<td>
-			Ratio: <input class="component_ratio" type="text" style="width:100px" value=""/>
-		</td>
+		<td><input type="submit" value="add" class="add_component"/></td>
 	</tr>
 	<tr>
-		<th align="left">New components?</th>
-		<td colspan="2">
-			Add from %select_ions% or <input class="new_component" type="text" style="width:100px" value=""/> <input type="submit" value="add" class="add_component"/>
-		</td>
+		<td colspan="2"><input type="submit" value="Duplicate this solution" id="solution_duplicate"/> <input type="submit" value="Delete this solution" id="solution_delete"/> <span/> </td>
+		<td colspan="2"><input type="submit" value="Cancel" id="solution_cancel"/> <input type="submit" value="Done" id="solution_done"/> <span/> </td>
 	</tr>
 </table>
-<input type="submit" value="delete" name="delete_solution"/> <input type="submit" value="done" name="end_solution"/> 

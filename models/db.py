@@ -125,7 +125,7 @@ db.define_table('strain',
         )
 db.define_table('flise_file',
         Field('name'),
-        Field('file', 'upload', requires = IS_NOT_EMPTY()),
+        Field('file', 'upload', autodelete=True, requires = IS_NOT_EMPTY()),
         Field('sampling_time', 'double', default=0.5, label='Sampling Time (s)'),
         Field('created_on', 'date', default = request.now),
         #Field('created_by', db.auth_user),

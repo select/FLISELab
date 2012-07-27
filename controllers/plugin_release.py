@@ -255,7 +255,7 @@ def create(sub_release_folder, release_type, release_web2py_base, update_web2py 
     create a full release zip package
     '''
     #if there are no previous releases, set up everything needed
-
+    import os
     if not os.path.exists(os.path.join(sub_release_folder, 'web2py')) or update_web2py:
         result = prepare_web2py(release_type)
         if not result == True:
@@ -292,8 +292,11 @@ python web2py/web2py.py''')
     elif release_type == 'win':
         shutil.copy(os.path.join(request.folder,'static', 'plugin_release', 'start.bat'), os.path.join(sub_release_folder, '%s.bat'%APPLICATION_NAME))
     elif release_type == 'osx':
-        pass#no clue what to do for osx to make it look nice
-    #move site-packages 
+        import stat
+        os.chmod(os.path.join(sub_release_folder, 'web2py', 'web2py.app', 'Contents', 'MacOS',   'web2py'), 0755)
+        os.chmod(os.path.join(sub_release_folder, 'web2py', 'web2py.app', 'Contents', 'MacOS',   'python'), 0755)
+        pass  # no clue what to do for osx to make it look nice
+    # move site-packages 
     #if os.path.exists(os.path.join(request.folder, 'site-packages')):
     #    shutil.copytree(os.path.join(request.folder, 'site-packages'), os.path.join(release_web2py_base, 'site-packages'))
     #move and modify files for osx release

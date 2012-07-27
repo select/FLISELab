@@ -1,0 +1,22 @@
+{{extend 'layout.html'}}
+<h1>Release Status</h1>
+{{if not os.path.exists(RELEASE_FOLDER):}}
+    <h2>Update</h2>
+    <br />
+    {{=LOAD('plugin_release', 'check_version', vars=dict(force = True), ajax=True, target='check_version')}} 
+    <br />
+    {{=TAG['button']('check', _class="button", _onclick="web2py_component('%s', 'check_version')"%URL(r=request, f='check_version', vars=dict(force = True)))}}
+    <br />
+    <br />
+{{else:}}
+    <h2>Create Releases</h2>
+    <div id="show"></div>
+    {{=TABLE([TR(TD(type),TD(TAG['button']('create', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'full_release', vars=dict(type = type))), _class="button"))) for type in 'win src osx'.split()], _id="create_release_table")}}
+    <br />
+    {{=TAG['button']('create w2p package', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'core_release')), _class="button")}}
+    <br />
+    <br />
+    {{=LOAD('plugin_release', 'edit_version', ajax=True)}}
+    <br />
+    {{TAG['button']('Mercurial Pull/Update', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'hg_update')), _class="button")}}
+{{pass}}

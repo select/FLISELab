@@ -1,0 +1,65 @@
+{{extend 'layout.html'}}
+<h1>Download</h1>
+Here you can download <i>{{=APPLICATION_NAME}}</i> version {{=LOAD('plugin_release', 'version', target="versionstring")}}
+{{extension = 'tar.gz'}}
+<table id='download_table'>
+	<tr>
+		<td>as Web2py Application</td>
+        <td>{{=A('Download', _href=URL(request.application, 'static', 'web2py.app.%s.w2p'%APPLICATION_NAME))}}</td>
+	</tr>
+	<tr>
+		<td>Source / Linux</td>
+        <td>{{=A('Download', _href=URL(request.application, 'static', '%s_src.%s'%(APPLICATION_NAME,extension)))}}</td>
+	</tr>
+	<tr>
+		<td>Windows</td>
+        <td>{{=A('Download', _href=URL(request.application, 'static', '%s_win.%s'%(APPLICATION_NAME,extension)))}}</td>
+	</tr>
+	<!-- tr>
+		<td>Os X</td>
+        <td>{{=A('Download', _href=URL(request.application, 'static', '%s_osx.%s'%(APPLICATION_NAME,extension)))}}</td>
+	</tr -->
+</table>
+
+<h1>Install</h1>
+<p>
+The following instructions should work for the operating system specific packages. If you already have web2py running on your system it should be easy for you to install <i>{{=APPLICATION_NAME}}</i>.
+    <ol>
+        <li>Download the package that matches you operating system. Unpack the downloaded package and go to the directory you unpacked it to. 
+        </li>
+        <li>Start the web2py server
+            <ul>
+                <li>On Windows you will find a {{=APPLICATION_NAME}}.bat file and a folder called "web2py". Double click the {{=APPLICATION_NAME}}.bat file. </li>
+                <li>On Linux make sure that you have Python &gt;=2.5 installed. You will find a {{=APPLICATION_NAME}}.sh file that you can execute</li>
+                <li>On Mac OsX we had not time to test it yet, sorry :/ Most likely you will need to install web2py as an application and start web2py from the menu. Everything else should be the same.</li>
+            </ul>
+        </li>
+        <li>Choose a password
+        <ul>
+            <li>
+            If you see a user interface like in the picture below you can type any password (it will not be stored and is only valid for this session) and press "start server".<br/>
+            <img src="{{=URL(request.application, 'static/plugin_release', 'web2py_start.png')}}" alt="web2py server start gui" /><br/>
+            You Broswer will automatically open and start the <i>{{=APPLICATION_NAME}}</i> application 
+            </li>
+            <li>
+                If you do not see this user interface you can type a password in the console window that opens. You then need to manually open the address that is displayed in your web browser. If you did not change anything it will be <a href="http://127.0.0.1:8000">http://127.0.0.1:8000</a> (just click this link).
+            </li>
+        </ul>
+        </li>
+        <li>
+        On your first start you will be asked to create an initial user. If you are working locally with <i>{{=APPLICATION_NAME}}</i> you will not have to remember the password since you will be automatically logged in.<br/>
+        You should now be able to use <i>{{=APPLICATION_NAME}}</i>.
+        </li>
+    </ol>
+</p>
+<p>
+    <h1>Update</h1>
+    <p>If there is a new version of <i>{{=APPLICATION_NAME}}</i> available you will see a "update" button in your admin menu. After you updated <i>{{=APPLICATION_NAME}}</i> a restart might be required.
+    <br />
+    <img src="{{=URL(request.application, 'static/images/about', 'release_update.png')}}" alt="update button in menu" />
+    <br />
+    In addition to that you can click on the <a href="{{=URL(request.application, 'plugin_release', 'status')}}">version number in the admin menu</a> and you will be directed to a page where you can check for updates and install them.
+    <br />
+    The update process will download a web2py application package (*.w2p) and overwrite your current web2py application. All your data will still be available and ready to use with the new <i>{{=APPLICATION_NAME}}</i> version.
+    </p>
+</p>

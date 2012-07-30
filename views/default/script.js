@@ -64,7 +64,7 @@ function init_file(cur_id,name){
 	$('#section_file').slideToggle();
 	
 	//Load Raw Data Description Panel
-	web2py_component('{{=URL('file')}}/'+cur_id,'edit_record')
+	web2py_component('{{=URL('file')}}/'+cur_id,'edit_record');
 	
 	//Load time-series and associated data, then display graph and initiate callbacks			
 	$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
@@ -102,7 +102,7 @@ function init_file(cur_id,name){
 		for (var i=0; i<graph_labels.length-1; i++){
 			//find if it belongs to one list of similarities
 			flag=false;
-			if (!(listSim==[])){
+			if (listSim != []){
 				for (var iL1=0;iL1<listSim.length;iL1++){
 					for (var iL2=0;iL2<listSim[iL1].length;iL2++){
 						if (listSim[iL1][iL2]==i){
@@ -146,7 +146,7 @@ function init_file(cur_id,name){
 					data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
 					traditional: true,
 					success: function(data){
-						if (!(Object.getOwnPropertyNames(data).length === 0)){
+						if (Object.getOwnPropertyNames(data).length !== 0){
 							//add it to g annotations
 							if (data['series_id']==-1){
 								for (var i = 0; i < g.colors_.length; i++) {
@@ -590,8 +590,8 @@ function init_file(cur_id,name){
 	$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
 		//Initialize tool variables
 		isSelecting = false;
-		tool = 'zoom';//Default tool
-		tool = 'event';
+		tool = 'zoom'; // Default tool
+		tool = 'event'; // TOREMOVE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		
 		//Reset panel
 		$('#tools').html('');
@@ -1050,12 +1050,16 @@ function init_files(){
 	});
 	//Files Delete button
 	$('.del').unbind('click');
+	$('.del').unbind('confirm');
 	$('.del').click(function(){
 		$(this).parent().remove();
 		$.ajax({
 			url:'{{=URL('file')}}',
 			data: {delr: $(this).parent().attr('id')}
 		});
+		if (cur_id == $(this).parent().attr('id')){
+			location.reload();
+		}
 	});
 	$('.del').confirm({
 		stopAfter:'ok',
@@ -1439,7 +1443,7 @@ function interval2export(pos) {
 				//Series - Calibration
 				var stcal;
 				for (var i = 0;i<$('#series_options > table').size();i++){
-					stcal = '<tr><td style="color:%color%">%species%</td><td>Slope: <input name="sub_calslope" type="text" value="%slope%" style="width:60px"/></td><td>Intercept: <input name="sub_calintercept" type="text" value="%intercept%" style="width:60px"/>(Volt)</td></tr>';
+					stcal = '<tr><td style="color:%color%">%species%</td><td>Slope: <input name="sub_calslope" type="text" value="%slope%" style="width:60px" class="double"/></td><td>Intercept: <input name="sub_calintercept" type="text" value="%intercept%" style="width:60px" class="double"/>(Volt)</td></tr>';
 					stcal = stcal.replace(/%species%/, $('#series'+i+' > tbody > tr > td > select').val());
 					stcal = stcal.replace(/%color%/, $('#series'+i+' > tbody > tr:eq(1) > td > table > tbody > tr > td > input').val());
 					if (calslope[i]==undefined) {
@@ -2294,13 +2298,71 @@ function add2event(context,g){
 									stsol = stsol.replace(/%stcomp%/,stcomp);
 								};
 								stsol = stsol.replace(/%stcomp%/,'');
+								stsol = stsol.replace(/%select_components%/, $('#components_store > div').html());
 								//Reset the panel
 								$('#solution').html('');
 								//Adapt panel HTML
 								$('#solution').append(stsol);
 								$('#solution_warning').hide();
 								$('#solution_delete_refused').hide();
-								$('#solution_cancel').parent().attr('style','text-align:right');
+								$('#solution_name_warning').hide();
+								//Change name
+								$('input[name="solution_name"]').unbind('change');
+								$('input[name="solution_name"]').change(function(){
+									//Load other solution names and check it is not already used
+									var flag_exist = false;
+									for (var iS = $('select[name="select_solution"] option').size() - 1; iS >= 0; iS--) {
+										if ($(this).val() == $('select[name="select_solution"] option').eq(iS).text()) {
+											if (!(solution_id == null)) {
+												if (!(solution_id == $('select[name="select_solution"] option').eq(iS).val())) {
+													flag_exist = true;
+													break;
+												};
+											} else {
+												flag_exist = true;
+												break;
+											};
+										};
+									};
+									$('input[name="solution_name"]').parent().parent().find('th').removeAttr('style');
+									$('#solution_name_warning').hide();
+									if (flag_exist) {
+										$('input[name="solution_name"]').parent().parent().find('th').attr('style','color:red');
+										$('#solution_name_warning').show();
+									} else {
+										//Save name
+									};
+									//Save name
+									solution_name = $(this).val();
+								});
+								//Add component from list
+								$('select[name="select_components"]').unbind('change');
+								$('select[name="select_components"]').change(function(){
+									//Check it is not already a component or empty
+									var flag_exist = false;
+									if ($(this).val() == '') {
+										flag_exist = true;
+									} else {
+										for (var iC = solution_components.length - 1; iC >= 0; iC--) {
+											if (solution_components[iC] == $(this).val()) {
+												flag_exist = true;
+												break;
+											};
+										};
+									};
+									
+									if (!(flag_exist)) {
+										//Save new component
+										solution_components.push($(this).val());
+										solution_ratios.push('');
+										//Change panel
+										var i = solution_components.length - 1;
+										var stcomp = '<tr><th align="left">Component '+String(i+1)+':</th><td style="text-align: left"> %component% </td> <td style="text-align: right"> Concentration ratio (from 0 to 1): <input class="component_ratio" type="text" style="width:40px" value="%ratio%"/></td> <td><input type="submit" value="remove" class="remove_component"/></td> </tr>    %stcomp%';
+										stcomp = stcomp.replace(/%component%/, solution_components[i]);
+										stcomp = stcomp.replace(/%ratio%/, solution_ratios[i]);
+										$('#new_component').parent().parent().before(stcomp);
+									};
+								});
 								//Set delete function
 								$('#solution_delete').unbind('click');
 								$('#solution_delete').click(function(){
@@ -2387,6 +2449,7 @@ function add2event(context,g){
 														$('select[name="event_select_solution"] option:selected').removeAttr('selected');
 														$('select[name="event_select_solution"] option[value="'+solution_id+'"]').remove();
 														$('select[name="select_solution"] option[value="'+solution_id+'"]').remove();
+														$('#simplemodal-container').css('height', 'auto');
 														solution_id = null;
 													}, 30);
 												} else {
@@ -2418,6 +2481,23 @@ function add2event(context,g){
 											persist:true,
 											opacity:20,
 										});
+										$('#simplemodal-container').css('height', 'auto');
+									}, 30);
+								});
+								//Set done function
+								$('#solution_done').unbind('click');
+								$('#solution_done').click(function(){
+									//Close modal without saving
+									$.modal.close();
+									//Come back to event modal
+									window.setTimeout(function() {
+										event_modal = $("#event").modal({
+											overlayClose:false,
+											escClose:false,
+											persist:true,
+											opacity:20,
+										});
+										$('#simplemodal-container').css('height', 'auto');
 									}, 30);
 								});
 								//Create solution modal window
@@ -2433,7 +2513,8 @@ function add2event(context,g){
 												});
 											});
 										},
-									})
+									});
+									$('#simplemodal-container').css('height', 'auto');
 								}, 5);
 							}
 						});
@@ -2653,6 +2734,7 @@ function add2event(context,g){
 					persist:true,
 					opacity:20,
 				});
+				$('#simplemodal-container').css('height', 'auto');
 				//Hide fields according to type
 				switch(type)
 				{

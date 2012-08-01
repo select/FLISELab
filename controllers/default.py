@@ -303,16 +303,19 @@ def del_event():
 
 def store_solution():
     response.generic_patterns = ['json']
-    solution_id = request.vars.solution_id
-    record = db(db.solution.id == solution_id).select().first()
+    if request.vars.solution_id:
+        solution_id = request.vars.solution_id
+        record = db(db.solution.id == solution_id).select().first()
+    else:
+        record = None
     if request.vars.var_name:
         var_name = request.vars.var_name
         val = request.vars.val
         if record:
             record.update_record(**{var_name: val})
         else:
-            record = db.solution.insert()
-            record.update_record(**{var_name: val})
+            record = db.solution.insert(**{var_name: val})
+            #record.update_record(**{var_name: val})
     if record:
         return dict([(field, record[field]) for field in db.solution.fields])
     else:

@@ -2306,6 +2306,9 @@ function add2event(context,g){
 								$('#solution_warning').hide();
 								$('#solution_delete_refused').hide();
 								$('#solution_name_warning').hide();
+								if (solution_id == null){
+									$('#solution_duplicate').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+								}
 								//Change name
 								$('input[name="solution_name"]').unbind('change');
 								$('input[name="solution_name"]').change(function(){
@@ -2329,8 +2332,6 @@ function add2event(context,g){
 									if (flag_exist) {
 										$('input[name="solution_name"]').parent().parent().find('th').attr('style','color:red');
 										$('#solution_name_warning').show();
-									} else {
-										//Save name
 									};
 									//Save name
 									solution_name = $(this).val();
@@ -2354,13 +2355,203 @@ function add2event(context,g){
 									if (!(flag_exist)) {
 										//Save new component
 										solution_components.push($(this).val());
-										solution_ratios.push('');
+										solution_ratios.push('1');
 										//Change panel
 										var i = solution_components.length - 1;
-										var stcomp = '<tr><th align="left">Component '+String(i+1)+':</th><td style="text-align: left"> %component% </td> <td style="text-align: right"> Concentration ratio (from 0 to 1): <input class="component_ratio" type="text" style="width:40px" value="%ratio%"/></td> <td><input type="submit" value="remove" class="remove_component"/></td> </tr>    %stcomp%';
+										var stcomp = '<tr><th align="left">Component '+String(i+1)+':</th><td style="text-align: left"> %component% </td> <td style="text-align: right"> Concentration ratio (from 0 to 1): <input class="component_ratio" type="text" style="width:40px" value="%ratio%"/></td> <td><input type="submit" value="remove" class="remove_component"/></td> </tr>';
 										stcomp = stcomp.replace(/%component%/, solution_components[i]);
 										stcomp = stcomp.replace(/%ratio%/, solution_ratios[i]);
 										$('#new_component').parent().parent().before(stcomp);
+										//Set component concentration ratio (refresh)
+										$('.component_ratio').unbind('change');
+										$('.component_ratio').change(function(){
+											//Collect component to change
+											var update_ratio = $(this).val();
+											var update_component = $(this).parent().parent().find('td').eq(0).text().trim();
+											var update_index;
+											for (var iC = solution_components.length - 1; iC >= 0; iC--) {
+												if (solution_components[iC] == update_component) {
+													solution_ratios.splice(iC,1,update_ratio);
+													update_index = iC;
+													break;
+												};
+											};
+											$(this).parent().attr('style','text-align: right');
+											if (isNaN(parseFloat(update_ratio))){
+												$(this).parent().attr('style','text-align: right; color:red');
+											} else {
+												if ((parseFloat(update_ratio) >= 0) && (parseFloat(update_ratio) <= 1)) {
+													update_ratio = String(parseFloat(update_ratio));
+													$(this).val(update_ratio);
+													solution_ratios.splice(update_index,1,update_ratio);
+												} else {
+													$(this).parent().attr('style','text-align: right; color:red');
+												};
+											}
+										});
+										//Remove component (refresh)
+										$('.remove_component').unbind('click');
+										$('.remove_component').click(function(){
+											//Collect component to remove
+											var rm_component = $(this).parent().parent().find('td').eq(0).text().trim();
+											//Remove it
+											for (var iC = solution_components.length - 1; iC >= 0; iC--) {
+												if (solution_components[iC] == rm_component) {
+													solution_components.splice(iC,1);
+													solution_ratios.splice(iC,1);
+													break;
+												};
+											};
+											$(this).parent().parent().remove();
+											//Refresh listing
+											for (var iC = solution_components.length; iC > 0; iC--) {
+												$('#add_component').parent().parent().parent().find('tr').eq(iC).find('th').html('Component '+String(iC)+':');
+											}
+										});
+									};
+								});
+								//Add new component
+								$('#add_component').unbind('click');
+								$('#add_component').click(function(){
+									//Check it is not already a component or empty
+									var flag_exist = false;
+									if ($('#new_component').val() == '') {
+										flag_exist = true;
+									} else {
+										for (var iC = solution_components.length - 1; iC >= 0; iC--) {
+											if (solution_components[iC] == $('#new_component').val()) {
+												flag_exist = true;
+												break;
+											};
+										};
+									};
+									
+									if (!(flag_exist)) {
+										//Save new component
+										solution_components.push($('#new_component').val());
+										solution_ratios.push('1');
+										//Change panel
+										var i = solution_components.length - 1;
+										var stcomp = '<tr><th align="left">Component '+String(i+1)+':</th><td style="text-align: left"> %component% </td> <td style="text-align: right"> Concentration ratio (from 0 to 1): <input class="component_ratio" type="text" style="width:40px" value="%ratio%"/></td> <td><input type="submit" value="remove" class="remove_component"/></td> </tr>';
+										stcomp = stcomp.replace(/%component%/, solution_components[i]);
+										stcomp = stcomp.replace(/%ratio%/, solution_ratios[i]);
+										$('#new_component').parent().parent().before(stcomp);
+										//Set component concentration ratio (refresh)
+										$('.component_ratio').unbind('change');
+										$('.component_ratio').change(function(){
+											//Collect component to change
+											var update_ratio = $(this).val();
+											var update_component = $(this).parent().parent().find('td').eq(0).text().trim();
+											var update_index;
+											for (var iC = solution_components.length - 1; iC >= 0; iC--) {
+												if (solution_components[iC] == update_component) {
+													solution_ratios.splice(iC,1,update_ratio);
+													update_index = iC;
+													break;
+												};
+											};
+											$(this).parent().attr('style','text-align: right');
+											if (isNaN(parseFloat(update_ratio))){
+												$(this).parent().attr('style','text-align: right; color:red');
+											} else {
+												if ((parseFloat(update_ratio) >= 0) && (parseFloat(update_ratio) <= 1)) {
+													update_ratio = String(parseFloat(update_ratio));
+													$(this).val(update_ratio);
+													solution_ratios.splice(update_index,1,update_ratio);
+												} else {
+													$(this).parent().attr('style','text-align: right; color:red');
+												};
+											}
+										});
+										//Remove component (refresh)
+										$('.remove_component').unbind('click');
+										$('.remove_component').click(function(){
+											//Collect component to remove
+											var rm_component = $(this).parent().parent().find('td').eq(0).text().trim();
+											//Remove it
+											for (var iC = solution_components.length - 1; iC >= 0; iC--) {
+												if (solution_components[iC] == rm_component) {
+													solution_components.splice(iC,1);
+													solution_ratios.splice(iC,1);
+													break;
+												};
+											};
+											$(this).parent().parent().remove();
+											//Refresh listing
+											for (var iC = solution_components.length; iC > 0; iC--) {
+												$('#add_component').parent().parent().parent().find('tr').eq(iC).find('th').html('Component '+String(iC)+':');
+											}
+										});
+									};
+								});
+								//Set component concentration ratio
+								$('.component_ratio').unbind('change');
+								$('.component_ratio').change(function(){
+									//Collect component to change
+									var update_ratio = $(this).val();
+									var update_component = $(this).parent().parent().find('td').eq(0).text().trim();
+									var update_index;
+									for (var iC = solution_components.length - 1; iC >= 0; iC--) {
+										if (solution_components[iC] == update_component) {
+											solution_ratios.splice(iC,1,update_ratio);
+											update_index = iC;
+											break;
+										};
+									};
+									$(this).parent().attr('style','text-align: right');
+									if (isNaN(parseFloat(update_ratio))){
+										$(this).parent().attr('style','text-align: right; color:red');
+									} else {
+										if ((parseFloat(update_ratio) >= 0) && (parseFloat(update_ratio) <= 1)) {
+											update_ratio = String(parseFloat(update_ratio));
+											$(this).val(update_ratio);
+											solution_ratios.splice(update_index,1,update_ratio);
+										} else {
+											$(this).parent().attr('style','text-align: right; color:red');
+										};
+									}
+								});
+								//Remove component
+								$('.remove_component').unbind('click');
+								$('.remove_component').click(function(){
+									//Collect component to remove
+									var rm_component = $(this).parent().parent().find('td').eq(0).text().trim();
+									//Remove it
+									for (var iC = solution_components.length - 1; iC >= 0; iC--) {
+										if (solution_components[iC] == rm_component) {
+											solution_components.splice(iC,1);
+											solution_ratios.splice(iC,1);
+											break;
+										};
+									};
+									$(this).parent().parent().remove();
+									//Refresh listing
+									for (var iC = solution_components.length; iC > 0; iC--) {
+										$('#add_component').parent().parent().parent().find('tr').eq(iC).find('th').html('Component '+String(iC)+':');
+									}
+								});
+								//Duplicate solution
+								$('#solution_duplicate').unbind('click');
+								$('#solution_duplicate').click(function(){
+									//Detach from previous solution
+									solution_id = null;
+									$('#solution_duplicate').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+									//Create new name and update
+									solution_name = $('input[name="solution_name"]').val()+' copy';
+									$('input[name="solution_name"]').val(solution_name);
+									//Load other solution names and check it is not already used
+									var flag_exist = false;
+									for (var iS = $('select[name="select_solution"] option').size() - 1; iS >= 0; iS--) {
+										if (solution_name == $('select[name="select_solution"] option').eq(iS).text()) {
+											flag_exist = true;
+											break;
+										};
+									};
+									$('input[name="solution_name"]').parent().parent().find('th').removeAttr('style');
+									$('#solution_name_warning').hide();
+									if (flag_exist) {
+										$('input[name="solution_name"]').parent().parent().find('th').attr('style','color:red');
+										$('#solution_name_warning').show();
 									};
 								});
 								//Set delete function
@@ -2487,18 +2678,100 @@ function add2event(context,g){
 								//Set done function
 								$('#solution_done').unbind('click');
 								$('#solution_done').click(function(){
-									//Close modal without saving
-									$.modal.close();
-									//Come back to event modal
-									window.setTimeout(function() {
-										event_modal = $("#event").modal({
-											overlayClose:false,
-											escClose:false,
-											persist:true,
-											opacity:20,
-										});
-										$('#simplemodal-container').css('height', 'auto');
-									}, 30);
+									var flag_ok = true;
+									for (var iC = solution_ratios.length - 1; iC >= 0; iC--) {
+										if (isNaN(parseFloat(solution_ratios[iC]))){
+											flag_ok = false;
+											break;
+										} else {
+											if (!((parseFloat(solution_ratios[iC]) >= 0) && (parseFloat(solution_ratios[iC]) <= 1))) {
+												flag_ok = false;
+												break;
+											};
+										}
+									};
+									if ($('#solution_name_warning').is(":visible")) {
+										flag_ok = false;
+									};
+									if (flag_ok) {
+										//Save solution
+										if (solution_id != null) {
+											$.ajax({
+												url: '{{=URL("store_solution.json")}}',
+												data: {solution_id:solution_id, var_name:'name', val: solution_name},
+												traditional: true
+											});
+											$.ajax({
+												url: '{{=URL("store_solution.json")}}',
+												data: {solution_id:solution_id, var_name:'components_name', val: solution_components},
+												traditional: true
+											});
+											$.ajax({
+												url: '{{=URL("store_solution.json")}}',
+												data: {solution_id:solution_id, var_name:'components_ratio', val: solution_ratios},
+												traditional: true
+											});
+										} else {
+											$.ajax({
+												url: '{{=URL("store_solution.json")}}',
+												data: {var_name:'name', val: solution_name},
+												traditional: true,
+												success: function(data){
+													solution_id = data['id'];
+													//add to select_option et al.
+													$('select[name="select_solution"]').append('<option value='+solution_id+'>'+solution_name+'</option>');
+													$('select[name="event_select_solution"]').append('<option value='+solution_id+'>'+solution_name+'</option>');
+													$('select[name="event_select_solution"] option[value="'+solution_id+'"]').attr('selected','selected');
+													//save
+													$.ajax({
+														url: '{{=URL("store_solution.json")}}',
+														data: {solution_id:solution_id, var_name:'components_name', val: solution_components},
+														traditional: true
+													});
+													$.ajax({
+														url: '{{=URL("store_solution.json")}}',
+														data: {solution_id:solution_id, var_name:'components_ratio', val: solution_ratios},
+														traditional: true
+													});
+												}
+											});
+										}
+										//Close modal without saving
+										$.modal.close();
+										//Come back to event modal
+										window.setTimeout(function() {
+											event_modal = $("#event").modal({
+												overlayClose:false,
+												escClose:false,
+												persist:true,
+												opacity:20,
+											});
+											$('#simplemodal-container').css('height', 'auto');
+											//Update select_option
+											if (solution_id != null) {
+												for (var iS = $('select[name="select_solution"] option').size() - 1; iS >= 0; iS--) {
+													if (solution_id == $('select[name="select_solution"] option').eq(iS).val()) {
+														if (solution_name != $('select[name="select_solution"] option').eq(iS).text()) {
+															//Update
+															$('select[name="select_solution"] option').eq(iS).text(solution_name)
+														}
+														break;
+													}
+												}
+												for (var iS = $('select[name="event_select_solution"] option').size() - 1; iS >= 0; iS--) {
+													if (solution_id == $('select[name="event_select_solution"] option').eq(iS).val()) {
+														if (solution_name != $('select[name="event_select_solution"] option').eq(iS).text()) {
+															//Update
+															$('select[name="event_select_solution"] option').eq(iS).text(solution_name)
+														}
+														break;
+													}
+												}
+											}
+										}, 30);
+									} else {
+										$('#solution_warning').show();
+									};
 								});
 								//Create solution modal window
 								window.setTimeout(function() {

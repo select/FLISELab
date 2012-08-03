@@ -591,7 +591,6 @@ function init_file(cur_id,name){
 		//Initialize tool variables
 		isSelecting = false;
 		tool = 'zoom'; // Default tool
-		tool = 'event'; // TOREMOVE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		
 		//Reset panel
 		$('#tools').html('');
@@ -1461,49 +1460,115 @@ function interval2export(pos) {
 				st = st.replace(/%caloptions%/,'');
 				$('#subinterval').append(st);
 				$('#subinterval select[name="sub_select_strain"] option[value="'+strain_ref+'"]').attr('selected','selected');
+				if (name == '') {
+					$('input[name="sub_name"]').parent().parent().find('th').first().attr('style','color: red');
+				};
+				if (od == '') {
+					$('input[name="sub_od"]').parent().parent().find('th').first().attr('style','color: red');
+				};
+				if (dilutionf == '') {
+					$('input[name="sub_dilutionf"]').parent().parent().find('th').first().attr('style','color: red');
+				};
+				if (celldiameter == '') {
+					$('input[name="sub_celldiameter"]').parent().parent().find('th').first().attr('style','color: red');
+				};
+				$('input[name="sub_calintercept"]').each(function(){
+					if ($(this).val() == '') {$(this).parent().attr('style','color: red');};
+				});
+				$('input[name="sub_calslope"]').each(function(){
+					if ($(this).val() == '') {$(this).parent().attr('style','color: red');};
+				});
 				
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				//spreadsheet export
 				$('#export2excel').click(function(){
-					var raw_data = [];
-					for (var i=0; i<graph_data.length; ++i){
-						if ((graph_data[i][0]>=intStart) && (graph_data[i][0]<=intEnd)){
-							raw_data.push(graph_data[i]);
-						}
-					}
-					var data = {'1 Parameters': { header:[], 
-									data: [
-									['Name',$('input[name="sub_name"]').val(), ' '],
-									['Strain',$('#subinterval select[name="sub_select_strain"]').val(), $('#subinterval option:selected').html()],
-									['Optical density',$('input[name="sub_od"]').val(), ' '],
-									['Dilution factor',$('input[name="sub_dilutionf"]').val(), ' '],
-									['Cell diameter',$('input[name="sub_celldiameter"]').val(), ' '],
-									['Comments',$('input[name="sub_comments"]').val(), ' '],
-									['Calibration','', ' ']
-									]
-								},
-								'2 Raw Data': { header:graph_labels, 
-									data: raw_data
-								},
-								'3 Processed Data': { header:graph_labels, 
-									data: [graph_data[0]]
-								}
+					var flag_ok = true;
+					if ($('input[name="sub_name"]').val() == '') {flag_ok = false;};
+					if ($('input[name="sub_od"]').val() == '') {flag_ok = false;};
+					if ($('input[name="sub_dilutionf"]').val() == '') {flag_ok = false;};
+					if ($('input[name="sub_celldiameter"]').val() == '') {flag_ok = false;};
+					$('input[name="sub_calintercept"]').each(function(){
+						if ($(this).val() == '') {flag_ok = false;};
+					});
+					$('input[name="sub_calslope"]').each(function(){
+						if ($(this).val() == '') {flag_ok = false;};
+					});
+					if (flag_ok) {
+						var raw_data = []; // extracted from original data
+						var raw_time = []; // extracted from original time
+						var raw_time_ref = []; // extracted from calculated time, used as reference since the original time is not reliable (not under the second)
+						var raw_series = []; // reshaped timeseries to be passed for SG-differentiation
+						var raw_data_point = [];
+						for (var iP=0; iP<graph_data.length; iP++){
+							if ((graph_data[iP][0]>=intStart) && (graph_data[iP][0]<=intEnd)){
+								raw_data_point = graph_data[iP];
+								raw_data.push(raw_data_point);
+								raw_time.push(graph_time[iP]);
+								raw_time_ref.push(raw_data_point.splice(0,1));//remove time
+								for (var iS = 0; iS < raw_data_point.length; iS++) {
+									raw_series[iS].push(raw_data_point[iS]);
+								};
 							}
-					$('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xls' name='format'/> ");
-					$('#json2spreadsheet_form').submit();
+						}
+						//1 Parameters
+						var int_parameters = [
+							['Name:', $('input[name="sub_name"]').val(), ' ', ' ', ' ', ' ', ' '],
+							['Original raw file:', $('.current_record').text(), ' ', ' ', ' ', ' ', ' '],
+							['Experiment start (raw):', intStart, raw_time[0], ' ', ' ', ' ', ' '],
+							['Experiment end (raw):', intEnd, raw_time.slice(-1)[0], ' ', ' ', ' ', ' '],
+							['Strain (reference):', $('#subinterval option:selected').html(), $('#subinterval select[name="sub_select_strain"]').val(), ' ', ' ', ' ', ' '],
+							['Optical density:', $('input[name="sub_od"]').val(), ' ', ' ', ' ', ' ', ' '],
+							['Dilution factor:', $('input[name="sub_dilutionf"]').val(), ' ', ' ', ' ', ' ', ' '],
+							['Cell diameter:', $('input[name="sub_celldiameter"]').val(), ' ', ' ', ' ', ' ', ' '],
+							['Comments:', $('textarea[name="sub_comments"]').val(), ' ', ' ', ' ', ' ', ' '],
+							['Savitzky-Golay window:',$('#lochw').val(), ' ', ' ', ' ', ' ', ' '],
+							['Savitzky-Golay order:',$('#order').val(), ' ', ' ', ' ', ' ', ' '],
+						];
+						$('input[name="sub_calintercept"]').each(function(){
+							int_parameters.push(['Series:', 'Name:', graph_labels[$(this).parent().parent().index()+1], 'Slope:', $(this).parent().parent().find('td').eq(1).find('input').first().val(), 'Intercept:', $(this).val()]);
+						});
+						//3 Processed data
+						$.ajax({
+							url: '{{=URL('subint_process_data.json')}}',
+							data: {flise_file_id:cur_id, interval_time:intStart+':'+intEnd,data:JSON.stringify(raw_series)},
+							traditional: true,
+							type: 'POST',
+							success: function(data){
+								var result = data.result;
+							}
+						});
+						//Make XLS
+						var data = {'1 Parameters': { header:[], 
+										data: int_parameters
+									},
+									'2 Raw Data': { header:graph_labels, 
+										data: raw_data
+									},
+									'3 Processed Data': { header:graph_labels, 
+										data: [graph_data[0]]
+									}
+								};
+						$('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xls' name='format'/> <input type='hidden' value='"+$('input[name="sub_name"]').val()+"' name='filename'/> ");
+						$('#json2spreadsheet_form').submit();
+					};
 				});	
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				
 				//Name input
 				$('input[name="sub_name"]').unbind('change');
 				$('input[name="sub_name"]').change(function(){
-					// TODO: first check this name does not exist already for this FLISE file?
-					//Save subinterval name
-					$.ajax({
-						url: '{{=URL("store_subint_option.json")}}',
-						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'name', val: $(this).val()},
-						traditional: true
-					});
+					$(this).parent().parent().find('th').first().removeAttr('style');
+					if ($(this).val() == '') {
+						//Alert
+						$(this).parent().parent().find('th').first().attr('style','color: red');
+					} else {
+						//Save subinterval name
+						$.ajax({
+							url: '{{=URL("store_subint_option.json")}}',
+							data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'name', val: $(this).val()},
+							traditional: true
+						});
+					};
 				});
 				//Strain reference input
 				$('select[name="sub_select_strain"]').unbind('change');
@@ -1518,32 +1583,50 @@ function interval2export(pos) {
 				//OD input
 				$('input[name="sub_od"]').unbind('change');
 				$('input[name="sub_od"]').change(function(){
-					//Save new OD
-					$.ajax({
-						url: '{{=URL("store_subint_option.json")}}',
-						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'optical_density', val: $(this).val()},
-						traditional: true
-					});
+					$(this).parent().parent().find('th').first().removeAttr('style');
+					if ($(this).val() == '') {
+						//Alert
+						$(this).parent().parent().find('th').first().attr('style','color: red');
+					} else {
+						//Save new OD
+						$.ajax({
+							url: '{{=URL("store_subint_option.json")}}',
+							data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'optical_density', val: $(this).val()},
+							traditional: true
+						});
+					}
 				});
 				//Dilution factor input
 				$('input[name="sub_dilutionf"]').unbind('change');
 				$('input[name="sub_dilutionf"]').change(function(){
-					//Save new dilution factor
-					$.ajax({
-						url: '{{=URL("store_subint_option.json")}}',
-						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'dilution_factor', val: $(this).val()},
-						traditional: true
-					});
+					$(this).parent().parent().find('th').first().removeAttr('style');
+					if ($(this).val() == '') {
+						//Alert
+						$(this).parent().parent().find('th').first().attr('style','color: red');
+					} else {
+						//Save new dilution factor
+						$.ajax({
+							url: '{{=URL("store_subint_option.json")}}',
+							data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'dilution_factor', val: $(this).val()},
+							traditional: true
+						});
+					}
 				});
 				//Cell diameter input
 				$('input[name="sub_celldiameter"]').unbind('change');
 				$('input[name="sub_celldiameter"]').change(function(){
-					//Save new cell diameter
-					$.ajax({
-						url: '{{=URL("store_subint_option.json")}}',
-						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'cell_diameter', val: $(this).val()},
-						traditional: true
-					});
+					$(this).parent().parent().find('th').first().removeAttr('style');
+					if ($(this).val() == '') {
+						//Alert
+						$(this).parent().parent().find('th').first().attr('style','color: red');
+					} else {
+						//Save new cell diameter
+						$.ajax({
+							url: '{{=URL("store_subint_option.json")}}',
+							data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'cell_diameter', val: $(this).val()},
+							traditional: true
+						});
+					}
 				});
 				//Comments free text area
 				$('textarea[name="sub_comments"]').unbind('change');
@@ -1556,30 +1639,51 @@ function interval2export(pos) {
 					});
 				});
 				//Calibration
-				//BUG: if one enter only 1 value for instance for the second series and none for the first, only one value is stored and therefore is passed for the first series.
 				$('input[name="sub_calintercept"]').change(function(){
-					var items = [];
-					$('input[name="sub_calintercept"]').each(function(){
-						items.push($(this).val());
-					});
-					//Save intercept change
-					$.ajax({
-						url: '{{=URL("store_subint_option.json")}}',
-						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'intercept', val: items},
-						traditional: true
-					});
+					$(this).parent().removeAttr('style');
+					if ($(this).val() == '') {
+						$(this).parent().attr('style','color: red');
+					} else {
+						var flag = true;
+						$('input[name="sub_calintercept"]').each(function(){
+							if ($(this).val() == ''){flag = false;}
+						});
+						if (flag) {
+							var items = [];
+							$('input[name="sub_calintercept"]').each(function(){
+								items.push($(this).val()); // BUG: if one enter only 1 value for instance for the second series and none for the first, only one value is stored and therefore is passed for the first series. To hide this, I don't save anything if not all the values are entered.
+							});
+							//Save intercept change
+							$.ajax({
+								url: '{{=URL("store_subint_option.json")}}',
+								data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'intercept', val: items},
+								traditional: true
+							});
+						};
+					};
 				});
 				$('input[name="sub_calslope"]').change(function(){
-					var items = [];
-					$('input[name="sub_calslope"]').each(function(){
-						items.push($(this).val());
-					});
-					//Save slope change
-					$.ajax({
-						url: '{{=URL("store_subint_option.json")}}',
-						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'slope', val: items},
-						traditional: true
-					});
+					$(this).parent().removeAttr('style');
+					if ($(this).val() == '') {
+						$(this).parent().attr('style','color: red');
+					} else {
+						var flag = true;
+						$('input[name="sub_calslope"]').each(function(){
+							if ($(this).val() == ''){flag = false;}
+						});
+						if (flag) {
+							var items = [];
+							$('input[name="sub_calslope"]').each(function(){
+								items.push($(this).val()); // BUG: if one enter only 1 value for instance for the second series and none for the first, only one value is stored and therefore is passed for the first series. To hide this, I don't save anything if not all the values are entered.
+							});
+							//Save slope change
+							$.ajax({
+								url: '{{=URL("store_subint_option.json")}}',
+								data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'slope', val: items},
+								traditional: true
+							});
+						};
+					};
 				});
 				//Make popup
 				event_modal = $("#subinterval").modal({

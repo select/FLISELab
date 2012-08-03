@@ -362,6 +362,93 @@ def get_savgol():
     return dict(result=result)
 
 
+def subint_process_data():
+    response.generic_patterns = ['json']
+    flise_file_id = request.vars.flise_file_id
+    interval_time = request.vars.interval_time
+    time = interval_time.split(':')
+    intStart = float(time[0])
+    intEnd = float(time[1])
+    #load interval parameters
+    sel_set = db(db.subintervals.extract_time == interval_time)(db.subintervals.flise_file_id == flise_file_id)
+    record = sel_set.select().first()
+    optical_density = record.optical_density
+    dilution_factor = record.dilution_factor
+    cell_diameter = record.cell_diameter
+    slope = record.slope
+    intercept = record.intercept
+    #calculate concetrations
+    from gluon.contrib import simplejson
+    data = simplejson.loads(request.vars.data)
+    data2diff = []
+    for iS in range(len(data)):
+        data2diff.append([10 ** ((x - float(intercept[iS])) / float(slope[iS])) for x in data[iS]])
+    #differentiate interval raw data
+    import savgol
+    record = db.flise_file[int(flise_file_id)]
+    sg_win = record.sg_win
+    sg_order = record.sg_order
+    myinstance = savgol.Savgol(int(sg_win), int(sg_win), int(sg_order), 1)
+    datadiff = []
+    for iS in range(len(data2diff)):
+        datadiff.append(myinstance.filterTS(data2diff[iS]))
+    #collect events and solutions and calculate volume sequence
+    intEvents = []
+    intSolutions = []
+    volume = []
+    ncell = []
+    ts = float(record.sampling_time)
+    sel_set = db(db.event.flise_file_id == flise_file_id)
+    eventStart = -1
+    if sel_set:
+            #find where to start
+            for record in sel_set.select():
+                if float(record.time) <= intStart and record.type == 'wash':
+                    eventStart = max(eventStart, float(record.time))
+            #collect events
+            for record in sel_set.select():
+                if eventStart <= float(record.time) < intEnd:
+                    intEvents.append({'time': float(record.time), 'type': record.type, 'series_name': record.series_name, 'solution_id': record.solution_id, 'concentration': record.concentration, 'volume': record.volume, 'comment': record.comment})
+            from operator import itemgetter
+            intEvents = sorted(intEvents, key=itemgetter('time'))
+            intSols_index = set()
+            for intEvent in intEvents:
+                intSols_index.add(intEvent['solution_id'])
+            #collect solutions
+            for iS in intSols_index:
+                record = db.solution.id[int(iS)]
+                intSolutions.append({'name': record.name, 'components_name': record.components_name, 'components_ratio': record.components_ratio})
+            #make volume sequence
+            volume_step = []
+            volume_time = []
+            volume_now = 0
+            for intEvent in intEvents:
+                if intEvent['type'] == 'wash':
+                    volume_now = float(intEvent['volume'])
+                elif intEvent['type'] == 'dilution':
+                    volume_now = volume_now + float(intEvent['volume'])
+                elif intEvent['type'] == 'removal':
+                    volume_now = volume_now - float(intEvent['volume'])
+                elif intEvent['type'] == 'injection':
+                    volume_now = volume_now + float(intEvent['volume'])
+                volume_step.append(volume_now)
+                volume_time.append(intEvent['time'])
+            volume_time.append(intEnd)
+            t = intStart
+            for iv, tv in enumerate(volume_time):
+                if tv <= intStart:
+                    volume_index = iv
+                else:
+                    break
+            while (t < intEnd):
+                if volume_time[volume_index + 1] <= t:
+                    volume_index += 1
+                volume.append(volume_step[volume_index])
+                ncell.append(volume_step[volume_index] * optical_density * 1.2e7 * dilution_factor)
+                t = t + ts
+    return dict(concentrations=data2diff, concentrationsDiff=datadiff, volume=volume, ncell=ncell, intEvents=intEvents, intSolutions=intSolutions)
+
+
 def export_spreadsheet():
     export_format = request.vars.format
     from gluon.contrib import simplejson
@@ -370,14 +457,15 @@ def export_spreadsheet():
     except:
         import sys
         raise HTTP(500, 'Deserializing JSON input failed: %s' % sys.exc_info()[1])
-        import tablib.core
+    import tablib.core
     databook = tablib.core.Databook()
     for name, data in data_object.iteritems():
         #print 'not using transmitted data header: ',data['header']
         if False and data['header']:
-            dataset = tablib.core.Dataset(headers = data['header'])
+            dataset = tablib.core.Dataset(headers=data['header'])
         else:
-            dataset = tablib.core.Dataset()
+            dataset = tablib.core.Dataset(headers=data['header'])
+            dataset.title = name
         for row in data['data']:
             if row:
                 dataset.append(row)
@@ -385,8 +473,8 @@ def export_spreadsheet():
         databook.add_sheet(dataset)
     if export_format in 'yaml csv xls xlsx':
         import gluon.contenttype
-        import os.path
-        response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s'%export_format)
+        #import os.path
+        response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s' % export_format)
         response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
         #response.write(getattr(data,export_format), escape=False)
         return getattr(databook, export_format)

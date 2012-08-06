@@ -15,6 +15,7 @@ def index():
     example action using the internationalization operator T and flash
     rendered by views/default/index.html or views/generic.html
     """
+    check_first_user()#check if the first users exits if not redirect to setup
     response.files.append(URL(request.application, 'static/dygraphs', 'dygraph-dev.js'))
     response.files.append(URL(request.application, 'static/html5slider', 'html5slider.js'))      # to REMOVE in the end
     response.files.append(URL(request.application, 'static/js', 'jquery.confirm.js'))
@@ -80,7 +81,8 @@ def file():
         #filename, file = db.flise_file.file.retrieve(record.file)
         #record.update_record(created_on=datetime.fromtimestamp(os.path.getctime(os.path.join(request.folder,'uploads',record.file))))
         ##?-> http://stackoverflow.com/questions/946967/get-file-creation-time-with-python-on-mac
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");' % (URL(r=request, f='files'), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
+        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");'  \
+                                                                                                % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
 
     if request.args(0):
         db.flise_file.file.readable, db.flise_file.file.writable = False, False
@@ -310,7 +312,10 @@ def store_solution():
         record = None
     if request.vars.var_name:
         var_name = request.vars.var_name
-        val = request.vars.val
+        if var_name != ' name':
+            val = request.vars.getlist('val')
+        else:
+            val = request.vars.val
         if record:
             record.update_record(**{var_name: val})
         else:

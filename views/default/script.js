@@ -44,6 +44,35 @@ $.get('{{=URL(request.application, 'static/templates','global_options.html')}}',
 if($.cookie('flise_js_options')== null) $.cookie('flise_js_options', 'a=10', { expires: 30, path: '/' });
 */
 
+function init_files(){
+	//Select a file (click behavior)
+	$('.flise_file .select').unbind('click');
+	$('.flise_file .select').click(function(){
+		cur_id = $(this).parent().attr('id');
+		init_file(cur_id, $(this).html());
+		//Load Raw Data Description Panel
+	      web2py_component('{{=URL('file')}}/'+cur_id,'edit_record');
+	});
+	//Files Delete button
+	$('.del').unbind('click');
+	$('.del').unbind('confirm');
+	$('.del').click(function(){
+		$(this).parent().remove();
+		$.ajax({
+			url:'{{=URL('file')}}',
+			data: {delr: $(this).parent().attr('id')}
+		});
+		if (cur_id == $(this).parent().attr('id')){
+			location.reload();
+		}
+	});
+	$('.del').confirm({
+		stopAfter:'ok',
+		wrapper: '<div style="width:130px;background-color: orange;" class="del"></div>',
+		timeout:3000
+	}); 
+}
+
 /**************** INIT ********************/
 function init_file(cur_id,name){
 	//Show data extraction zone
@@ -62,9 +91,6 @@ function init_file(cur_id,name){
 	$('#series_options').slideUp();
 	$('#global_options').slideUp();
 	$('#section_file').slideToggle();
-	
-	//Load Raw Data Description Panel
-	web2py_component('{{=URL('file')}}/'+cur_id,'edit_record');
 	
 	//Load time-series and associated data, then display graph and initiate callbacks			
 	$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
@@ -1038,33 +1064,6 @@ function init_file(cur_id,name){
 			$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 		});
 	});
-}
-
-function init_files(){
-	//Select a file (click behavior)
-	$('.flise_file .select').unbind('click');
-	$('.flise_file .select').click(function(){
-		cur_id = $(this).parent().attr('id');
-		init_file(cur_id, $(this).html());
-	});
-	//Files Delete button
-	$('.del').unbind('click');
-	$('.del').unbind('confirm');
-	$('.del').click(function(){
-		$(this).parent().remove();
-		$.ajax({
-			url:'{{=URL('file')}}',
-			data: {delr: $(this).parent().attr('id')}
-		});
-		if (cur_id == $(this).parent().attr('id')){
-			location.reload();
-		}
-	});
-	$('.del').confirm({
-		stopAfter:'ok',
-		wrapper: '<div style="width:130px;background-color: orange;" class="del"></div>',
-		timeout:3000
-	}); 
 }
 
 /**************** WINDOW RESIZE *********************/

@@ -382,13 +382,15 @@ def subint_process_data():
     record = sel_set.select().first()
     optical_density = record.optical_density
     dilution_factor = record.dilution_factor
-    cell_diameter = record.cell_diameter
+    cell_diameter = record.cell_diameter * 1e-6
     slope = record.slope
     intercept = record.intercept
     #calculate concetrations
     from gluon.contrib import simplejson
     data = simplejson.loads(request.vars.data)
     data2diff = []
+    from math import pi
+    svr = ((1 - optical_density * 1.2e7 * dilution_factor * (4 / 3) * pi * ((cell_diameter / 2) ** 3)) / (optical_density * 1.2e7 * dilution_factor * pi * (cell_diameter ** 2)))
     for iS in range(len(data)):
         data2diff.append([10 ** ((x - float(intercept[iS])) / float(slope[iS])) for x in data[iS]])
     #differentiate interval raw data
@@ -400,6 +402,9 @@ def subint_process_data():
     datadiff = []
     for iS in range(len(data2diff)):
         datadiff.append(myinstance.filterTS(data2diff[iS]))
+    fluxes = []
+    for iS in range(len(datadiff)):
+        fluxes.append([svr * x for x in datadiff[iS]])
     #collect events and solutions and calculate volume sequence
     intEvents = []
     intSolutions = []
@@ -414,18 +419,19 @@ def subint_process_data():
                 if float(record.time) <= intStart and record.type == 'wash':
                     eventStart = max(eventStart, float(record.time))
             #collect events
+            intSols_index = set()
             for record in sel_set.select():
                 if eventStart <= float(record.time) < intEnd:
-                    intEvents.append({'time': float(record.time), 'type': record.type, 'series_name': record.series_name, 'solution_id': record.solution_id, 'concentration': record.concentration, 'volume': record.volume, 'comment': record.comment})
+                    intEvents.append({'time': float(record.time), 'type': record.type, 'series_name': record.series_name, 'solution_name': db.solution[record.solution_id].name if record.solution_id else None, 'concentration': record.concentration, 'volume': record.volume, 'comment': record.comment})
+                    if record.solution_id:
+                        intSols_index.add(record.solution_id)
             from operator import itemgetter
             intEvents = sorted(intEvents, key=itemgetter('time'))
-            intSols_index = set()
-            for intEvent in intEvents:
-                intSols_index.add(intEvent['solution_id'])
             #collect solutions
             for iS in intSols_index:
-                record = db.solution.id[int(iS)]
-                intSolutions.append({'name': record.name, 'components_name': record.components_name, 'components_ratio': record.components_ratio})
+                solution_record = db.solution[int(iS)]
+                if solution_record:
+                    intSolutions.append({'name': solution_record.name, 'components_name': solution_record.components_name, 'components_ratio': solution_record.components_ratio})
             #make volume sequence
             volume_step = []
             volume_time = []
@@ -454,7 +460,9 @@ def subint_process_data():
                 volume.append(volume_step[volume_index])
                 ncell.append(volume_step[volume_index] * optical_density * 1.2e7 * dilution_factor)
                 t = t + ts
-    return dict(concentrations=data2diff, concentrationsDiff=datadiff, volume=volume, ncell=ncell, intEvents=intEvents, intSolutions=intSolutions)
+            volume.append(volume_step[volume_index])
+            ncell.append(volume_step[volume_index] * optical_density * 1.2e7 * dilution_factor)
+    return dict(concentrations=data2diff, concentrationsDiff=datadiff, fluxes=fluxes, volume=volume, ncell=ncell, surf2vol_ratio=svr, intEvents=intEvents, intSolutions=intSolutions)
 
 
 def export_spreadsheet():
@@ -467,7 +475,7 @@ def export_spreadsheet():
         raise HTTP(500, 'Deserializing JSON input failed: %s' % sys.exc_info()[1])
     import tablib.core
     databook = tablib.core.Databook()
-    for name, data in data_object.iteritems():
+    for name, data in data_object:
         #print 'not using transmitted data header: ',data['header']
         if False and data['header']:
             dataset = tablib.core.Dataset(headers=data['header'])

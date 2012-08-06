@@ -1482,6 +1482,7 @@ function interval2export(pos) {
 				//spreadsheet export
 				$('#export2excel').click(function(){
 					var flag_ok = true;
+					$('#export2excel').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 					if ($('input[name="sub_name"]').val() == '') {flag_ok = false;};
 					if ($('input[name="sub_od"]').val() == '') {flag_ok = false;};
 					if ($('input[name="sub_dilutionf"]').val() == '') {flag_ok = false;};
@@ -1497,15 +1498,18 @@ function interval2export(pos) {
 						var raw_time = []; // extracted from original time
 						var raw_time_ref = []; // extracted from calculated time, used as reference since the original time is not reliable (not under the second)
 						var raw_series = []; // reshaped timeseries to be passed for SG-differentiation
-						var raw_data_point = [];
+						for (var iS = graph_data[0].length - 2; iS >= 0; iS--) {
+							raw_series.push([]);
+						};
+						var raw_data_point;
 						for (var iP=0; iP<graph_data.length; iP++){
 							if ((graph_data[iP][0]>=intStart) && (graph_data[iP][0]<=intEnd)){
-								raw_data_point = graph_data[iP];
-								raw_data.push(raw_data_point);
+								raw_data_point = graph_data.slice(iP,iP+1)[0];
+								raw_data.push(raw_data_point.slice());
 								raw_time.push(graph_time[iP]);
-								raw_time_ref.push(raw_data_point.splice(0,1));//remove time
-								for (var iS = 0; iS < raw_data_point.length; iS++) {
-									raw_series[iS].push(raw_data_point[iS]);
+								raw_time_ref.push(raw_data_point[0]);
+								for (var iS = 1; iS < raw_data_point.length; iS++) {
+									raw_series[iS-1].push(raw_data_point[iS]);
 								};
 							}
 						}
@@ -1519,36 +1523,95 @@ function interval2export(pos) {
 							['Optical density:', $('input[name="sub_od"]').val(), ' ', ' ', ' ', ' ', ' '],
 							['Dilution factor:', $('input[name="sub_dilutionf"]').val(), ' ', ' ', ' ', ' ', ' '],
 							['Cell diameter:', $('input[name="sub_celldiameter"]').val(), ' ', ' ', ' ', ' ', ' '],
-							['Comments:', $('textarea[name="sub_comments"]').val(), ' ', ' ', ' ', ' ', ' '],
-							['Savitzky-Golay window:',$('#lochw').val(), ' ', ' ', ' ', ' ', ' '],
-							['Savitzky-Golay order:',$('#order').val(), ' ', ' ', ' ', ' ', ' '],
+							['Surface to volume ratio:', ' ', ' ', ' ', ' ', ' ', ' '],
 						];
 						$('input[name="sub_calintercept"]').each(function(){
 							int_parameters.push(['Series:', 'Name:', graph_labels[$(this).parent().parent().index()+1], 'Slope:', $(this).parent().parent().find('td').eq(1).find('input').first().val(), 'Intercept:', $(this).val()]);
 						});
+						int_parameters.push(['Comments:', $('textarea[name="sub_comments"]').val(), ' ', ' ', ' ', ' ', ' ']);
+						int_parameters.push(['Savitzky-Golay window:',$('#lochw').val(), ' ', ' ', ' ', ' ', ' ']);
+						int_parameters.push(['Savitzky-Golay order:',$('#order').val(), ' ', ' ', ' ', ' ', ' ']);
 						//3 Processed data
 						$.ajax({
 							url: '{{=URL('subint_process_data.json')}}',
-							data: {flise_file_id:cur_id, interval_time:intStart+':'+intEnd,data:JSON.stringify(raw_series)},
+							data: {flise_file_id:cur_id, interval_time:intStart+':'+intEnd, data:JSON.stringify(raw_series)},
 							traditional: true,
 							type: 'POST',
 							success: function(data){
-								var result = data.result;
+								var concentrations = data.concentrations;
+								var concentrationsDiff = data.concentrationsDiff;
+								var fluxes = data.fluxes;
+								var volume = data.volume;
+								var ncell = data.ncell;
+								var surf2vol_ratio = data.surf2vol_ratio;
+								int_parameters[8][1] = String(surf2vol_ratio);
+								var intEvents = data.intEvents;
+								var intSolutions = data.intSolutions;
+								//Structure results into a table
+								var result = [];
+								var header_result = [];
+								header_result.push('time reference (s)');
+								header_result.push('raw time');
+								for (var iS = 0; iS < concentrations.length; iS++) {
+									header_result.push('['+graph_labels[iS+1]+'] (mol/L)');
+								};
+								for (var iS = 0; iS < concentrationsDiff.length; iS++) {
+									header_result.push('d/dt['+graph_labels[iS+1]+'] (mol/L/s)');
+								};
+								for (var iS = 0; iS < fluxes.length; iS++) {
+									header_result.push('flux('+graph_labels[iS+1]+')');
+								};
+								header_result.push('cuvette volume (L)');
+								header_result.push('number of cells in cuvette');
+								for (var iT = 0; iT < raw_time_ref.length; iT++) {
+									result.push([raw_time_ref[iT], raw_time[iT]]);
+									for (var iS = 0; iS < concentrations.length; iS++) {
+										result[iT].push(concentrations[iS][iT]);
+									};
+									for (var iS = 0; iS < concentrationsDiff.length; iS++) {
+										result[iT].push(concentrationsDiff[iS][iT]);
+									};
+									for (var iS = 0; iS < fluxes.length; iS++) {
+										result[iT].push(fluxes[iS][iT]);
+									};
+									result[iT].push(volume[iT]);
+									result[iT].push(ncell[iT]);
+								};
+								//Structure events and solutions into a table
+								var events = [];
+								var solutions = [];
+								for (var iE = 0; iE < intEvents.length; iE++) {
+									events.push([intEvents[iE].time, intEvents[iE].type, intEvents[iE].series_name, intEvents[iE].solution_name, (intEvents[iE].volume != null) ? intEvents[iE].volume : ' ', (intEvents[iE].concentration != null) ? intEvents[iE].concentration : ' ', intEvents[iE].comment]);
+								};
+								for (var iS = 0; iS < intSolutions.length; iS++) {
+									for (var iC = 0; iC < intSolutions[iS].components_name.length; iC++) {
+										solutions.push([(iC == 0) ? intSolutions[iS].name : ' ', intSolutions[iS].components_name[iC], intSolutions[iS].components_ratio[iC]]);
+									};
+								};
+								//Make XLS
+								var data = [['1 Parameters', { header:[], 
+										data: int_parameters
+									}],
+									['2 Raw Data', { header:graph_labels, 
+										data: raw_data
+									}],
+									['3 Processed Data', { header:header_result, 
+										data: result
+									}],
+									['4 Events', { header:['Time', 'Type', 'Series name (or all)', 'Solution', 'Volume', 'Concentration', 'Comment'], 
+										data: events
+									}],
+									['5 Solutions', { header:['Name', 'Component', 'Concentration ratio'], 
+										data: solutions
+									}]
+								];
+								$('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xls' name='format'/> <input type='hidden' value='"+$('input[name="sub_name"]').val()+"' name='filename'/> ");
+								$('#json2spreadsheet_form').submit();
+								$('#export2excel').removeAttr("disabled").removeAttr("style");
 							}
 						});
-						//Make XLS
-						var data = {'1 Parameters': { header:[], 
-										data: int_parameters
-									},
-									'2 Raw Data': { header:graph_labels, 
-										data: raw_data
-									},
-									'3 Processed Data': { header:graph_labels, 
-										data: [graph_data[0]]
-									}
-								};
-						$('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xls' name='format'/> <input type='hidden' value='"+$('input[name="sub_name"]').val()+"' name='filename'/> ");
-						$('#json2spreadsheet_form').submit();
+					} else {
+						$('#export2excel').removeAttr("disabled").removeAttr("style");
 					};
 				});	
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx

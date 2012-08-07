@@ -500,6 +500,7 @@ def export():
     import StringIO
     output = StringIO.StringIO()
     archive = zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED)
+    archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].file), arcname="file.txt")
     archive.writestr("flise_file.csv", str(db(db.flise_file.id == cur_id).select()))
     archive.writestr("events.csv", str(db(db.event.flise_file_id == cur_id).select()))
     archive.writestr("subintervals.csv", str(db(db.subintervals.flise_file_id == cur_id).select()))

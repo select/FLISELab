@@ -49,13 +49,11 @@ def file():
     def on_validate(form):
         global sampling_time_old
         sampling_time_old = db.flise_file[request.args(0)].sampling_time
-        print '1 asdf asdf', request.args(0), sampling_time_old
 
     def on_accept(form):
         from gluon.contrib import simplejson
         global sampling_time_old
         #update time of cutT, nocutT, dropT and evenT when sampling time is changed + subintervals definition
-        print '2 asdfsdddd ', form.vars.sampling_time, sampling_time_old
         sfactor = form.vars.sampling_time / sampling_time_old
         dropT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)]
         db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))

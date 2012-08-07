@@ -1536,6 +1536,7 @@ function interval2export(pos) {
 							url: '{{=URL('subint_process_data.json')}}',
 							data: {flise_file_id:cur_id, interval_time:intStart+':'+intEnd, data:JSON.stringify(raw_series)},
 							traditional: true,
+							async: false,
 							type: 'POST',
 							success: function(data){
 								var concentrations = data.concentrations;

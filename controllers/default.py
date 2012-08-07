@@ -495,59 +495,19 @@ def export_spreadsheet():
 
 
 def export():
-    # def compress(path, archive, base_path, archive_type = 'zip'):
-    #     paths = os.listdir(path)
-    #     for p in paths:
-    #         p = os.path.join(path, p) # Make the path relative
-    #         if os.path.isdir(p): # Recursive case
-    #             compress(p, archive, base_path, archive_type)
-    #         else:
-    #             if archive_type == 'zip':
-    #                 archive.write(p, './'+p[len(base_path):]) # Write the file to the zipfile
-    #             elif archive_type == 'tar':
-    #                 archive.add(p, './'+p[len(base_path):], False, glob_ignore)
-    #     return
-
-    # def targzit(path, archname):
-    #     tarname = os.path.join(path, archname[:-7] + '.tar')
-    #     archive = tarfile.TarFile(tarname, 'w')
-    #     if os.path.isdir(path):
-    #         compress(path, archive, path, 'tar')
-    #     else:
-    #         archive.add(p, './'+p[len(base_path):])
-    #     archive.close()
-
-    #     tgzfp = gzopen(archname, 'wb')
-    #     tfp = open(tarname, 'rb')
-    #     tgzfp.write(tfp.read())
-    #     tfp.close()
-    #     tgzfp.close()
-    #     #os.unlink(tarname)
-
-    # def zipit(path, archname):
-    #     # Create a ZipFile Object primed to write
-    #     archive = zipfile.ZipFile(archname, "w", zipfile.ZIP_DEFLATED) # "a" to append, "r" to read
-    #     # Recurse or not, depending on what path is
-    #     if os.path.isdir(path):
-    #         compress(path, archive, path)
-    #     else:
-    #         archive.write(path, './'+p[len(path):])
-    #     archive.close()
-
-    cur_id = 1
+    cur_id = request.vars.id
     import zipfile
     import StringIO
     output = StringIO.StringIO()
     archive = zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED)
     archive.writestr("flise_file.csv", str(db(db.flise_file.id == cur_id).select()))
-    print str(db(db.flise_file.id == cur_id).select())
-    print str(db(db.event.flise_file_id == cur_id).select())
-    print str(db(db.subintervals.flise_file_id == cur_id).select())
-    print str(db(db.solution.id == db.event.solution_id)(db.event.flise_file_id == cur_id).select(db.solution.id, db.solution.name, db.solution.components_name, db.solution.components_ratio))
-
+    archive.writestr("events.csv", str(db(db.event.flise_file_id == cur_id).select()))
+    archive.writestr("subintervals.csv", str(db(db.subintervals.flise_file_id == cur_id).select()))
+    archive.writestr("solutions.csv", str(db(db.solution.id == db.event.solution_id)(db.event.flise_file_id == cur_id).select(db.solution.id, db.solution.name, db.solution.components_name, db.solution.components_ratio, distinct=True)))
+    archive.close()
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.zip')
-    response.headers['Content-disposition'] = 'attachment; filename=test.zip'
+    response.headers['Content-disposition'] = 'attachment; filename=flise_file_%s.zip' % cur_id
     return output.getvalue()
 
 

@@ -51,7 +51,7 @@ function init_files(){
 		cur_id = $(this).parent().attr('id');
 		init_file(cur_id, $(this).html());
 		//Load Raw Data Description Panel
-	      web2py_component('{{=URL('file')}}/'+cur_id,'edit_record');
+		web2py_component('{{=URL('file')}}/'+cur_id,'edit_record');
 	});
 	//Files Delete button
 	$('.del').unbind('click');
@@ -70,7 +70,7 @@ function init_files(){
 		stopAfter:'ok',
 		wrapper: '<div style="width:130px;background-color: orange;" class="del"></div>',
 		timeout:3000
-	}); 
+	});
 }
 
 /**************** INIT ********************/
@@ -78,7 +78,7 @@ function init_file(cur_id,name){
 	//Show data extraction zone
 	$('#my_records').slideUp();
 	$('#edit_record').slideUp();
-	$('#section_data').parent().attr('style','width:490px');
+	$('#section_data').parent().attr('style','width:455px');
 	$('#section_data').show('slow');
 	//Show which file is selected
 	
@@ -550,6 +550,7 @@ function init_file(cur_id,name){
 	// Load autosegmentation panel
 	$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
 		var autoseg_str = data;
+		console.log('autosegmentation');
 		//Reset the panel
 		$('#autoseg_options').html('');
 		//Create panel

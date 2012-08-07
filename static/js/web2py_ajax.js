@@ -62,7 +62,10 @@ function complete_web2py_ajax_page (xhr, text, action, target){
       web2py_trap_form(action,target);
       web2py_ajax_init();      
       if(command) eval(command);
-      if(flash) jQuery('.flash').html(flash).slideDown();
+      if(flash) {
+        jQuery('.flash').html(flash).slideDown();
+        jQuery(".flash").delay(10000).fadeOut('slow');
+      }
 }
 function web2py_trap_form(action,target) {
    jQuery('#'+target+' form').each(function(i){

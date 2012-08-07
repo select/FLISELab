@@ -55,13 +55,13 @@ def file():
         global sampling_time_old
         #update time of cutT, nocutT, dropT and evenT when sampling time is changed + subintervals definition
         sfactor = form.vars.sampling_time / sampling_time_old
-        dropT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)]
+        dropT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)] if (db.flise_file[form.vars.id].dropT != None) else []
         db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))
-        cutT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].cutT)]
+        cutT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].cutT)] if (db.flise_file[form.vars.id].cutT != None) else []
         db.flise_file[form.vars.id].update_record(cutT=simplejson.dumps(cutT))
-        nocutT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].nocutT)]
+        nocutT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].nocutT)] if (db.flise_file[form.vars.id].nocutT != None) else []
         db.flise_file[form.vars.id].update_record(nocutT=simplejson.dumps(nocutT))
-        eventT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].eventT)]
+        eventT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].eventT)] if (db.flise_file[form.vars.id].eventT != None) else []
         db.flise_file[form.vars.id].update_record(eventT=simplejson.dumps(eventT))
         for record in db(db.event.flise_file_id == form.vars.id).select():
             time = record.time * sfactor
@@ -82,8 +82,7 @@ def file():
         #filename, file = db.flise_file.file.retrieve(record.file)
         #record.update_record(created_on=datetime.fromtimestamp(os.path.getctime(os.path.join(request.folder,'uploads',record.file))))
         ##?-> http://stackoverflow.com/questions/946967/get-file-creation-time-with-python-on-mac
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");'  \
-                                                                                                % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
+        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");' % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
 
     if request.args(0):
         db.flise_file.file.readable, db.flise_file.file.writable = False, False

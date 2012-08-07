@@ -100,7 +100,7 @@ if not auth.is_logged_in() and db(db.auth_user.id>0).count() and not os.path.exi
     auth.user = Storage(auth.settings.table_user._filter_fields(user, id=True))
     auth.environment.session.auth = Storage(user=user, last_visit=request.now,
                                             expiration=auth.settings.expiration)
-    response.flash = 'You were automatically logged in as %s %s.<br/> To prevent this create the file %s'%(user.first_name, user.last_name, os.path.join(request.folder, 'LOCK'))
+    response.flash = 'You were automatically logged in as %s %s. To prevent this create the file %s'%(user.first_name, user.last_name, os.path.join(request.folder, 'LOCK'))
 #########################################################################
 
 #########################################################################

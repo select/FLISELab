@@ -13,8 +13,24 @@
 							<div class="current_record">... none</div>
 							<h3 onclick="collapse('my_records')">My FLISE</h3>
 							{{=LOAD('default', 'files', target='my_records', ajax=True)}}
-							<h3 onclick="collapse('create_record')">Upload FLISE</h3>
+							<h3 onclick="collapse('create_record'); collapse('import_record');">Upload FLISE</h3>
 							{{=LOAD('default', 'file', ajax=True, target='create_record')}}
+							<div id="import_record">
+								<form action="" enctype="multipart/form-data" method="post">
+									<table>
+										<tbody>
+											<tr>
+												<th>or load exported Flise:</th>
+												<td><input type="file" name="datafile" size="100"></td>
+											</tr>
+											<tr>
+												<th></th>
+												<td><input type="submit" value="Import"></td>
+											</tr>
+										</tbody>
+									</table>
+								</form>
+							</div>
 					</div>
 					<div id="section_data" style="display:none">
 						<hr />

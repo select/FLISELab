@@ -24,25 +24,33 @@ h3[onclick]:hover, h2[onclick]:hover {
     list-style: none;
     position: relative;
 }
-.flise_file .del{
+.flise_file .flise_file_actions{
+	display: none;
+	float: right;
+}
+.flise_file .flise_export, .flise_file .flise_del{
     width: 36px;
     height: 20px;
-    display: none;
-    float: right;
-    background-color: red;
     color: white;
     text-shadow: #666 1px 1px 0;
     border-radius: 3px;
     padding: 0 5px 0 5px;
     text-align: center;
-}
-.flise_file:hover .del {
     display: inline-block;
 }
-.flise_file .select{
+.flise_file .flise_del {
+    background-color: red;
+}
+.flise_file .flise_export {
+    background-color: green;
+}
+.flise_file:hover .flise_file_actions {
     display: inline-block;
 }
-.flise_file .select, .flise_file .del {
+.flise_file .flise_select{
+    display: inline-block;
+}
+.flise_file .flise_select, .flise_file .flise_del, .flise_file .flise_export {
     cursor: pointer;
 }
 .flise_file:hover {

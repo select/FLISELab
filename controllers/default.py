@@ -35,7 +35,8 @@ def files():
     items = []
     for record in records:
         filename, file = db.flise_file.file.retrieve(record.file)
-        items.append(LI(DIV(record.name if record.name else filename, _class="select"), DIV('delete', _class="del"), _class='flise_file', _id=record.id))
+        #items.append(LI(DIV(record.name if record.name else filename, _class="select"), DIV('delete', _class="del"), _class='flise_file', _id=record.id))
+        items.append(LI(DIV(record.name if record.name else filename, _class="flise_select"), DIV(FORM(_style="display:none", _target="_blank", _action=URL(r=request, f='export_file', vars=dict(flise_id=record.id))), DIV('export', _class="flise_export"), DIV('delete', _class="flise_del"), _class='flise_file_actions'), _class='flise_file', _id=record.id))
     return TAG[''](JS('init_files();'), UL(items, _id="flise_files"))
 
 
@@ -486,18 +487,17 @@ def export_spreadsheet():
         databook.add_sheet(dataset)
     if export_format in 'yaml csv xls xlsx':
         import gluon.contenttype
-        #import os.path
         response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s' % export_format)
         response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
-        #response.write(getattr(data,export_format), escape=False)
         return getattr(databook, export_format)
     return ''
 
 
-def export():
-    cur_id = request.vars.id
+def export_file():
+    cur_id = request.vars.flise_id
     import zipfile
     import StringIO
+    import os.path
     output = StringIO.StringIO()
     archive = zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED)
     archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].file), arcname="file.txt")

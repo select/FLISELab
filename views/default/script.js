@@ -7,6 +7,7 @@ var g2;//Graph variable for preprocessing result
 var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
 var cur_id;//ID of the Flise-file
 $('#create_record').slideDown();
+$('#import_record').slideDown();
 $('.current_record').hide().prev().hide();
 
 //Global variables to save
@@ -46,29 +47,34 @@ if($.cookie('flise_js_options')== null) $.cookie('flise_js_options', 'a=10', { e
 
 function init_files(){
 	//Select a file (click behavior)
-	$('.flise_file .select').unbind('click');
-	$('.flise_file .select').click(function(){
+	$('.flise_file .flise_select').unbind('click');
+	$('.flise_file .flise_select').click(function(){
 		cur_id = $(this).parent().attr('id');
 		init_file(cur_id, $(this).html());
 		//Load Raw Data Description Panel
-		web2py_component('{{=URL('file')}}/'+cur_id,'edit_record');
+		web2py_component('{{=URL('file')}}/' + cur_id, 'edit_record');
+	});
+	//Files Export button
+	$('.flise_export').unbind('click');
+	$('.flise_export').click(function(){
+		$(this).parent().find('form').eq(0).submit();
 	});
 	//Files Delete button
-	$('.del').unbind('click');
-	$('.del').unbind('confirm');
-	$('.del').click(function(){
-		$(this).parent().remove();
+	$('.flise_del').unbind('click');
+	$('.flise_del').unbind('confirm');
+	$('.flise_del').click(function(){
+		$(this).parent().parent().remove();
 		$.ajax({
 			url:'{{=URL('file')}}',
-			data: {delr: $(this).parent().attr('id')}
+			data: {delr: $(this).parent().parent().attr('id')}
 		});
-		if (cur_id == $(this).parent().attr('id')){
+		if (cur_id == $(this).parent().parent().attr('id')){
 			location.reload();
 		}
 	});
-	$('.del').confirm({
+	$('.flise_del').confirm({
 		stopAfter:'ok',
-		wrapper: '<div style="width:130px;background-color: orange;" class="del"></div>',
+		wrapper: '<div style="width:130px;background-color: orange;" class="flise_del"></div>',
 		timeout:3000
 	});
 }
@@ -87,6 +93,7 @@ function init_file(cur_id,name){
 	$('.current_record').show().prev().show();
 	//Rearrange which panel is developped or not
 	$('#create_record').slideUp();
+	$('#import_record').slideUp();
 	$('#edit_record').slideDown();
 	$('#series_options').slideUp();
 	$('#global_options').slideUp();

@@ -35,8 +35,6 @@ def files():
     items = []
     for record in records:
         filename, file = db.flise_file.file.retrieve(record.file)
-        #items.append(LI(DIV(record.name if record.name else filename, _class="select"), DIV('delete', _class="del"), _class='flise_file', _id=record.id))
-        #items.append(LI(DIV(record.name if record.name else filename, _class="flise_select"), DIV(FORM(_style="display:none", _target="_blank", _enctype="", _method="GET", _action=URL(r=request, f='export_file', vars=dict(flise_id=record.id))), DIV('export', _class="flise_export"), DIV('delete', _class="flise_del"), _class='flise_file_actions'), _class='flise_file', _id=record.id))
         items.append(LI(DIV(record.name if record.name else filename, _class="flise_select"), DIV(A(DIV('export', _class="flise_export"), _target="_blank", _href=URL(r=request, f='export_file', vars=dict(flise_id=record.id))), DIV('delete', _class="flise_del"), _class='flise_file_actions'), _class='flise_file', _id=record.id))
     return TAG[''](JS('init_files();'), UL(items, _id="flise_files"))
 
@@ -511,6 +509,41 @@ def export_file():
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.zip')
     response.headers['Content-disposition'] = 'attachment; filename=flise_file_%s.zip' % cur_id
     return output.getvalue()
+
+
+def import_file():
+    flag = True
+    if request.vars.datafile != None:
+        flise_file_zip = request.vars.datafile.file
+        import zipfile
+        if zipfile.is_zipfile(flise_file_zip):
+            zf = zipfile.ZipFile(flise_file_zip, 'r')
+            for filename in ['flise_file.csv', 'events.csv', 'subintervals.csv', 'solutions.csv', 'file.txt']:
+                try:
+                    zf.getinfo(filename)
+                except KeyError:
+                    flag = False
+            if flag:
+                import csv
+                file_flise = csv.DictReader(zf.read('flise_file.csv').split('\r\n')).next()
+                del file_flise['flise_file.id']
+                del file_flise['flise_file.file']
+                file_flise = dict((key.replace('flise_file.',''), value) for (key, value) in file_flise.items())
+                file_flise['series_species'] = [x for x in file_flise['series_species'].split('|')[1:-1]]
+                file_flise['series_show'] = [x for x in file_flise['series_show'].split('|')[1:-1]]
+                file_flise['series_colors'] = [x for x in file_flise['series_colors'].split('|')[1:-1]]
+                db_flise_file = db.flise_file.insert(**file_flise)
+                file_data = db.flise_file.file.store(zf.open('file.txt'))
+                db_flise_file.update_record(file=file_data)
+                file_events = zf.read('events.csv')
+                file_subintervals = zf.read('subintervals.csv')
+                file_solutions = zf.read('solutions.csv')
+            zf.close()
+        else:
+            flag = False
+    from gluon.sqlhtml import form_factory
+    form = form_factory(Field('datafile', 'upload', label='or import "Flise*.zip"', uploadfield=False))
+    return TAG['']('', form if flag else TAG[''](DIV('Wrong file, cannot load.', _style='color:red'), form))
 
 
 def user():

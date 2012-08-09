@@ -36,7 +36,8 @@ def files():
     for record in records:
         filename, file = db.flise_file.file.retrieve(record.file)
         #items.append(LI(DIV(record.name if record.name else filename, _class="select"), DIV('delete', _class="del"), _class='flise_file', _id=record.id))
-        items.append(LI(DIV(record.name if record.name else filename, _class="flise_select"), DIV(FORM(_style="display:none", _target="_blank", _action=URL(r=request, f='export_file', vars=dict(flise_id=record.id))), DIV('export', _class="flise_export"), DIV('delete', _class="flise_del"), _class='flise_file_actions'), _class='flise_file', _id=record.id))
+        #items.append(LI(DIV(record.name if record.name else filename, _class="flise_select"), DIV(FORM(_style="display:none", _target="_blank", _enctype="", _method="GET", _action=URL(r=request, f='export_file', vars=dict(flise_id=record.id))), DIV('export', _class="flise_export"), DIV('delete', _class="flise_del"), _class='flise_file_actions'), _class='flise_file', _id=record.id))
+        items.append(LI(DIV(record.name if record.name else filename, _class="flise_select"), DIV(A(DIV('export', _class="flise_export"), _target="_blank", _href=URL(r=request, f='export_file', vars=dict(flise_id=record.id))), DIV('delete', _class="flise_del"), _class='flise_file_actions'), _class='flise_file', _id=record.id))
     return TAG[''](JS('init_files();'), UL(items, _id="flise_files"))
 
 

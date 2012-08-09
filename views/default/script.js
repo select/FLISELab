@@ -54,11 +54,6 @@ function init_files(){
 		//Load Raw Data Description Panel
 		web2py_component('{{=URL('file')}}/' + cur_id, 'edit_record');
 	});
-	//Files Export button
-	$('.flise_export').unbind('click');
-	$('.flise_export').click(function(){
-		$(this).parent().find('form').eq(0).submit();
-	});
 	//Files Delete button
 	$('.flise_del').unbind('click');
 	$('.flise_del').unbind('confirm');

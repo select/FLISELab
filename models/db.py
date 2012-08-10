@@ -141,9 +141,9 @@ db.define_table('flise_file',
         Field('disp_smooth_value', 'integer', readable = False, writable = False),
         Field('autoseg_win', 'integer', readable = False, writable = False),
         Field('autoseg_fuse', 'integer', readable = False, writable = False),
-        Field('sg_win', 'integer', readable = False, writable = False),
-        Field('sg_order', 'integer', readable = False, writable = False),
-        Field('sg_overlay', 'boolean', readable = False, writable = False),
+        Field('sg_win', 'integer', default=40, readable = False, writable = False),
+        Field('sg_order', 'integer', default=4, readable = False, writable = False),
+        Field('sg_overlay', 'boolean', default=False, readable = False, writable = False),
         Field('dropT', 'text', readable = False, writable = False),#JSON
         Field('cutT', 'text', readable = False, writable = False),#JSON
         Field('nocutT', 'text', readable = False, writable = False),#JSON

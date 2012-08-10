@@ -54,7 +54,7 @@ def file():
         from gluon.contrib import simplejson
         global sampling_time_old
         #update time of cutT, nocutT, dropT and evenT when sampling time is changed + subintervals definition
-        sfactor = form.vars.sampling_time / sampling_time_old
+        sfactor = float(form.vars.sampling_time) / sampling_time_old
         dropT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)] if (db.flise_file[form.vars.id].dropT != None) else []
         db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))
         cutT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].cutT)] if (db.flise_file[form.vars.id].cutT != None) else []
@@ -73,7 +73,7 @@ def file():
             intEnd = float(str_time[1]) * sfactor
             extract_time = '%g:%g' % (intStart, intEnd)
             record.update_record(extract_time=extract_time)
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");' % (URL(r=request, f='files'), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
+        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; ' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
 
     def on_accept_create(form):
         #import time
@@ -634,3 +634,7 @@ def data():
       LOAD('default','data.load',args='tables',ajax=True,user_signature=True)
     """
     return dict(form=crud())
+
+
+def test():
+    print request.vars

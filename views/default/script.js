@@ -50,6 +50,7 @@ function init_files(){
 	$('.flise_file .flise_select').unbind('click');
 	$('.flise_file .flise_select').click(function(){
 		cur_id = $(this).parent().attr('id');
+		console.log('file selectet');
 		init_file(cur_id, $(this).html());
 		//Load Raw Data Description Panel
 		web2py_component('{{=URL('file')}}/' + cur_id, 'edit_record');
@@ -76,6 +77,7 @@ function init_files(){
 
 /**************** INIT ********************/
 function init_file(cur_id,name){
+	console.log('init_file called');
 	//Show data extraction zone
 	$('#my_records').slideUp();
 	$('#edit_record').slideUp();
@@ -1428,66 +1430,10 @@ function interval2export(pos) {
 			}
 			//Temp subinterval options and create corresponding panel
 			$.get('{{=URL(request.application, 'static/templates','subinterval.html')}}', function(htmlstr) {
-				//Reset the panel
-				$('#subinterval').html('');
-				//Adapt panel HTML
-				var st = htmlstr;
-				st = st.replace(/%start%/,intStart);
-				st = st.replace(/%end%/,intEnd);
-				st = st.replace(/%name%/, name)
-				st = st.replace(/%strain_ref%/, $('#strains_store > div').html());
-				st = st.replace('select_strain_global', 'sub_select_strain');
-				st = st.replace(/%comments%/, comments);
-				st = st.replace(/%od%/, od);
-				st = st.replace(/%dilutionf%/, dilutionf);
-				st = st.replace(/%celldiameter%/, celldiameter);
-				//Series - Calibration
-				var stcal;
-				for (var i = 0;i<$('#series_options > table').size();i++){
-					stcal = '<tr><td style="color:%color%">%species%</td><td>Slope: <input name="sub_calslope" type="text" value="%slope%" style="width:60px" class="double"/></td><td>Intercept: <input name="sub_calintercept" type="text" value="%intercept%" style="width:60px" class="double"/>(Volt)</td></tr>';
-					stcal = stcal.replace(/%species%/, $('#series'+i+' > tbody > tr > td > select').val());
-					stcal = stcal.replace(/%color%/, $('#series'+i+' > tbody > tr:eq(1) > td > table > tbody > tr > td > input').val());
-					if (calslope[i]==undefined) {
-						stcal = stcal.replace(/%slope%/,'');
-					} else {
-						stcal = stcal.replace(/%slope%/,calslope[i]);
-					}
-					if (calintercept[i]==undefined) {
-						stcal = stcal.replace(/%intercept%/,'');
-					} else {
-						stcal = stcal.replace(/%intercept%/,calintercept[i]);
-					}
-					st = st.replace(/%caloptions%/,stcal+'%caloptions%');
-				}
-				st = st.replace(/%caloptions%/,'');
-				$('#subinterval').append(st);
-				$('#subinterval select[name="sub_select_strain"] option[value="'+strain_ref+'"]').attr('selected','selected');
-				if (name == '') {
-					$('input[name="sub_name"]').parent().parent().find('th').first().attr('style','color: red');
-				};
-				if (od == '') {
-					$('input[name="sub_od"]').parent().parent().find('th').first().attr('style','color: red');
-				};
-				if (dilutionf == '') {
-					$('input[name="sub_dilutionf"]').parent().parent().find('th').first().attr('style','color: red');
-				};
-				if (celldiameter == '') {
-					$('input[name="sub_celldiameter"]').parent().parent().find('th').first().attr('style','color: red');
-				};
-				$('input[name="sub_calintercept"]').each(function(){
-					if ($(this).val() == '') {$(this).parent().attr('style','color: red');};
-				});
-				$('input[name="sub_calslope"]').each(function(){
-					if ($(this).val() == '') {$(this).parent().attr('style','color: red');};
-				});
-				
-				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-				//spreadsheet export
-				$('#export2excel').unbind('click');
-				$('#export2excel').click(function(){
+				function prepare_export(success_fkt, error_fkt){
 					var flag_ok = true;
 					$('#export2excel').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-					if ($('input[name="sub_name"]').val() == '') {flag_ok = false;};
+					if ($('input[name="sub_name"]').val() == '')  flag_ok = false;
 					if ($('input[name="sub_od"]').val() == '') {flag_ok = false;};
 					if ($('input[name="sub_dilutionf"]').val() == '') {flag_ok = false;};
 					if ($('input[name="sub_celldiameter"]').val() == '') {flag_ok = false;};
@@ -1536,6 +1482,7 @@ function interval2export(pos) {
 						int_parameters.push(['Savitzky-Golay window:',$('#lochw').val(), ' ', ' ', ' ', ' ', ' ']);
 						int_parameters.push(['Savitzky-Golay order:',$('#order').val(), ' ', ' ', ' ', ' ', ' ']);
 						//3 Processed data
+						console.log('asdlfsdf '+intStart+':'+intEnd);
 						$.ajax({
 							url: '{{=URL('subint_process_data.json')}}',
 							data: {flise_file_id:cur_id, interval_time:intStart+':'+intEnd, data:JSON.stringify(raw_series)},
@@ -1610,14 +1557,108 @@ function interval2export(pos) {
 										data: solutions
 									}]
 								];
-								$('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xls' name='format'/> <input type='hidden' value='"+$('input[name="sub_name"]').val()+"' name='filename'/> ");
-								$('#json2spreadsheet_form').submit();
-								$('#export2excel').removeAttr("disabled").removeAttr("style");
+								success_fkt(data);
 							}
 						});
 					} else {
-						$('#export2excel').removeAttr("disabled").removeAttr("style");
+						error_fkt();
 					};
+				}
+
+				//Reset the panel
+				$('#subinterval').html('');
+				//Adapt panel HTML
+				var st = htmlstr;
+				st = st.replace(/%start%/,intStart);
+				st = st.replace(/%end%/,intEnd);
+				st = st.replace(/%name%/, name)
+				st = st.replace(/%strain_ref%/, $('#strains_store > div').html());
+				st = st.replace('select_strain_global', 'sub_select_strain');
+				st = st.replace(/%comments%/, comments);
+				st = st.replace(/%od%/, od);
+				st = st.replace(/%dilutionf%/, dilutionf);
+				st = st.replace(/%celldiameter%/, celldiameter);
+				//Series - Calibration
+				var stcal;
+				for (var i = 0;i<$('#series_options > table').size();i++){
+					stcal = '<tr><td style="color:%color%">%species%</td><td>Slope: <input name="sub_calslope" type="text" value="%slope%" style="width:60px" class="double"/></td><td>Intercept: <input name="sub_calintercept" type="text" value="%intercept%" style="width:60px" class="double"/>(Volt)</td></tr>';
+					stcal = stcal.replace(/%species%/, $('#series'+i+' > tbody > tr > td > select').val());
+					stcal = stcal.replace(/%color%/, $('#series'+i+' > tbody > tr:eq(1) > td > table > tbody > tr > td > input').val());
+					if (calslope[i]==undefined) {
+						stcal = stcal.replace(/%slope%/,'');
+					} else {
+						stcal = stcal.replace(/%slope%/,calslope[i]);
+					}
+					if (calintercept[i]==undefined) {
+						stcal = stcal.replace(/%intercept%/,'');
+					} else {
+						stcal = stcal.replace(/%intercept%/,calintercept[i]);
+					}
+					st = st.replace(/%caloptions%/,stcal+'%caloptions%');
+				}
+				st = st.replace(/%caloptions%/,'');
+				$('#subinterval').append(st);
+				$('#subinterval select[name="sub_select_strain"] option[value="'+strain_ref+'"]').attr('selected','selected');
+				if (name == '') {
+					$('input[name="sub_name"]').parent().parent().find('th').first().attr('style','color: red');
+				};
+				if (od == '') {
+					$('input[name="sub_od"]').parent().parent().find('th').first().attr('style','color: red');
+				};
+				if (dilutionf == '') {
+					$('input[name="sub_dilutionf"]').parent().parent().find('th').first().attr('style','color: red');
+				};
+				if (celldiameter == '') {
+					$('input[name="sub_celldiameter"]').parent().parent().find('th').first().attr('style','color: red');
+				};
+				$('input[name="sub_calintercept"]').each(function(){
+					if ($(this).val() == '') {$(this).parent().attr('style','color: red');};
+				});
+				$('input[name="sub_calslope"]').each(function(){
+					if ($(this).val() == '') {$(this).parent().attr('style','color: red');};
+				});
+				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+				//pyMantis export
+				$('#export2pyMantis').click(function(){
+						prepare_export(
+						function(data){
+							$.ajax({
+								url: '{{=URL(request.application, 'default', 'export_spreadsheet')}}',
+								type: 'POST',
+								data: {data: JSON.stringify(data), filename: 'bla.xls', format: 'store_xls'},
+								success: function(xlsfile){
+									$.ajax({
+										url:'{{=URL(request.application, 'default', 'export_file')}}',
+										data: {flise_id: cur_id},
+										success: function(zipfile){
+											$('#pymantis_export_form').html("<input type='hidden' value='"+data+"' name='data'/> <input type='hidden' value='"+zipfile+"'/>");
+											$('#pymantis_export_form').submit();
+											$('#export2pyMantis').removeAttr("disabled").removeAttr("style");
+										}
+									});
+									//$('#pymantis_export_form').html("<input type='text' value='"+data+"' name='data'/> ");
+								},
+
+							});
+						},
+						function(){
+							$('#export2pyMantis').removeAttr("disabled").removeAttr("style");				
+						}
+					);
+				});
+				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+				//spreadsheet export
+				$('#export2excel').click(function(){
+					prepare_export(
+						function(data){
+							$('#json2spreadsheet_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='xls' name='format'/> <input type='hidden' value='"+$('input[name="sub_name"]').val()+"' name='filename'/> ");
+							$('#json2spreadsheet_form').submit();
+							$('#export2excel').removeAttr("disabled").removeAttr("style");
+						},
+						function(){
+							$('#export2excel').removeAttr("disabled").removeAttr("style");				
+						}
+					);
 				});	
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				

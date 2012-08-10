@@ -75,7 +75,7 @@ function init_files(){
 }
 
 /**************** INIT ********************/
-function init_file(cur_id,name){
+function init_file(cur_id, name){
 	//Show data extraction zone
 	$('#my_records').slideUp();
 	$('#edit_record').slideUp();
@@ -1559,7 +1559,7 @@ function interval2export(pos) {
 					} else {
 						error_fkt();
 					};
-				}
+				};
 
 				//Reset the panel
 				$('#subinterval').html('');
@@ -1615,6 +1615,7 @@ function interval2export(pos) {
 				});
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				//pyMantis export
+				$('#export2pyMantis').unbind('click');
 				$('#export2pyMantis').click(function(){
 						prepare_export(
 						function(data){
@@ -1644,6 +1645,7 @@ function interval2export(pos) {
 				});
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				//spreadsheet export
+				$('#export2excel').unbind('click')
 				$('#export2excel').click(function(){
 					prepare_export(
 						function(data){

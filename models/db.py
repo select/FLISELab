@@ -124,7 +124,7 @@ db.define_table('strain',
         Field('identifier', 'integer')
         )
 db.define_table('flise_file',
-        Field('name'),
+        Field('name', requires=IS_NOT_EMPTY()),
         Field('file', 'upload', autodelete=True, requires=IS_NOT_EMPTY()),
         Field('sampling_time', 'double', default=0.5, requires=IS_NOT_EMPTY(), label='Sampling Time (s)'),
         Field('created_on', 'date', default=request.now),

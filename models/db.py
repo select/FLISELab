@@ -125,63 +125,63 @@ db.define_table('strain',
         )
 db.define_table('flise_file',
         Field('name'),
-        Field('file', 'upload', autodelete=True, requires = IS_NOT_EMPTY()),
-        Field('sampling_time', 'double', default=0.5, label='Sampling Time (s)'),
-        Field('created_on', 'date', default = request.now),
+        Field('file', 'upload', autodelete=True, requires=IS_NOT_EMPTY()),
+        Field('sampling_time', 'double', default=0.5, requires=IS_NOT_EMPTY(), label='Sampling Time (s)'),
+        Field('created_on', 'date', default=request.now),
         #Field('created_by', db.auth_user),
-        Field('series_species', 'list:string', readable = False, writable = False),
-        Field('series_colors', 'list:string', readable = False, writable = False),
-        Field('series_show', 'list:string', readable = False, writable = False),
-        Field('strain_id', db.strain, readable = False, writable = False),
-        Field('comments', 'text', readable = False, writable = False),
-        Field('optical_density', 'double', readable = False, writable = False),
-        Field('dilution_factor', 'double', readable = False, writable = False),
-        Field('cell_diameter', 'double', readable = False, writable = False),
-        Field('disp_smooth', 'boolean', readable = False, writable = False),
-        Field('disp_smooth_value', 'integer', readable = False, writable = False),
-        Field('autoseg_win', 'integer', readable = False, writable = False),
-        Field('autoseg_fuse', 'integer', readable = False, writable = False),
+        Field('series_species', 'list:string', readable=False, writable=False),
+        Field('series_colors', 'list:string', readable=False, writable=False),
+        Field('series_show', 'list:string', readable=False, writable=False),
+        Field('strain_id', db.strain, readable=False, writable=False),
+        Field('comments', 'text', readable=False, writable=False),
+        Field('optical_density', 'double', readable=False, writable=False),
+        Field('dilution_factor', 'double', readable=False, writable=False),
+        Field('cell_diameter', 'double', readable=False, writable=False),
+        Field('disp_smooth', 'boolean', readable=False, writable=False),
+        Field('disp_smooth_value', 'integer', readable=False, writable=False),
+        Field('autoseg_win', 'integer', readable=False, writable=False),
+        Field('autoseg_fuse', 'integer', readable=False, writable=False),
         Field('sg_win', 'integer', default=40, readable = False, writable = False),
         Field('sg_order', 'integer', default=4, readable = False, writable = False),
         Field('sg_overlay', 'boolean', default=False, readable = False, writable = False),
-        Field('dropT', 'text', readable = False, writable = False),#JSON
-        Field('cutT', 'text', readable = False, writable = False),#JSON
-        Field('nocutT', 'text', readable = False, writable = False),#JSON
-        Field('eventT', 'text', readable = False, writable = False),#JSON
+        Field('dropT', 'text', readable=False, writable=False),  # JSON
+        Field('cutT', 'text', readable=False, writable=False),  # JSON
+        Field('nocutT', 'text', readable=False, writable=False),  # JSON
+        Field('eventT', 'text', readable=False, writable=False),  # JSON
         )
 db.define_table('subintervals',
-        Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
+        Field('flise_file_id', db.flise_file, requires=IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero=None)),
         Field('name'),
-        Field('extract_time', 'text'),#pickle/JSON
-        Field('strain_id', db.strain, readable = False, writable = False),
-        Field('comments', 'text', readable = False, writable = False),
-        Field('optical_density', 'double', readable = False, writable = False),
-        Field('dilution_factor', 'double', readable = False, writable = False),
-        Field('cell_diameter', 'double', readable = False, writable = False),
-        Field('intercept', 'list:string'),#JSON list of doubles
-        Field('slope', 'list:string'),#JSON list of doubles
+        Field('extract_time', 'text'),  # pickle/JSON
+        Field('strain_id', db.strain, readable=False, writable=False),
+        Field('comments', 'text', readable=False, writable=False),
+        Field('optical_density', 'double', readable=False, writable=False),
+        Field('dilution_factor', 'double', readable=False, writable=False),
+        Field('cell_diameter', 'double', readable=False, writable=False),
+        Field('intercept', 'list:string'),  # JSON list of doubles
+        Field('slope', 'list:string'),  # JSON list of doubles
         )
 db.define_table('solution',
         Field('name'),
-        Field('components_name', 'list:string', readable = False, writable = False),
-        Field('components_ratio', 'list:string', readable = False, writable = False),
+        Field('components_name', 'list:string', readable=False, writable=False),
+        Field('components_ratio', 'list:string', readable=False, writable=False),
         )
 db.define_table('event',
-        Field('flise_file_id', db.flise_file, requires = IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero = None)),
+        Field('flise_file_id', db.flise_file, requires=IS_IN_DB(db, 'flise_file.id', '%(name)s [%(id)s]', zero=None)),
         Field('time', 'double'),
-        Field('type', requires = IS_IN_SET('wash calibration injection comment dilution removal'.split())),
+        Field('type', requires=IS_IN_SET('wash calibration injection comment dilution removal'.split())),
         Field('series_id', 'integer'),
         Field('series_name', 'text'),
-        Field('solution_id', db.solution, readable = False, writable = False),
+        Field('solution_id', db.solution, readable=False, writable=False),
         Field('concentration', 'double'),
         Field('volume', 'double'),
-        Field('comment', 'text', readable = False, writable = False),
+        Field('comment', 'text', readable=False, writable=False),
         )
 
 JS = lambda x: SCRIPT(x, _type="text/javascript")
 
-def parse_raw_flise(raw_file):
-    import csv
-    reader = list(csv.reader(raw_file, delimiter="\t"))
-    time_col = [[i*.5]+line[:-1] for i,line in enumerate(reader)]
 
+#def parse_raw_flise(raw_file):
+#   import csv
+#    reader = list(csv.reader(raw_file, delimiter="\t"))
+#    time_col = [[i * .5] + line[:-1] for i, line in enumerate(reader)]

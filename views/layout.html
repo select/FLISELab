@@ -92,7 +92,7 @@
       {{block header}} <!-- this is default header -->
       
       <h1>
-        <span id="appname">{{=request.application.capitalize()}}</span>App
+        <a href="{{=URL('default','index')}}" style="text-decoration:none; color:#669DFF;"><span id="appname">{{=request.application.capitalize()}}</span>App</a>
       </h1>
       <div style="clear: both;"></div><!-- Clear the divs -->
       {{end}}

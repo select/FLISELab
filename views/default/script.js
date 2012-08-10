@@ -1483,6 +1483,7 @@ function interval2export(pos) {
 				
 				//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
 				//spreadsheet export
+				$('#export2excel').unbind('click');
 				$('#export2excel').click(function(){
 					var flag_ok = true;
 					$('#export2excel').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");

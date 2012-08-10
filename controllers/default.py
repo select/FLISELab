@@ -525,19 +525,56 @@ def import_file():
                     flag = False
             if flag:
                 import csv
+                #flise
                 file_flise = csv.DictReader(zf.read('flise_file.csv').split('\r\n')).next()
                 del file_flise['flise_file.id']
                 del file_flise['flise_file.file']
-                file_flise = dict((key.replace('flise_file.',''), value) for (key, value) in file_flise.items())
+                file_flise = dict((key.replace('flise_file.', ''), value) for (key, value) in file_flise.items())
                 file_flise['series_species'] = [x for x in file_flise['series_species'].split('|')[1:-1]]
                 file_flise['series_show'] = [x for x in file_flise['series_show'].split('|')[1:-1]]
                 file_flise['series_colors'] = [x for x in file_flise['series_colors'].split('|')[1:-1]]
                 db_flise_file = db.flise_file.insert(**file_flise)
                 file_data = db.flise_file.file.store(zf.open('file.txt'))
                 db_flise_file.update_record(file=file_data)
-                file_events = zf.read('events.csv')
-                file_subintervals = zf.read('subintervals.csv')
-                file_solutions = zf.read('solutions.csv')
+                #solutions
+                file_solutions = csv.DictReader(zf.read('solutions.csv').split('\r\n'))
+                solution_newindex = []
+                for solution in file_solutions:
+                    solution_newindex.append([solution['solution.id']])
+                    del solution['solution.id']
+                    solution = dict((key.replace('solution.', ''), value) for (key, value) in solution.items())
+                    solution['components_name'] = [x for x in solution['components_name'].split('|')[1:-1]]
+                    solution['components_ratio'] = [x for x in solution['components_ratio'].split('|')[1:-1]]
+                    db_solution = db.solution.insert(**solution)
+                    solution_newindex[-1].append(db_solution.id)
+                solution_newindex = dict((x[0], x[1]) for x in solution_newindex)
+                #events
+                file_events = csv.DictReader(zf.read('events.csv').split('\r\n'))
+                event_newindex = []
+                for event in file_events:
+                    event_newindex.append([event['event.id']])
+                    del event['event.id']
+                    event = dict((key.replace('event.', ''), value) for (key, value) in event.items())
+                    event['flise_file_id'] = db_flise_file.id
+                    event['solution_id'] = solution_newindex[event['solution_id']] if event['solution_id'] != '<NULL>' else None
+                    if event['volume'] == '<NULL>':
+                        event['volume'] = None
+                    if event['concentration'] == '<NULL>':
+                        event['concentration'] = None
+                    db_event = db.event.insert(**event)
+                    event_newindex[-1].append(db_event.id)
+                #subintervals
+                file_subintervals = csv.DictReader(zf.read('subintervals.csv').split('\r\n'))
+                subint_newindex = []
+                for subint in file_subintervals:
+                    subint_newindex.append([subint['subintervals.id']])
+                    del subint['subintervals.id']
+                    subint = dict((key.replace('subintervals.', ''), value) for (key, value) in subint.items())
+                    subint['flise_file_id'] = db_flise_file.id
+                    subint['slope'] = [x for x in subint['slope'].split('|')[1:-1]]
+                    subint['intercept'] = [x for x in subint['intercept'].split('|')[1:-1]]
+                    db_subint = db.subintervals.insert(**subint)
+                    subint_newindex[-1].append(db_subint.id)
             zf.close()
         else:
             flag = False

@@ -50,7 +50,6 @@ function init_files(){
 	$('.flise_file .flise_select').unbind('click');
 	$('.flise_file .flise_select').click(function(){
 		cur_id = $(this).parent().attr('id');
-		console.log('file selectet');
 		init_file(cur_id, $(this).html());
 		//Load Raw Data Description Panel
 		web2py_component('{{=URL('file')}}/' + cur_id, 'edit_record');
@@ -77,7 +76,6 @@ function init_files(){
 
 /**************** INIT ********************/
 function init_file(cur_id,name){
-	console.log('init_file called');
 	//Show data extraction zone
 	$('#my_records').slideUp();
 	$('#edit_record').slideUp();
@@ -554,7 +552,6 @@ function init_file(cur_id,name){
 	// Load autosegmentation panel
 	$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
 		var autoseg_str = data;
-		console.log('autosegmentation');
 		//Reset the panel
 		$('#autoseg_options').html('');
 		//Create panel
@@ -1482,7 +1479,6 @@ function interval2export(pos) {
 						int_parameters.push(['Savitzky-Golay window:',$('#lochw').val(), ' ', ' ', ' ', ' ', ' ']);
 						int_parameters.push(['Savitzky-Golay order:',$('#order').val(), ' ', ' ', ' ', ' ', ' ']);
 						//3 Processed data
-						console.log('asdlfsdf '+intStart+':'+intEnd);
 						$.ajax({
 							url: '{{=URL('subint_process_data.json')}}',
 							data: {flise_file_id:cur_id, interval_time:intStart+':'+intEnd, data:JSON.stringify(raw_series)},

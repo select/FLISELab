@@ -444,13 +444,16 @@ def subint_process_data():
                     volume_now = volume_now + float(intEvent['volume'])
                 volume_step.append(volume_now)
                 volume_time.append(intEvent['time'])
+            if len(volume_step) == 0:
+                volume_step.append(0)
+                volume_time.append(intStart)
             volume_time.append(intEnd)
             t = intStart
             for iv, tv in enumerate(volume_time):
                 if tv <= intStart:
                     volume_index = iv
                 else:
-                    break
+                    break                
             while (t < intEnd):
                 if volume_time[volume_index + 1] <= t:
                     volume_index += 1

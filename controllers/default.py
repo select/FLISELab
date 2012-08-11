@@ -82,7 +82,8 @@ def file():
         #filename, file = db.flise_file.file.retrieve(record.file)
         #record.update_record(created_on=datetime.fromtimestamp(os.path.getctime(os.path.join(request.folder,'uploads',record.file))))
         ##?-> http://stackoverflow.com/questions/946967/get-file-creation-time-with-python-on-mac
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");' % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
+        #response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");' % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
+        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");' % (URL(r=request, f='files'))
 
     if request.args(0):
         db.flise_file.file.readable, db.flise_file.file.writable = False, False
@@ -583,7 +584,7 @@ def import_file():
             flag = False
     from gluon.sqlhtml import form_factory
     form = form_factory(Field('datafile', 'upload', label='or import "Flise*.zip"', uploadfield=False))
-    return TAG['']('', form if flag else TAG[''](DIV('Wrong file, cannot load.', _style='color:red'), form))
+    return TAG[''](JS('web2py_ajax_page("GET", "%s", "", "my_records");' % URL(r=request, f='files')) if flag else '', form if flag else TAG[''](DIV('Wrong file, cannot load.', _style='color:red'), form))
 
 
 def user():

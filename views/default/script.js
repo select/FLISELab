@@ -1622,6 +1622,7 @@ function interval2export(pos) {
 							$('#pymantis_export_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='"+cur_id+"' name='flise_id'/> <input type='hidden' value='"+$('input[name="sub_name"]').val()+"' name='filename'/> ");
 							$('#pymantis_export_form').submit();
 							$('#export2pyMantis').removeAttr("disabled").removeAttr("style");
+							window.open("http://translucent-network.org/pyMantis/tlc/edit/FLISE-lab", "_blank");
 							// $.ajax({
 							// 	url: '{{=URL(request.application, 'default', 'export_spreadsheet')}}',
 							// 	type: 'POST',
@@ -1642,7 +1643,7 @@ function interval2export(pos) {
 							//});
 						},
 						function(){
-							$('#export2pyMantis').removeAttr("disabled").removeAttr("style");				
+							$('#export2pyMantis').removeAttr("disabled").removeAttr("style");
 						}
 					);
 				});

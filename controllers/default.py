@@ -512,6 +512,51 @@ def export_file():
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.zip')
     response.headers['Content-disposition'] = 'attachment; filename=flise_file_%s.zip' % cur_id
+    return output.get
+
+
+def export_pyMantis():
+    cur_id = request.vars.flise_id
+    #make excel
+    from gluon.contrib import simplejson
+    try:
+        data_object = simplejson.loads(request.vars.data)
+    except:
+        import sys
+        raise HTTP(500, 'Deserializing JSON input failed: %s' % sys.exc_info()[1])
+    import tablib.core
+    databook = tablib.core.Databook()
+    for name, data in data_object:
+        if False and data['header']:
+            dataset = tablib.core.Dataset(headers=data['header'])
+        else:
+            dataset = tablib.core.Dataset(headers=data['header'])
+            dataset.title = name
+        for row in data['data']:
+            if row:
+                dataset.append(row)
+        databook.add_sheet(dataset)
+    export_format = 'xls'
+    #make zipfile
+    import zipfile
+    import StringIO
+    import os.path
+    fexport = StringIO.StringIO()
+    fexport.write(getattr(databook, export_format))
+    output = StringIO.StringIO()
+    archive = zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED)
+    archive.writestr('exp-export_%s.%s' % (request.vars.filename, export_format), fexport.getvalue())
+    fexport.close()
+    archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].file), arcname="file.txt")
+    archive.writestr("flise_file.csv", str(db(db.flise_file.id == cur_id).select()))
+    archive.writestr("events.csv", str(db(db.event.flise_file_id == cur_id).select()))
+    archive.writestr("subintervals.csv", str(db(db.subintervals.flise_file_id == cur_id).select()))
+    archive.writestr("solutions.csv", str(db(db.solution.id == db.event.solution_id)(db.event.flise_file_id == cur_id).select(db.solution.id, db.solution.name, db.solution.components_name, db.solution.components_ratio, distinct=True)))
+    archive.close()
+    #return zipfile
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.zip')
+    response.headers['Content-disposition'] = 'attachment; filename=%s-export_flise-%s.zip' % (request.vars.filename, cur_id)
     return output.getvalue()
 
 
@@ -638,7 +683,3 @@ def data():
       LOAD('default','data.load',args='tables',ajax=True,user_signature=True)
     """
     return dict(form=crud())
-
-
-def test():
-    print request.vars

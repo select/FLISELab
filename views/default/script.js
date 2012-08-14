@@ -1429,7 +1429,6 @@ function interval2export(pos) {
 			$.get('{{=URL(request.application, 'static/templates','subinterval.html')}}', function(htmlstr) {
 				function prepare_export(success_fkt, error_fkt){
 					var flag_ok = true;
-					$('#export2excel').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 					if ($('input[name="sub_name"]').val() == '')  flag_ok = false;
 					if ($('input[name="sub_od"]').val() == '') {flag_ok = false;};
 					if ($('input[name="sub_dilutionf"]').val() == '') {flag_ok = false;};
@@ -1617,26 +1616,30 @@ function interval2export(pos) {
 				//pyMantis export
 				$('#export2pyMantis').unbind('click');
 				$('#export2pyMantis').click(function(){
+						$('#export2excel').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 						prepare_export(
 						function(data){
-							$.ajax({
-								url: '{{=URL(request.application, 'default', 'export_spreadsheet')}}',
-								type: 'POST',
-								data: {data: JSON.stringify(data), filename: 'bla.xls', format: 'store_xls'},
-								success: function(xlsfile){
-									$.ajax({
-										url:'{{=URL(request.application, 'default', 'export_file')}}',
-										data: {flise_id: cur_id},
-										success: function(zipfile){
-											$('#pymantis_export_form').html("<input type='hidden' value='"+data+"' name='data'/> <input type='hidden' value='"+zipfile+"'/>");
-											$('#pymantis_export_form').submit();
-											$('#export2pyMantis').removeAttr("disabled").removeAttr("style");
-										}
-									});
-									//$('#pymantis_export_form').html("<input type='text' value='"+data+"' name='data'/> ");
-								},
-
-							});
+							$('#pymantis_export_form').html("<input type='hidden' value='"+JSON.stringify(data)+"' name='data'/> <input type='hidden' value='"+cur_id+"' name='flise_id'/> <input type='hidden' value='"+$('input[name="sub_name"]').val()+"' name='filename'/> ");
+							$('#pymantis_export_form').submit();
+							$('#export2pyMantis').removeAttr("disabled").removeAttr("style");
+							// $.ajax({
+							// 	url: '{{=URL(request.application, 'default', 'export_spreadsheet')}}',
+							// 	type: 'POST',
+							// 	data: {data: JSON.stringify(data), filename: 'bla.xls', format: 'store_xls'},
+							// 	success: function(xlsfile){
+							// 		$.ajax({
+							// 			url:'{{=URL(request.application, 'default', 'export_file')}}',
+							// 			data: {flise_id: cur_id},
+							// 			success: function(zipfile){
+							// 				$('#pymantis_export_form').html("<input type='hidden' value='"+data+"' name='data'/> <input type='hidden' value='"+zipfile+"'/>");
+							// 				$('#pymantis_export_form').submit();
+							// 				$('#export2pyMantis').removeAttr("disabled").removeAttr("style");
+							// 			}
+							// 		});
+							// 		//$('#pymantis_export_form').html("<input type='text' value='"+data+"' name='data'/> ");
+							// 	},
+							// 	$('#export2pyMantis').removeAttr("disabled").removeAttr("style");
+							//});
 						},
 						function(){
 							$('#export2pyMantis').removeAttr("disabled").removeAttr("style");				

@@ -86,13 +86,14 @@
 
     <div id="container">                        
       
-        {{=SPAN( A('config', _href=URL('setup', 'index')), ' | ', A('up/pck', _href=URL('plugin_release', 'status')) , _class='auth_navbar')}} {{try:}}{{=auth.navbar(action=URL('default','user'))}}{{except:pass}}
-    
+      <!-- {{=SPAN( A('config', _href=URL('setup', 'index')), ' | ', A('up/pck', _href=URL('plugin_release', 'status')) , _class='auth_navbar')}} {{try:}}{{=auth.navbar(action=URL('default','user'))}}{{except:pass}} -->
+      {{=SPAN( A('config', _href=URL('setup', 'index')), ' | ', A('up/pck', _href=URL('plugin_release', 'status')) , _class='auth_navbar')}}
+
     <div id="header"> <!-- header and login nav -->
       {{block header}} <!-- this is default header -->
       
       <h1>
-        <a href="{{=URL('default','index')}}" style="text-decoration:none; color:#669DFF;"><span id="appname">{{=request.application.capitalize()}}</span>App</a>
+        <a href="{{=URL('default','index')}}" style="text-decoration:none; color:#669DFF;"><span id="appname">{{try:}}{{=request.application.capitalize()}}{{except:'Flise'}}</span>Lab</a>
       </h1>
       <div style="clear: both;"></div><!-- Clear the divs -->
       {{end}}

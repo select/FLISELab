@@ -508,11 +508,12 @@ def export_file():
     archive.writestr("events.csv", str(db(db.event.flise_file_id == cur_id).select()))
     archive.writestr("subintervals.csv", str(db(db.subintervals.flise_file_id == cur_id).select()))
     archive.writestr("solutions.csv", str(db(db.solution.id == db.event.solution_id)(db.event.flise_file_id == cur_id).select(db.solution.id, db.solution.name, db.solution.components_name, db.solution.components_ratio, distinct=True)))
+    archive.writestr("strains.csv", str(db(db.strain.id == db.flise_file.strain_id)(db.flise_file.id == cur_id).select(db.strain.id, db.strain.name, db.strain.identifier)|db(db.strain.id == db.subintervals.strain_id)(db.subintervals.flise_file_id == cur_id).select(db.strain.id, db.strain.name, db.strain.identifier, distinct=True)))
     archive.close()
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.zip')
     response.headers['Content-disposition'] = 'attachment; filename=flise_file_%s.zip' % cur_id
-    return output.get
+    return output.getvalue()
 
 
 def export_pyMantis():
@@ -552,6 +553,7 @@ def export_pyMantis():
     archive.writestr("events.csv", str(db(db.event.flise_file_id == cur_id).select()))
     archive.writestr("subintervals.csv", str(db(db.subintervals.flise_file_id == cur_id).select()))
     archive.writestr("solutions.csv", str(db(db.solution.id == db.event.solution_id)(db.event.flise_file_id == cur_id).select(db.solution.id, db.solution.name, db.solution.components_name, db.solution.components_ratio, distinct=True)))
+    archive.writestr("strains.csv", str(db(db.strain.id == db.flise_file.strain_id)(db.flise_file.id == cur_id).select(db.strain.id, db.strain.name, db.strain.identifier)|db(db.strain.id == db.subintervals.strain_id)(db.subintervals.flise_file_id == cur_id).select(db.strain.id, db.strain.name, db.strain.identifier, distinct=True)))
     archive.close()
     #return zipfile
     import gluon.contenttype
@@ -574,14 +576,28 @@ def import_file():
                     flag = False
             if flag:
                 import csv
+                #strains
+                file_strains = csv.DictReader(zf.read('strains.csv').split('\r\n'))
+                strain_newindex = []
+                for strain in file_strains:
+                    strain_newindex.append([strain['strain.id']])
+                    del strain['strain.id']
+                    strain = dict((key.replace('strain.', ''), value) for (key, value) in strain.items())
+                    if not db(db.strain.name == strain['name'])(db.strain.identifier == strain['identifier']).count():
+                        db_strain = db.strain.insert(**strain)
+                    else:
+                        db_strain = db(db.strain.name == strain['name'])(db.strain.identifier == strain['identifier']).select().first()
+                    strain_newindex[-1].append(db_strain.id)
+                strain_newindex = dict((x[0], x[1]) for x in strain_newindex)
                 #flise
                 file_flise = csv.DictReader(zf.read('flise_file.csv').split('\r\n')).next()
                 del file_flise['flise_file.id']
                 del file_flise['flise_file.file']
-                file_flise = dict((key.replace('flise_file.', ''), value) for (key, value) in file_flise.items())
-                file_flise['series_species'] = [x for x in file_flise['series_species'].split('|')[1:-1]]
-                file_flise['series_show'] = [x for x in file_flise['series_show'].split('|')[1:-1]]
-                file_flise['series_colors'] = [x for x in file_flise['series_colors'].split('|')[1:-1]]
+                file_flise = dict((key.replace('flise_file.', ''), value if value != '<NULL>' else None) for (key, value) in file_flise.items())
+                file_flise['series_species'] = [x for x in file_flise['series_species'].split('|')[1:-1]] if file_flise['series_species'] != None else None
+                file_flise['series_show'] = [x for x in file_flise['series_show'].split('|')[1:-1]] if file_flise['series_show'] != None else None
+                file_flise['series_colors'] = [x for x in file_flise['series_colors'].split('|')[1:-1]] if file_flise['series_colors'] != None else None
+                file_flise['strain_id'] = strain_newindex[file_flise['strain_id']] if file_flise['strain_id'] != None else None
                 db_flise_file = db.flise_file.insert(**file_flise)
                 file_data = db.flise_file.file.store(zf.open('file.txt'))
                 db_flise_file.update_record(file=file_data)
@@ -591,9 +607,9 @@ def import_file():
                 for solution in file_solutions:
                     solution_newindex.append([solution['solution.id']])
                     del solution['solution.id']
-                    solution = dict((key.replace('solution.', ''), value) for (key, value) in solution.items())
-                    solution['components_name'] = [x for x in solution['components_name'].split('|')[1:-1]]
-                    solution['components_ratio'] = [x for x in solution['components_ratio'].split('|')[1:-1]]
+                    solution = dict((key.replace('solution.', ''), value if value != '<NULL>' else None) for (key, value) in solution.items())
+                    solution['components_name'] = [x for x in solution['components_name'].split('|')[1:-1]] if solution['components_name'] != None else None
+                    solution['components_ratio'] = [x for x in solution['components_ratio'].split('|')[1:-1]] if solution['components_ratio'] != None else None
                     db_solution = db.solution.insert(**solution)
                     solution_newindex[-1].append(db_solution.id)
                 solution_newindex = dict((x[0], x[1]) for x in solution_newindex)
@@ -603,13 +619,9 @@ def import_file():
                 for event in file_events:
                     event_newindex.append([event['event.id']])
                     del event['event.id']
-                    event = dict((key.replace('event.', ''), value) for (key, value) in event.items())
+                    event = dict((key.replace('event.', ''), value if value != '<NULL>' else None) for (key, value) in event.items())
                     event['flise_file_id'] = db_flise_file.id
-                    event['solution_id'] = solution_newindex[event['solution_id']] if event['solution_id'] != '<NULL>' else None
-                    if event['volume'] == '<NULL>':
-                        event['volume'] = None
-                    if event['concentration'] == '<NULL>':
-                        event['concentration'] = None
+                    event['solution_id'] = solution_newindex[event['solution_id']] if event['solution_id'] != None else None
                     db_event = db.event.insert(**event)
                     event_newindex[-1].append(db_event.id)
                 #subintervals
@@ -618,10 +630,11 @@ def import_file():
                 for subint in file_subintervals:
                     subint_newindex.append([subint['subintervals.id']])
                     del subint['subintervals.id']
-                    subint = dict((key.replace('subintervals.', ''), value) for (key, value) in subint.items())
+                    subint = dict((key.replace('subintervals.', ''), value if value != '<NULL>' else None) for (key, value) in subint.items())
                     subint['flise_file_id'] = db_flise_file.id
-                    subint['slope'] = [x for x in subint['slope'].split('|')[1:-1]]
-                    subint['intercept'] = [x for x in subint['intercept'].split('|')[1:-1]]
+                    subint['slope'] = [x for x in subint['slope'].split('|')[1:-1]] if subint['slope'] != None else None
+                    subint['intercept'] = [x for x in subint['intercept'].split('|')[1:-1]] if subint['intercept'] != None else None
+                    subint['strain_id'] = strain_newindex[subint['strain_id']] if subint['strain_id'] != None else None
                     db_subint = db.subintervals.insert(**subint)
                     subint_newindex[-1].append(db_subint.id)
             zf.close()

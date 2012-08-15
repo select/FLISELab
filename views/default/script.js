@@ -6,9 +6,6 @@ var g;//Graph variable (from dygraph)
 var g2;//Graph variable for preprocessing result
 var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
 var cur_id;//ID of the Flise-file
-$('#create_record').slideDown();
-$('#import_record').slideDown();
-$('.current_record').hide().prev().hide();
 
 //Global variables to save
 var cutT;
@@ -26,6 +23,12 @@ var event_del;
 var isSelecting;
 var isDrawing=false;
 var tool;
+
+/************ Init **************/
+$('#create_record').show();
+$('.current_record').hide().prev().hide();
+$('.local-help').hide();
+$('#upload_flise').slideDown();
 
 /************ Preload *********************/
 var series_template = '';
@@ -87,8 +90,7 @@ function init_file(cur_id, name){
 	$('.current_record').attr('id', cur_id);
 	$('.current_record').show().prev().show();
 	//Rearrange which panel is developped or not
-	$('#create_record').slideUp();
-	$('#import_record').slideUp();
+	$('#upload_flise').slideUp();
 	$('#edit_record').slideDown();
 	$('#series_options').slideUp();
 	$('#global_options').slideUp();

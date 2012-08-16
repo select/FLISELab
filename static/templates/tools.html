@@ -1,4 +1,44 @@
 							<div class='toolbar'><div id="tool_zoom" onClick='change_tool(this)'></div><div id="tool_cut" onClick='change_tool(this)'></div><div id="tool_nocut" onClick='change_tool(this)'></div><div id="tool_drop" onClick='change_tool(this)'></div><div id="tool_event" onClick='change_tool(this)'></div><div id="tool_cancel" onClick='change_tool(this)'></div></div>
 							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 							<input id="revert_tool" type="submit" value="Undo"/>
-							<p style="font-size:smaller">(<strong>double-click</strong>: with zoom tool, it will reset the zoom.)</p>
+							<h3>[<a onclick="$('#tools_info').toggle('slow')" style="cursor:help">?</a>]</h3>
+							<div id="tools_info" style="font-size:smaller" class="local-help">
+								<table border="1">
+									<tr>
+										<th scope="row">Zoom: </th>
+										<td width="101"><img src="%img%zoom.png" width="100" height="100" alt="Zoom" style="border:1px solid black; " /></td>
+										<td><p>Mouse over to highlight individual values. The coordinates are: the calculated time in seconds, with the raw recorded time in parenthesis; each series name and value (with customed defined colors and visibility as defined in the &quot;series options&quot; panel).</p>
+											<p>Click and drag to zoom in (vertical and horizontal). Double-click to come back to the original scale.</p>
+										<p>You can also use the mousewheel to zoom along the time axis. Alt-click and drag can be used to move along the time axis</p></td>
+									</tr>
+									<tr>
+										<th scope="row">Cut:</th>
+										<td width="101"><img src="%img%cut.png" width="100" height="100" alt="Cut" style="border:1px solid black;" /></td>
+										<td>Click to create a separation between two portions of the time series. Each defined segment is an experiment and can thus be exported with the segment export tool. It will also split a no-cut interval (priority).</td>
+									</tr>
+									<tr>
+										<th scope="row">No cut:</th>
+										<td width="101"><img src="%img%nocut.png" width="100" height="100" alt="No cut" style="border:1px solid black;" /></td>
+										<td>Click and drag to define a timed interval when you should not place a cut.</td>
+									</tr>
+									<tr>
+										<th scope="row">Drop:</th>
+										<td width="101"><img src="%img%drop.png" width="100" height="100" alt="Drop" style="border:1px solid black;" /></td>
+										<td>Click and drag to define a timed interval when the data can be discarded (no segment export). The auto-segmentation method (panel &quot;Auto-segmentation&quot;) will place automatically &quot;drop&quot;-segments (the window size is used to compute the local statistics; the distance to fuse indicates the minimal length an interval can have to be considered as an experiment, otherwise it is fused with the neighbouring &quot;drop&quot;-segments). &quot;Drop&quot;-segments have priority over cuts and &quot;no-cut&quot;-segments.</td>
+									</tr>
+									<tr>
+										<th scope="row">Event:</th>
+										<td width="101"><img src="%img%event.png" width="100" height="100" alt="Event" style="border:1px solid black;" /></td>
+										<td><p>Events can be either attached to series (click on the series at the desired time) or to all the series (click away from the series at the desired time). A window will popup to further define the event. Mouse over to know the time of event defined (text); you can edit an event by clicking at the exact same time (at the flag marker) for the same series (or away if it concerns all series).</p>
+										<p>Series event types: comment; calibration (for the series measured component).</p>
+										<p>All series event types: comment; wash (precise the initial solution and the inital volume); injection (precise what solution is added, for which volume and concentration); dilution (precise the amount of pure water added); removal (precise the volume of medium removed).</p>
+										<p>NOTE: any experiment segment should be always preceded by a wash-event to set the initial volume (otherwise nul).</p></td>
+									</tr>
+									<tr>
+										<th scope="row">Cancel:</th>
+										<td width="101"><img src="%img%cancel.png" width="100" height="100" alt="Cancel" style="border:1px solid black;" /></td>
+										<td>Click and drag to defined an interval within which any cut, event, fully covered no-cut and drop segments are removed.</td>
+									</tr>
+								</table>
+								<p>(<strong>Hint</strong>: any tool action can be immediatly reverted with the "Undo" button.)</p>
+							</div>

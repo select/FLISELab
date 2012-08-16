@@ -625,7 +625,11 @@ function init_file(cur_id, name){
 		//Reset panel
 		$('#tools').html('');
 		//Load the panel
-		$('#tools').append(data);
+		htmlstr = data;
+		htmlstr = htmlstr.replace(/%img%/g, "{{=URL(request.application, 'static/icons', '%img%')}}");
+		htmlstr = htmlstr.replace(/%img%/g, "");
+		$('#tools').append(htmlstr);
+		$('#tools_info').hide();
 		
 		//Load Tool Export panel
 		$.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {

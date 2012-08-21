@@ -23,6 +23,6 @@ APPLICATION_URL = "http://translucent-network.org/FLISELAB"
 APPLICATION_PACKAGE_URL = "http://translucent-network.org/fliselab_static"
 WEB2PY_URL = 'http://web2py.com'
 WEB2PY_VERSION_URL = WEB2PY_URL+'/examples/default/version'
-IGNORE_PATTERNS = ('*web2py.app.*', '*.sw?', '*~', '*.pyc', 'CVS', '^.git', '*.svn', '*%s_*.zip'%APPLICATION_NAME, '*%s_*.tar*'%APPLICATION_NAME)
+IGNORE_PATTERNS = ('*web2py.app.*', '*.sw?', '*~', '*.pyc', 'CVS', '^.git', '.svn', '*%s_*.zip'%APPLICATION_NAME, '*%s_*.tar*'%APPLICATION_NAME)
 ##########################################
 

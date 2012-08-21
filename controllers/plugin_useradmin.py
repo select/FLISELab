@@ -44,8 +44,8 @@ def index():
             response.flash = 'Created New Group'
     groups = db(db.auth_group.id>0).select()
     #---------------------------------------------------
-    response.files.append(URL(request.application,'static','data_table.css'))
-    response.files.append(URL(request.application,'static/dataTables/media/js','jquery.dataTables.min.js'))
+    response.files.append(URL(request.application,'static/plugin_useradmin','data_table.css'))
+    response.files.append(URL(request.application,'static/plugin_useradmin/dataTables/media/js','jquery.dataTables.min.js'))
     script = SCRIPT('''$(document).ready(function(){
     oTable = $('#useradmin-table').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
     });''')
@@ -59,8 +59,8 @@ def page():
     '''
     response.files.append(URL(request.application,'static/plugin_useradmin','base.css'))
     #---------------------------------------------------
-    response.files.append(URL(request.application,'static','data_table.css'))
-    response.files.append(URL(request.application,'static/dataTables/media/js','jquery.dataTables.min.js'))
+    response.files.append(URL(request.application,'static/plugin_useradmin','data_table.css'))
+    response.files.append(URL(request.application,'static/plugin_useradmin/dataTables/media/js','jquery.dataTables.min.js'))
     script = SCRIPT('''$(document).ready(function(){
     oTable = $('#useradmin-table').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
     });''')

@@ -1,7 +1,9 @@
-/
+
 class ContentTooShortError(Exception):
     def __init__(self,message):
         self.errorMessage = 'Bla: %s'% message
+
+status_fkt = lambda message,close=False: sys.stderr.write(message)
 
 def download_status_fkt(size_known,num_done,start=False,stop=False,url=''):
     ''' internal default function if no external UI functions were set (see L{setUIFunctions})'''
@@ -205,7 +207,7 @@ def update():
     update this app from a zip from the web
     '''
     if os.path.exists(RELEASE_FOLDER):
-        return 'This is the sever, should not update!'
+        return 'This is the server, should not update!'
     if not session.app_is_old_version:
         return 'Cannot find newer version.'
     filename = os.path.join(request.folder,'private','tmp.w2p')
@@ -457,6 +459,16 @@ def edit_version():
     if form.accepts(request.vars, session, keepvalues = True):
         open(os.path.join(request.folder, 'VERSION'), 'w').write(form.vars.version)
     return form
+
+@auth.requires_membership('admin')
+def svn_update():
+    import subprocess
+    p = subprocess.Popen(['svn','up'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd = request.folder)
+    ustdout,ustderr = p.communicate()
+    return TAG[''](TABLE(
+        TR(TH('command'), TH('stdout'), TH('stderr')),
+        TR(TD('update'), TD(ustdout),TD(ustderr)),
+        ))
 
 @auth.requires_membership('admin')
 def hg_update():

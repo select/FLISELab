@@ -1,4 +1,4 @@
-
+/
 class ContentTooShortError(Exception):
     def __init__(self,message):
         self.errorMessage = 'Bla: %s'% message

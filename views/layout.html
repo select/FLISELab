@@ -86,9 +86,10 @@
         
 
     <div id="container">                        
-      
-      <!-- {{=SPAN( A('config', _href=URL('setup', 'index')), ' | ', A('up/pck', _href=URL('plugin_release', 'status')) , _class='auth_navbar')}} {{try:}}{{=auth.navbar(action=URL('default','user'))}}{{except:pass}} -->
-      {{=SPAN( A('config', _href=URL('setup', 'index')), ' | ', A('up/pck', _href=URL('plugin_release', 'status')) , _class='auth_navbar')}}
+   
+      {{if auth.is_logged_in():
+      =SPAN(A('config', _href=URL('setup', 'index')), ' | ', A('up/pck' if os.path.exists(os.path.join(request.folder, 'private', 'release')) else 'update', _href=URL('plugin_release', 'status')), ' | ' if os.path.exists(os.path.join(request.folder, 'private', 'release')) else '', A('useradmin', _href=URL('plugin_useradmin', 'page')) if os.path.exists(os.path.join(request.folder, 'private', 'release')) else '', _class='auth_navbar')
+      pass}}
 
     <div id="header"> <!-- header and login nav -->
       {{block header}} <!-- this is default header -->

@@ -488,7 +488,15 @@ def export_spreadsheet():
                 dataset.append(row)
         #dataset.extend(data['data'])
         databook.add_sheet(dataset)
-    if export_format in 'yaml csv xls xlsx':
+    if export_format == 'store_xls':
+        from gluon.utils import web2py_uuid
+        import os
+        uufilename = web2py_uuid() + '.xls'
+        if not os.path.exists(os.path.join(request.folder, 'static', 'tmp')):
+            os.mkdir(os.path.join(request.folder, 'static', 'tmp'))
+        open(os.path.join(request.folder, 'static', 'tmp',  uufilename), 'wb').write(getattr(databook, 'xls'))
+        return URL(request.application, 'static/tmp', uufilename)
+    elif export_format in 'yaml csv xls xlsx':
         import gluon.contenttype
         response.headers['Content-Type'] = gluon.contenttype.contenttype('.%s' % export_format)
         response.headers['Content-disposition'] = 'attachment; filename=%s.%s' % (request.vars.filename, export_format)
@@ -510,6 +518,13 @@ def export_file():
     archive.writestr("solutions.csv", str(db(db.solution.id == db.event.solution_id)(db.event.flise_file_id == cur_id).select(db.solution.id, db.solution.name, db.solution.components_name, db.solution.components_ratio, distinct=True)))
     archive.writestr("strains.csv", str(db(db.strain.id == db.flise_file.strain_id)(db.flise_file.id == cur_id).select(db.strain.id, db.strain.name, db.strain.identifier)|db(db.strain.id == db.subintervals.strain_id)(db.subintervals.flise_file_id == cur_id).select(db.strain.id, db.strain.name, db.strain.identifier, distinct=True)))
     archive.close()
+    if request.extension == 'store_zip':
+        from gluon.utils import web2py_uuid
+        uufilename = web2py_uuid() + '.zip'
+        if not os.path.exists(os.path.join(request.folder, 'static', 'tmp')):
+            os.mkdir(os.path.join(request.folder, 'static', 'tmp'))
+        open(os.path.join(request.folder, 'static', 'tmp',  uufilename), 'wb').write(output.getvalue())
+        return URL(request.application, 'static/tmp', uufilename)
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.zip')
     response.headers['Content-disposition'] = 'attachment; filename=flise_file_%s.zip' % cur_id

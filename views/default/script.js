@@ -183,7 +183,7 @@ function init_file(cur_id, name){
 									anns.push({
 										series: g.user_attrs_['labels'][i+1],
 										xval: data['time'],
-										icon: '/flise/static/icons/mark-event.png',
+										icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 										width: 16,
 										height: 16,
 										tickHeight: 2,
@@ -194,7 +194,7 @@ function init_file(cur_id, name){
 								anns.push({
 									series: data['series_name'],
 									xval: data['time'],
-									icon: '/flise/static/icons/mark-event.png',
+									icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 									width: 16,
 									height: 16,
 									tickHeight: 2,
@@ -331,7 +331,7 @@ function init_file(cur_id, name){
 												g.annotations_.push({
 													series: g.user_attrs_['labels'][i+1],
 													xval: data['time'],
-													icon: '/flise/static/icons/mark-event.png',
+													icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 													width: 16,
 													height: 16,
 													tickHeight: 2,
@@ -381,7 +381,7 @@ function init_file(cur_id, name){
 												g.annotations_.push({
 													series: g.user_attrs_['labels'][i+1],
 													xval: data['time'],
-													icon: '/flise/static/icons/mark-event.png',
+													icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 													width: 16,
 													height: 16,
 													tickHeight: 2,
@@ -750,7 +750,7 @@ function init_file(cur_id, name){
 									anns.push({
 										series: g.user_attrs_['labels'][i+1],
 										xval: event_del[iE].time,
-										icon: '/flise/static/icons/mark-event.png',
+										icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 										width: 16,
 										height: 16,
 										tickHeight: 2,
@@ -761,7 +761,7 @@ function init_file(cur_id, name){
 								anns.push({
 									series: g.user_attrs_['labels'][event_del[iE].series_id+1],
 									xval: event_del[iE].time,
-									icon: '/flise/static/icons/mark-event.png',
+									icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 									width: 16,
 									height: 16,
 									tickHeight: 2,
@@ -3220,7 +3220,7 @@ function add2event(context,g){
 										anns.push({
 											series: selectedPoints[i].name,
 											xval: time,
-											icon: '/flise/static/icons/mark-event.png',
+											icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 											width: 16,
 											height: 16,
 											tickHeight: 2,
@@ -3233,7 +3233,7 @@ function add2event(context,g){
 									var ann = {
 										series: series_name,
 										xval: time,
-										icon: '/flise/static/icons/mark-event.png',
+										icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 										width: 16,
 										height: 16,
 										tickHeight: 2,

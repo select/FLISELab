@@ -396,10 +396,11 @@ def subint_process_data():
     record = db.flise_file[int(flise_file_id)]
     sg_win = record.sg_win
     sg_order = record.sg_order
+    ts = float(record.sampling_time)
     myinstance = savgol.Savgol(int(sg_win), int(sg_win), int(sg_order), 1)
     datadiff = []
     for iS in range(len(data2diff)):
-        datadiff.append(myinstance.filterTS(data2diff[iS]))
+        datadiff.append([ts * x for x in myinstance.filterTS(data2diff[iS])])
     fluxes = []
     for iS in range(len(datadiff)):
         fluxes.append([-1e6 * vsr * x for x in datadiff[iS]])  # m^3 m^-2 s^-1 mol L^-1 = 10^6 m s^-1 nmol m^-2 and influx is positive
@@ -408,7 +409,6 @@ def subint_process_data():
     intSolutions = []
     volume = []
     ncell = []
-    ts = float(record.sampling_time)
     sel_set = db(db.event.flise_file_id == flise_file_id)
     eventStart = -1
     if sel_set:

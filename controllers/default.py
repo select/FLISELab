@@ -402,7 +402,7 @@ def subint_process_data():
         datadiff.append(myinstance.filterTS(data2diff[iS]))
     fluxes = []
     for iS in range(len(datadiff)):
-        fluxes.append([-1000 * vsr * x for x in datadiff[iS]])
+        fluxes.append([-1e6 * vsr * x for x in datadiff[iS]])  # m^3 m^-2 s^-1 mol L^-1 = 10^6 m s^-1 nmol m^-2 and influx is positive
     #collect events and solutions and calculate volume sequence
     intEvents = []
     intSolutions = []

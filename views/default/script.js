@@ -1506,13 +1506,13 @@ function interval2export(pos) {
 								header_result.push('time reference (s)');
 								header_result.push('raw time');
 								for (var iS = 0; iS < concentrations.length; iS++) {
-									header_result.push('['+graph_labels[iS+1]+'] (mol/L)');
+									header_result.push('['+graph_labels[iS+1]+']cuv (mol/L)');
 								};
 								for (var iS = 0; iS < concentrationsDiff.length; iS++) {
-									header_result.push('d/dt['+graph_labels[iS+1]+'] (mol/L/s)');
+									header_result.push('d/dt['+graph_labels[iS+1]+']cuv (mol/L/s)');
 								};
 								for (var iS = 0; iS < fluxes.length; iS++) {
-									header_result.push('flux('+graph_labels[iS+1]+')');
+									header_result.push('influx('+graph_labels[iS+1]+') (nmol/s/m^2)');
 								};
 								header_result.push('cuvette volume (L)');
 								header_result.push('number of cells in cuvette');

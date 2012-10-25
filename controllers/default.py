@@ -383,12 +383,12 @@ def subint_process_data():
     cell_diameter = record.cell_diameter * 1e-6
     slope = record.slope
     intercept = record.intercept
-    #calculate concetrations
+    #calculate concentrations
     from gluon.contrib import simplejson
     data = simplejson.loads(request.vars.data)
     data2diff = []
     from math import pi
-    svr = ((1 - optical_density * 1.2e7 * dilution_factor * (4 / 3) * pi * ((cell_diameter / 2) ** 3)) / (optical_density * 1.2e7 * dilution_factor * pi * (cell_diameter ** 2)))
+    vsr = ((1 - optical_density * 1.2e7 * dilution_factor * (4 / 3) * pi * ((cell_diameter / 2) ** 3)) / (optical_density * 1.2e7 * dilution_factor * pi * (cell_diameter ** 2)))
     for iS in range(len(data)):
         data2diff.append([10 ** ((x - float(intercept[iS])) / float(slope[iS])) for x in data[iS]])
     #differentiate interval raw data
@@ -402,7 +402,7 @@ def subint_process_data():
         datadiff.append(myinstance.filterTS(data2diff[iS]))
     fluxes = []
     for iS in range(len(datadiff)):
-        fluxes.append([svr * x for x in datadiff[iS]])
+        fluxes.append([-1000 * vsr * x for x in datadiff[iS]])
     #collect events and solutions and calculate volume sequence
     intEvents = []
     intSolutions = []
@@ -432,21 +432,27 @@ def subint_process_data():
                     intSolutions.append({'name': solution_record.name, 'components_name': solution_record.components_name, 'components_ratio': solution_record.components_ratio})
             #make volume sequence
             volume_step = []
+            volume_step_cell = []
             volume_time = []
             volume_now = 0
+            volume_now_cell = 0
             for intEvent in intEvents:
                 if intEvent['type'] == 'wash':
                     volume_now = float(intEvent['volume'])
+                    volume_now_cell = float(intEvent['volume'])
                 elif intEvent['type'] == 'dilution':
                     volume_now = volume_now + float(intEvent['volume'])
                 elif intEvent['type'] == 'removal':
                     volume_now = volume_now - float(intEvent['volume'])
+                    volume_now_cell = volume_now_cell - float(intEvent['volume'])
                 elif intEvent['type'] == 'injection':
                     volume_now = volume_now + float(intEvent['volume'])
                 volume_step.append(volume_now)
+                volume_step_cell.append(volume_now_cell)
                 volume_time.append(intEvent['time'])
             if len(volume_step) == 0:
                 volume_step.append(0)
+                volume_step_cell.append(0)
                 volume_time.append(intStart)
             volume_time.append(intEnd)
             t = intStart
@@ -459,11 +465,11 @@ def subint_process_data():
                 if volume_time[volume_index + 1] <= t:
                     volume_index += 1
                 volume.append(volume_step[volume_index])
-                ncell.append(volume_step[volume_index] * optical_density * 1.2e7 * dilution_factor)
+                ncell.append(volume_step_cell[volume_index] * 1000 * optical_density * 1.2e7 * dilution_factor)
                 t = t + ts
             volume.append(volume_step[volume_index])
-            ncell.append(volume_step[volume_index] * optical_density * 1.2e7 * dilution_factor)
-    return dict(concentrations=data2diff, concentrationsDiff=datadiff, fluxes=fluxes, volume=volume, ncell=ncell, surf2vol_ratio=svr, intEvents=intEvents, intSolutions=intSolutions)
+            ncell.append(volume_step_cell[volume_index] * optical_density * 1.2e7 * dilution_factor)
+    return dict(concentrations=data2diff, concentrationsDiff=datadiff, fluxes=fluxes, volume=volume, ncell=ncell, surf2vol_ratio=vsr, intEvents=intEvents, intSolutions=intSolutions)
 
 
 def export_spreadsheet():

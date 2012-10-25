@@ -400,7 +400,7 @@ def subint_process_data():
     myinstance = savgol.Savgol(int(sg_win), int(sg_win), int(sg_order), 1)
     datadiff = []
     for iS in range(len(data2diff)):
-        datadiff.append([ts * x for x in myinstance.filterTS(data2diff[iS])])
+        datadiff.append([x / ts for x in myinstance.filterTS(data2diff[iS])])
     fluxes = []
     for iS in range(len(datadiff)):
         fluxes.append([-1e6 * vsr * x for x in datadiff[iS]])  # m^3 m^-2 s^-1 mol L^-1 = 10^6 m s^-1 nmol m^-2 and influx is positive

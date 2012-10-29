@@ -181,7 +181,7 @@ def sg_options():
     record = db.flise_file[int(request.args(0))]
 
     def get_defaults():
-        sg_win = 40
+        sg_win = 60
         sg_order = 4
         sg_overlay = False
         return dict(sg_win=sg_win, sg_order=sg_order, sg_overlay=sg_overlay)

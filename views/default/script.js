@@ -1062,7 +1062,7 @@ function init_file(cur_id, name){
 				g.updateOptions({ 
 					file: graph_data,
 					labels: graph_labels,
-					colors: g.colors_.slice(0,graph_labels.length)
+					colors: g.colors_.slice(0,graph_labels.length-1)
 				});
 				g.resize(window.innerWidth-510, (window.innerHeight-90));
 				$('input[name="smooth_val"]').parent().find('span').eq(1).html('');

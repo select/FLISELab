@@ -3317,17 +3317,21 @@ function createGraph(graph_data, labels){
 						if (tool == 'zoom') {
 							Dygraph.defaultInteractionModel.mousedown(event, g, context);
 						} else {
-							context.initializeMouseDown(event, g, context);
-							if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
-								isSelecting = true; 
+							if (event.altKey || event.shiftKey) {
+								Dygraph.defaultInteractionModel.mousedown(event, g, context);
 							} else {
-								if (tool =='cut'){
-									add2cut(getX(context.dragStartX, g));
+								context.initializeMouseDown(event, g, context);
+								if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
+									isSelecting = true; 
 								} else {
-									if (tool=='event'){
-										add2event(context, g);
+									if (tool =='cut'){
+										add2cut(getX(context.dragStartX, g));
 									} else {
-										interval2export(getX(context.dragStartX, g));
+										if (tool=='event'){
+											add2event(context, g);
+										} else {
+											interval2export(getX(context.dragStartX, g));
+										}
 									}
 								}
 							}
@@ -3337,26 +3341,39 @@ function createGraph(graph_data, labels){
 						if (tool == 'zoom') {
 							Dygraph.defaultInteractionModel.mousemove(event, g, context);
 						} else {
-							if (!isSelecting) return;
-							drawSelectRect(event, g, context);
+							if (!isSelecting) {
+								if (event.altKey || event.shiftKey) {
+									Dygraph.defaultInteractionModel.mousemove(event, g, context);
+								} else {
+									return;
+								}
+							} else {
+								drawSelectRect(event, g, context);
+							}
 						}
 					},
 					mouseup: function(event, g, context) {
 						if (tool == 'zoom') {
 							Dygraph.defaultInteractionModel.mouseup(event, g, context);
-						} else if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {			
-							eraseSelectRect(g, context);
-							if (tool == 'nocut'){
-								if (context.prevEndX != null){
-									add2nocut(getX(context.dragStartX,g),getX(context.dragEndX,g));
-								}
-							} else if (tool == 'drop'){
-								if (context.prevEndX != null){
-									add2drop(getX(context.dragStartX,g),getX(context.dragEndX,g));
-								}
-							}	else if (tool == 'cancel'){
-								if (context.prevEndX != null){
-									erase(getX(context.dragStartX,g),getX(context.dragEndX,g));
+						} else {
+							if (isSelecting) {
+								eraseSelectRect(g, context);
+							};
+							if (event.altKey || event.shiftKey) {
+								Dygraph.defaultInteractionModel.mousemove(event, g, context);
+							} else if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
+								if (tool == 'nocut'){
+									if (context.prevEndX != null){
+										add2nocut(getX(context.dragStartX,g),getX(context.dragEndX,g));
+									}
+								} else if (tool == 'drop'){
+									if (context.prevEndX != null){
+										add2drop(getX(context.dragStartX,g),getX(context.dragEndX,g));
+									}
+								}	else if (tool == 'cancel'){
+									if (context.prevEndX != null){
+										erase(getX(context.dragStartX,g),getX(context.dragEndX,g));
+									}
 								}
 							}
 						}

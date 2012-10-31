@@ -428,7 +428,17 @@ function init_file(cur_id, name){
 					else vis.push(false);
 				});
 				//Pass visibility option to graph object
-				g.updateOptions({visibility: vis});
+				if (typeof g2 === "undefined")
+					g.updateOptions({visibility: vis});
+				else {
+					if ($("#overlay").is(':checked'))
+						g.updateOptions({visibility: vis.concat(vis)});
+					else
+						g.updateOptions({visibility: vis});
+					g2.updateOptions({visibility: vis});
+				}
+
+				//Save
 				$.ajax({
 					url: '{{=URL("store_option")}}',
 					data: {record_id:cur_id, var_name:'series_show', val: vis},
@@ -899,7 +909,7 @@ function init_file(cur_id, name){
 							//place values
 							for (iS=0; iS<result[iI-iIpass].length;iS++){
 								for (var iP2=0; iP2<result[iI-iIpass][iS].length;iP2++){
-									data2plot[iP+iP2][iS+1]=result[iI-iIpass][iS][iP2];
+									data2plot[iP+iP2][iS+1]=result[iI-iIpass][iS][iP2] / Tsamp;
 								}
 							}
 						}
@@ -909,10 +919,20 @@ function init_file(cur_id, name){
 						for (var i=0; i<graph_labels.length; i++){
 							derivlabels.push('SG1_'+graph_labels[i+1]);
 						}
+						var colors = [];
+						$('input[name="color"]').each(function(){
+							colors.push($(this).val());
+						});
+						var vis = []
+						$('input[name="show"]').each(function (){
+							if ($(this).is(':checked')) vis.push(true);
+							else vis.push(false);
+						});
 						g2 = new Dygraph(document.getElementById("graphdiv2"), data2plot,
 							{
 								labels: derivlabels,
-								colors: g.colors_,
+								colors: colors,
+								visibility: vis,
 								dateWindow: g.xAxisRange(),
 								width: window.innerWidth-510,
 								height: Math.floor((window.innerHeight-90)/2),
@@ -932,27 +952,27 @@ function init_file(cur_id, name){
 								},
 								interactionModel: {
 									mousedown: function (event, me, context) {
-										if (tool == 'zoom') {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
 											Dygraph.defaultInteractionModel.mousedown(event, me, context);
 										}
 									},
 									mousemove: function (event, me, context) {
-										if (tool == 'zoom') {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
 											Dygraph.defaultInteractionModel.mousemove(event, me, context);
 										}
 									},
 									mouseup: function(event, me, context) {
-										if (tool == 'zoom') {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
 											Dygraph.defaultInteractionModel.mouseup(event, me, context);
 										}
 									},
 									mouseout: function(event, me, context) {
-										if (tool == 'zoom') {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
 											Dygraph.defaultInteractionModel.mouseout(event, me, context);
 										}
 									},
 									dblclick: function(event, me, context) {
-										if (tool == 'zoom') {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
 											Dygraph.defaultInteractionModel.dblclick(event, me, context);
 										}
 									},
@@ -1037,16 +1057,25 @@ function init_file(cur_id, name){
 								}
 							}
 							//Plot in g
-							var colors = g.colors_.slice();
+							var colors = [];
+							$('input[name="color"]').each(function(){
+								colors.push($(this).val());
+							});
 							var labels = graph_labels.slice();
 							for (var iS =  1; iS < nS; iS++) {
 								colors.push("#000000");
 								labels.push('SG0_'+graph_labels[iS]);
 							};
+							var vis = []
+							$('input[name="show"]').each(function (){
+								if ($(this).is(':checked')) vis.push(true);
+								else vis.push(false);
+							});
 							g.updateOptions({ 
 								file: data2plot,
 								labels: labels,
-								colors: colors
+								colors: colors,
+								visibility: vis.concat(vis)
 							});
 						}
 					});
@@ -1056,13 +1085,17 @@ function init_file(cur_id, name){
 			$('#preproc_close').click(function(){
 				$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				$("#preproc").attr("value", "Extract, process and plot");
-				g2=undefined;
+				g2 = undefined;
 				$('#graphdiv2').hide();
 				$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
+				var colors = [];
+				$('input[name="color"]').each(function(){
+					colors.push($(this).val());
+				});
 				g.updateOptions({ 
 					file: graph_data,
 					labels: graph_labels,
-					colors: g.colors_.slice(0,graph_labels.length-1)
+					colors: colors
 				});
 				g.resize(window.innerWidth-510, (window.innerHeight-90));
 				$('input[name="smooth_val"]').parent().find('span').eq(1).html('');

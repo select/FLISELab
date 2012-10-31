@@ -1110,7 +1110,14 @@ function init_file(cur_id, name){
 /**************** WINDOW RESIZE *********************/
 jQuery(document).ready(function(){
 	 $(window).resize(function(){
-		 if (g != undefined){g.resize(window.innerWidth-530, window.innerHeight-90);}
+		if (typeof g !== "undefined"){
+		 	if (typeof g2 === "undefined")
+				g.resize(window.innerWidth-530, window.innerHeight-90);
+			else {
+				g.resize(window.innerWidth-530, Math.floor((window.innerHeight-90)/2));
+				g2.resize(window.innerWidth-530, Math.floor((window.innerHeight-90)/2));
+			}
+		}
 	 });
 });
 

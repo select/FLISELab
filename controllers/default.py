@@ -518,6 +518,7 @@ def export_file():
     output = StringIO.StringIO()
     archive = zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED)
     archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].file), arcname="file.txt")
+    archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].rlvfile), arcname="file.rlv")
     archive.writestr("flise_file.csv", str(db(db.flise_file.id == cur_id).select()))
     archive.writestr("events.csv", str(db(db.event.flise_file_id == cur_id).select()))
     archive.writestr("subintervals.csv", str(db(db.subintervals.flise_file_id == cur_id).select()))
@@ -570,6 +571,7 @@ def export_pyMantis():
     archive.writestr('exp-export_%s.%s' % (request.vars.filename, export_format), fexport.getvalue())
     fexport.close()
     archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].file), arcname="file.txt")
+    archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].rlvfile), arcname="file.rlv")
     archive.writestr("flise_file.csv", str(db(db.flise_file.id == cur_id).select()))
     archive.writestr("events.csv", str(db(db.event.flise_file_id == cur_id).select()))
     archive.writestr("subintervals.csv", str(db(db.subintervals.flise_file_id == cur_id).select()))
@@ -590,7 +592,7 @@ def import_file():
         import zipfile
         if zipfile.is_zipfile(flise_file_zip):
             zf = zipfile.ZipFile(flise_file_zip, 'r')
-            for filename in ['flise_file.csv', 'events.csv', 'subintervals.csv', 'solutions.csv', 'file.txt']:
+            for filename in ['flise_file.csv', 'events.csv', 'subintervals.csv', 'solutions.csv', 'file.txt', 'file.rlv']:
                 try:
                     zf.getinfo(filename)
                 except KeyError:
@@ -619,9 +621,11 @@ def import_file():
                 file_flise['series_show'] = [x for x in file_flise['series_show'].split('|')[1:-1]] if file_flise['series_show'] != None else None
                 file_flise['series_colors'] = [x for x in file_flise['series_colors'].split('|')[1:-1]] if file_flise['series_colors'] != None else None
                 file_flise['strain_id'] = strain_newindex[file_flise['strain_id']] if file_flise['strain_id'] != None else None
-                db_flise_file = db.flise_file.insert(**file_flise)
                 file_data = db.flise_file.file.store(zf.open('file.txt'))
-                db_flise_file.update_record(file=file_data)
+                file_flise['file'] = file_data
+                rlvfile_data = db.flise_file.rlvfile.store(zf.open('file.rlv'))
+                file_flise['rlvfile'] = rlvfile_data
+                db_flise_file = db.flise_file.insert(**file_flise)
                 #solutions
                 file_solutions = csv.DictReader(zf.read('solutions.csv').split('\r\n'))
                 solution_newindex = []

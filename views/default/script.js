@@ -1543,8 +1543,8 @@ function interval2export(pos) {
 								//Structure results into a table
 								var result = [];
 								var header_result = [];
-								header_result.push('time reference (s)');
-								header_result.push('raw time');
+								header_result.push('Time (s)');
+								header_result.push('Measurement time (hh:mm:ss)');
 								for (var iS = 0; iS < concentrations.length; iS++) {
 									header_result.push('['+graph_labels[iS+1]+']cuv (mol/L)');
 								};
@@ -1554,8 +1554,8 @@ function interval2export(pos) {
 								for (var iS = 0; iS < fluxes.length; iS++) {
 									header_result.push('influx('+graph_labels[iS+1]+') (nmol/s/m^2)');
 								};
-								header_result.push('cuvette volume (L)');
-								header_result.push('number of cells in cuvette');
+								header_result.push('Cuvette volume (L)');
+								header_result.push('Number of cells in cuvette');
 								for (var iT = 0; iT < raw_time_ref.length; iT++) {
 									result.push([raw_time_ref[iT], raw_time[iT]]);
 									for (var iS = 0; iS < concentrations.length; iS++) {

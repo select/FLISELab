@@ -226,6 +226,7 @@ function init_file(cur_id, name){
 				if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
 				else st = st.replace(/%show%/, '');
 				st = st.replace(/%color%/, colors[i]);
+				st = st.replace(/%calibration_slope%/, (data.slope[i]=='null' || data.slope[i]==null) ? '' : data.slope[i])
 				$('#series_options').append('<table id="series'+i+'">'+st+'</table>');
 				$('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
 			}
@@ -405,6 +406,7 @@ function init_file(cur_id, name){
 				};
 			});
 			//Color picker creation
+			$('input[name="color"]').unbind('change');
 			$('input[name="color"]').colorPicker();
 			$('input[name="color"]').change(function(){
 				var items = [];
@@ -442,6 +444,20 @@ function init_file(cur_id, name){
 				$.ajax({
 					url: '{{=URL("store_option")}}',
 					data: {record_id:cur_id, var_name:'series_show', val: vis},
+					traditional: true
+				});
+			});
+			//Calibration slope
+			$('input[name="calibration_slope"]').unbind('change');
+			$('input[name="calibration_slope"]').change(function(){
+				var items = [];
+				$('input[name="calibration_slope"]').each(function(){
+					items.push(($(this).val()=='') ? null : $(this).val());
+				});
+				//Save calibration_slope change
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'series_slope', val: items},
 					traditional: true
 				});
 			});
@@ -1408,6 +1424,9 @@ function interval2export(pos) {
 	var name = '';
 	var calintercept = [];
 	var calslope = [];
+	$('input[name="calibration_slope"]').each(function(){
+		calslope.push(($(this).val()=='') ? 'null' : $(this).val());
+	});
 	
 	$.ajax({
 		url: '{{=URL("store_subint_option.json")}}',
@@ -1447,8 +1466,8 @@ function interval2export(pos) {
 					traditional: true
 				});
 				for (var i = $('#series_options > table').size()-1; i >= 0; i--) {
-					calintercept.push(undefined);
-					calslope.push(undefined);
+					calintercept.push('null');
+					//calslope.push(undefined);
 				}
 				$.ajax({
 					url: '{{=URL("store_subint_option.json")}}',
@@ -1625,12 +1644,12 @@ function interval2export(pos) {
 					stcal = '<tr><td style="color:%color%">%species%</td><td>Slope: <input name="sub_calslope" type="text" value="%slope%" style="width:60px" class="double"/></td><td>Intercept: <input name="sub_calintercept" type="text" value="%intercept%" style="width:60px" class="double"/>(Volt)</td></tr>';
 					stcal = stcal.replace(/%species%/, $('#series'+i+' > tbody > tr > td > select').val());
 					stcal = stcal.replace(/%color%/, $('#series'+i+' > tbody > tr:eq(1) > td > table > tbody > tr > td > input').val());
-					if (calslope[i]==undefined) {
+					if (calslope[i]==undefined || calslope[i]=='null') {
 						stcal = stcal.replace(/%slope%/,'');
 					} else {
 						stcal = stcal.replace(/%slope%/,calslope[i]);
 					}
-					if (calintercept[i]==undefined) {
+					if (calintercept[i]==undefined || calintercept[i]=='null') {
 						stcal = stcal.replace(/%intercept%/,'');
 					} else {
 						stcal = stcal.replace(/%intercept%/,calintercept[i]);
@@ -1799,47 +1818,33 @@ function interval2export(pos) {
 					$(this).parent().removeAttr('style');
 					if ($(this).val() == '') {
 						$(this).parent().attr('style','color: red');
-					} else {
-						var flag = true;
-						$('input[name="sub_calintercept"]').each(function(){
-							if ($(this).val() == ''){flag = false;}
-						});
-						if (flag) {
-							var items = [];
-							$('input[name="sub_calintercept"]').each(function(){
-								items.push($(this).val()); // BUG: if one enter only 1 value for instance for the second series and none for the first, only one value is stored and therefore is passed for the first series. To hide this, I don't save anything if not all the values are entered.
-							});
-							//Save intercept change
-							$.ajax({
-								url: '{{=URL("store_subint_option.json")}}',
-								data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'intercept', val: items},
-								traditional: true
-							});
-						};
-					};
+					} 
+					var items = [];
+					$('input[name="sub_calintercept"]').each(function(){
+						items.push(($(this).val()=='')?'null':$(this).val());
+					});
+					//Save intercept change
+					$.ajax({
+						url: '{{=URL("store_subint_option.json")}}',
+						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'intercept', val: items},
+						traditional: true
+					});
 				});
 				$('input[name="sub_calslope"]').change(function(){
 					$(this).parent().removeAttr('style');
 					if ($(this).val() == '') {
 						$(this).parent().attr('style','color: red');
-					} else {
-						var flag = true;
-						$('input[name="sub_calslope"]').each(function(){
-							if ($(this).val() == ''){flag = false;}
-						});
-						if (flag) {
-							var items = [];
-							$('input[name="sub_calslope"]').each(function(){
-								items.push($(this).val()); // BUG: if one enter only 1 value for instance for the second series and none for the first, only one value is stored and therefore is passed for the first series. To hide this, I don't save anything if not all the values are entered.
-							});
-							//Save slope change
-							$.ajax({
-								url: '{{=URL("store_subint_option.json")}}',
-								data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'slope', val: items},
-								traditional: true
-							});
-						};
-					};
+					}
+					var items = [];
+					$('input[name="sub_calslope"]').each(function(){
+						items.push(($(this).val()=='')?'null':$(this).val()); 
+					});
+					//Save slope change
+					$.ajax({
+						url: '{{=URL("store_subint_option.json")}}',
+						data: {flise_record_id:cur_id, interval_time:intStart+':'+intEnd, var_name:'slope', val: items},
+						traditional: true
+					});
 				});
 				//Make popup
 				event_modal = $("#subinterval").modal({

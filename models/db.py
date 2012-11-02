@@ -133,6 +133,7 @@ db.define_table('flise_file',
         Field('series_species', 'list:string', readable=False, writable=False),
         Field('series_colors', 'list:string', readable=False, writable=False),
         Field('series_show', 'list:string', readable=False, writable=False),
+        Field('series_slope', 'list:string', readable=False, writable=False),  # JSON list of doubles
         Field('strain_id', db.strain, readable=False, writable=False),
         Field('comments', 'text', readable=False, writable=False),
         Field('optical_density', 'double', readable=False, writable=False),

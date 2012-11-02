@@ -123,11 +123,11 @@ def series_options():
         reader = list(csv.reader(raw_file, delimiter="\t"))
         num_series = len(reader[0]) - 1
         name = ['Species%s' % i for i in range(num_series)]
-        #color = None
+        slope = [None for i in range(num_series)]
         colors = ['#0000ff', '#ff0000', '#008000', '#ff6600', '#008080', '#333300']  # Default colors
         color = [colors[i] for i in range(min(num_series, len(colors)))] + [None for i in range(max(num_series - len(colors), 0))]
         show = ['true' for i in range(num_series)]
-        return dict(name=name, color=color, show=show, num_series=num_series)
+        return dict(name=name, color=color, show=show, num_series=num_series, slope=slope)
     defaults = get_defaults()
     name = record.series_species or defaults["name"]
     num_series = len(name) or defaults["num_series"]
@@ -135,7 +135,8 @@ def series_options():
     show = record.series_show or defaults["show"]
     #convert to boolean
     show_bool = [s in ['true', 'True', '1'] for s in show]
-    return dict(name=name, color=color, show=show_bool, num_series=num_series)
+    slope = record.series_slope or defaults["slope"]
+    return dict(name=name, color=color, show=show_bool, num_series=num_series, slope=slope)
 
 
 def global_options():

@@ -867,6 +867,40 @@ function init_file(cur_id, name){
 				//Disable button
 				$("#preproc").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				//Substract from segmentation intervals the intervals not to differentiate
+				function rmInInt(sInt, lInt){
+					if (sInt[0]>=lInt[0] && sInt[1]<=lInt[1]) {
+						if (sInt[0]!=lInt[0]) {diffdataT.push([lInt[0], sInt[0]]);};
+						return [sInt[1], lInt[1]];
+					} else {
+						if (lInt[0]!=lInt[1]) {diffdataT.push(lInt);};
+						return [];
+					};
+				}
+				var diffdataT = [];
+				var iD = 0;
+				var resInt = dataT[iD].slice();
+				for (var iN = 0; iN < nocutT.length; iN++) {
+					flag = true;
+					while (flag){
+						resInt = rmInInt(nocutT[iN].slice(), resInt);
+						if (resInt.length == 0) {
+							iD++;
+							resInt = dataT[iD].slice();
+						} else {
+							flag = false;
+						};
+					};
+				};
+				if (nocutT.length!=0) {
+					if (resInt[0]!=resInt[1]) {
+						diffdataT.push(resInt);
+					};
+					iD++;
+				};
+				for (var iD2 = iD; iD2 < dataT.length; iD2++) {
+					diffdataT.push(dataT[iD2].slice());
+				};
 				//Get processing parameters
 				var lochw = parseFloat($("#lochw").attr("value"));
 				var porder = parseFloat($("#order").attr("value"));
@@ -874,9 +908,9 @@ function init_file(cur_id, name){
 				var data2derive=[];
 				var Tsamp=(graph_data[1][0]-graph_data[0][0]);
 				var iDpass=0;
-				for (var iD=0; iD<dataT.length; iD++){
+				for (var iD=0; iD<diffdataT.length; iD++){
 					//prevent small intervals to be passed
-					if (Math.ceil((dataT[iD][1]-dataT[iD][0])/Tsamp)<=(2*lochw+1)){
+					if (Math.ceil((diffdataT[iD][1]-diffdataT[iD][0])/Tsamp)<=(2*lochw+1)){
 						iDpass++;
 						continue;
 					}
@@ -886,7 +920,7 @@ function init_file(cur_id, name){
 						data2derive[iD-iDpass].push([]);
 						data2derive[iD-iDpass][iS-1]=[];
 						for (var iP=0; iP<graph_data.length;iP++){
-							if ((graph_data[iP][0]>=dataT[iD][0])&&(graph_data[iP][0]<=dataT[iD][1])){
+							if ((graph_data[iP][0]>=diffdataT[iD][0])&&(graph_data[iP][0]<=diffdataT[iD][1])){
 								data2derive[iD-iDpass][iS-1].push(graph_data[iP][iS]);
 							}
 						}
@@ -912,15 +946,15 @@ function init_file(cur_id, name){
 						}
 						var Tsamp=(graph_data[1][0]-graph_data[0][0]);
 						var iIpass=0;
-						for (var iI=0; iI<dataT.length; iI++){
+						for (var iI=0; iI<diffdataT.length; iI++){
 							//prevent small intervals to be passed
-							if (Math.ceil((dataT[iI][1]-dataT[iI][0])/Tsamp)<=(2*lochw+1)){
+							if (Math.ceil((diffdataT[iI][1]-diffdataT[iI][0])/Tsamp)<=(2*lochw+1)){
 								iIpass++;
 								continue;
 							}
-							//find index when graph_data[iP][0]==dataT[iI][0]
+							//find index when graph_data[iP][0]==diffdataT[iI][0]
 							for (iP=0; iP<graph_data.length;iP++){
-								if (graph_data[iP][0]==dataT[iI][0]){break;}
+								if (graph_data[iP][0]==diffdataT[iI][0]){break;}
 							}
 							//place values
 							for (iS=0; iS<result[iI-iIpass].length;iS++){
@@ -1055,15 +1089,15 @@ function init_file(cur_id, name){
 							}
 							var Tsamp=(graph_data[1][0]-graph_data[0][0]);
 							var iIpass=0;
-							for (var iI=0; iI<dataT.length; iI++){
+							for (var iI=0; iI<diffdataT.length; iI++){
 								//prevent small intervals to be passed
-								if (Math.ceil((dataT[iI][1]-dataT[iI][0])/Tsamp)<=(2*lochw+1)){
+								if (Math.ceil((diffdataT[iI][1]-diffdataT[iI][0])/Tsamp)<=(2*lochw+1)){
 									iIpass++;
 									continue;
 								}
-								//find index when graph_data[iP][0]==dataT[iI][0]
+								//find index when graph_data[iP][0]==diffdataT[iI][0]
 								for (iP=0; iP<graph_data.length;iP++){
-									if (graph_data[iP][0]==dataT[iI][0]){break;}
+									if (graph_data[iP][0]==diffdataT[iI][0]){break;}
 								}
 								//place values
 								for (iS=0; iS<result[iI-iIpass].length;iS++){

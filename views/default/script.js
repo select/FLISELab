@@ -2143,8 +2143,7 @@ function unifyT() {
 		}
 	}		
 	
-	g.updateOptions({
-		file: graph_data, 
+	g.updateOptions({ 
 		underlayCallback: function(canvas, area, g) {
 			var area = g.layout_.getPlotArea();
 			var altColor = false;

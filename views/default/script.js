@@ -24,6 +24,15 @@ var isSelecting;
 var isDrawing=false;
 var tool;
 
+function aOa_cp_val(aOa){
+	//copy an array of arrays (aOa) by value and return it: correct the fact that the array slice method still clones array of objects by reference
+	var new_aOa = [];
+	for (var i = 0; i < aOa.length; i++) {
+		new_aOa.push(aOa[i].slice());
+	};
+	return new_aOa;
+}
+
 /************ Init **************/
 $('#create_record').show();
 $('.current_record').hide().prev().hide();
@@ -630,8 +639,8 @@ function init_file(cur_id, name){
 				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				// -here: we use the Array.slice() method since otherwise the Array object is passed by reference.
 				cutT = prevcutT.slice();
-				nocutT = prevnocutT.slice();
-				dropT = prevdropT.slice();
+				nocutT = aOa_cp_val(prevnocutT);
+				dropT = aOa_cp_val(prevdropT);
 				eventT = preveventT.slice();
 				unifyT();
 				$("#autoseg").removeAttr("disabled").removeAttr("style");
@@ -673,8 +682,8 @@ function init_file(cur_id, name){
 		$('#revert_tool').click(function(){
 			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 			cutT = prevcutT.slice();
-			nocutT = prevnocutT.slice();
-			dropT = prevdropT.slice();
+			nocutT = aOa_cp_val(prevnocutT);
+			dropT = aOa_cp_val(prevdropT);
 			unifyT();
 			// remove added evenT
 			var flag
@@ -1197,8 +1206,8 @@ function autoseg(data){
 	if (data.length>w){
 		//Backup previous state
 		prevcutT = cutT.slice();
-		prevnocutT = nocutT.slice();
-		prevdropT = dropT.slice();
+		prevnocutT = aOa_cp_val(nocutT);
+		prevdropT = aOa_cp_val(dropT);
 		preveventT = eventT.slice();
 		
 		//Calculate data local variation
@@ -2017,8 +2026,8 @@ function finishSelect() {
 function save2undo(){
 	//Backup previous state
 	prevcutT = cutT.slice();
-	prevnocutT = nocutT.slice();
-	prevdropT = dropT.slice();
+	prevnocutT = aOa_cp_val(nocutT);
+	prevdropT = aOa_cp_val(dropT);
 	preveventT = eventT.slice();
 	$("#revert_tool").removeAttr("disabled").removeAttr("style");
 	$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");

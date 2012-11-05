@@ -3538,7 +3538,7 @@ function change_tool(tool_div) {
 	if (tool == 'cut') {
 		dg_div.style.cursor = 'url(/flise/static/icons/cursor-cut.png) 1 30, auto';
 	} else if (tool == 'nocut') {
-		dg_div.style.cursor = 'url(/flise/static/icons/cursor-nocut.png) 1 30, auto';
+		dg_div.style.cursor = 'url(/flise/static/icons/cursor-nodiff.png) 1 30, auto';
 	} else if (tool == 'drop') {
 		dg_div.style.cursor = 'url(/flise/static/icons/cursor-drop.png) 1 30, auto';
 	} else if (tool == 'event') {

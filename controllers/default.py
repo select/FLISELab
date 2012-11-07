@@ -388,7 +388,7 @@ def subint_process_data():
     from gluon.contrib import simplejson
     data = simplejson.loads(request.vars.data)
     data2diff = []
-    from math import pi
+    from math import pi, ceil
     vsr = ((1 - optical_density * 1.2e7 * dilution_factor * (4 / 3) * pi * ((cell_diameter / 2) ** 3)) / (optical_density * 1.2e7 * dilution_factor * pi * (cell_diameter ** 2)))
     for iS in range(len(data)):
         data2diff.append([10 ** ((x - float(intercept[iS])) / float(slope[iS])) for x in data[iS]])
@@ -399,12 +399,35 @@ def subint_process_data():
     sg_order = record.sg_order
     ts = float(record.sampling_time)
     myinstance = savgol.Savgol(int(sg_win), int(sg_win), int(sg_order), 1)
+    diffT = simplejson.loads(request.vars.interval_diff)
     datadiff = []
     for iS in range(len(data2diff)):
-        datadiff.append([x / ts for x in myinstance.filterTS(data2diff[iS])])
+        if len(diffT) == 0:
+            datadiff.append([None for x in range(len(data2diff[iS]))])
+        else:
+            seriesdiff = []
+            series2diff = []
+            iD = 0
+            flag = True
+            for iP in range(len(data2diff[iS])):
+                if ((intStart + iP * ts) >= diffT[iD][0]) and ((intStart + iP * ts) <= diffT[iD][1]) and (ceil((diffT[iD][1] - diffT[iD][0]) / ts) > (2 * int(sg_win) + 1)):
+                    series2diff.append(data2diff[iS][iP])
+                    flag = True
+                else:
+                    if flag:
+                        flag = False
+                        if len(series2diff) != 0:
+                            seriesdiff.extend(myinstance.filterTS(series2diff))
+                        series2diff = []
+                        if iD < len(diffT) - 1:
+                            iD = iD + 1
+                    seriesdiff.append(None)
+            if flag:
+                seriesdiff.extend(myinstance.filterTS(series2diff))
+            datadiff.append([x / ts if x is not None else None for x in seriesdiff])
     fluxes = []
     for iS in range(len(datadiff)):
-        fluxes.append([-1e6 * vsr * x for x in datadiff[iS]])  # m^3 m^-2 s^-1 mol L^-1 = 10^6 m s^-1 nmol m^-2 and influx is positive
+        fluxes.append([-1e6 * vsr * x if x is not None else None for x in datadiff[iS]])  # m^3 m^-2 s^-1 mol L^-1 = 10^6 m s^-1 nmol m^-2 and influx is positive
     #collect events and solutions and calculate volume sequence
     intEvents = []
     intSolutions = []

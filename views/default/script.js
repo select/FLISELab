@@ -1567,6 +1567,24 @@ function interval2export(pos) {
 								};
 							}
 						}
+						//Split the subinterval into intervals to differentiate
+						var diffT = [];
+						var resInt = [intStart, intEnd];
+						var sInt, lInt;
+						for (var iN = 0; iN < nocutT.length; iN++) {
+							if (nocutT[iN][0]>=intEnd) {break;} 
+							else{
+								sInt = nocutT[iN].slice();
+								lInt = resInt.slice();
+								if (sInt[0]>=lInt[0] && sInt[1]<=lInt[1]) {
+									if (sInt[0]!=lInt[0]) {diffT.push([lInt[0], sInt[0]]);};
+									resInt = [sInt[1], lInt[1]];
+								};
+							};
+						};
+						if (resInt[0]!=resInt[1]) {
+							diffT.push(resInt);
+						};
 						//1 Parameters
 						var int_parameters = [
 							['Name:', $('input[name="sub_name"]').val(), ' ', ' ', ' ', ' ', ' '],
@@ -1588,7 +1606,7 @@ function interval2export(pos) {
 						//3 Processed data
 						$.ajax({
 							url: '{{=URL('subint_process_data.json')}}',
-							data: {flise_file_id:cur_id, interval_time:intStart+':'+intEnd, data:JSON.stringify(raw_series)},
+							data: {flise_file_id:cur_id, interval_time:intStart+':'+intEnd, data:JSON.stringify(raw_series), interval_diff:JSON.stringify(diffT)},
 							traditional: true,
 							async: false,
 							type: 'POST',

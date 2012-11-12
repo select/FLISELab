@@ -1370,8 +1370,21 @@ function autoseg(data){
 			for (var j = 0; j < intDrop.length; j++) {
 				if (intDrop[j][1]<intVar[i][0]) {
 					break;
-				} else if (intDrop[j][1]>intVar[i][0] && intDrop[j][0]<intVar[i][1]){
-					indInt.push(j);
+				} else {
+					if (intDrop[j][1]>intVar[i][0] && intDrop[j][0]<intVar[i][0]){
+						intVar[i][0] = Math.min(intDrop[j][1], intVar[i][1]);
+					}
+					if (intDrop[j][1]>intVar[i][1] && intDrop[j][0]<intVar[i][1]){
+						intVar[i][1] = Math.max(intDrop[j][0], intVar[i][1]);
+					}
+					if (intVar[i][1]==intVar[i][0]){
+						intVar.splice(i,1);
+						i--;
+					}
+					if (intDrop[j][0]>intVar[i][0] && intDrop[j][1]<intVar[i][1]){
+						intVar.splice(i,0, [intDrop[j][1], intVar[i][1]]);
+						intVar[i][1] = intDrop[j][0];
+					}
 				} 
 			}
 		}

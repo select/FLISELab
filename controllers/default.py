@@ -592,7 +592,7 @@ def export_pyMantis():
     fexport.write(getattr(databook, export_format))
     output = StringIO.StringIO()
     archive = zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED)
-    archive.writestr('exp-export_%s.%s' % (request.vars.filename, export_format), fexport.getvalue())
+    archive.writestr('%s.%s' % (request.vars.filename, export_format), fexport.getvalue())
     fexport.close()
     archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].file), arcname="file.txt")
     archive.write(os.path.join(request.folder, 'uploads', db.flise_file[cur_id].rlvfile), arcname="file.rlv")
@@ -605,7 +605,7 @@ def export_pyMantis():
     #return zipfile
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.zip')
-    response.headers['Content-disposition'] = 'attachment; filename=%s-export_flise-%s.zip' % (request.vars.filename, cur_id)
+    response.headers['Content-disposition'] = 'attachment; filename=%s_export-flise-%s.zip' % (request.vars.filename, cur_id)
     return output.getvalue()
 
 

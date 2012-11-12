@@ -1268,7 +1268,7 @@ function autoseg(data){
 				}
 			}
 		}
-		//Find position where all dataLocVar are above their threshold
+		//Find position where all dataLocVar are above their threshold (index) or some are above the threshold (indexU)
 		var index = new Array();
 		var flag = true;
 		for (var i = 0; i < dataLocVar.length; i++) {
@@ -1276,7 +1276,7 @@ function autoseg(data){
 			for (var j = 0; j < dataLocVar[0].length; j++) {
 				if (dataLocVar[i][j]<threshold[j]){
 					flag = false;
-					break
+					break;
 				}
 			}
 			if (flag){
@@ -1326,7 +1326,7 @@ function autoseg(data){
 			//Find all intDrop in contact with this intVar[i]
 			indInt = [];
 			for (var j = 0; j < intDrop.length; j++) {
-				if (intDrop[j][1]>=intVar[i][1] && intDrop[j][2]<=intVar[i][2]){
+				if (intDrop[j][0]>=intVar[i][0] && intDrop[j][1]<=intVar[i][1]){
 					indInt.push(j);
 				} else {
 					if (indInt.length!=0){
@@ -1336,8 +1336,8 @@ function autoseg(data){
 			}
 			//Modify and remove unnecessary elements
 			if (indInt.length>0){
+				intDrop[indInt[0]][0]=intVar[i][0];
 				intDrop[indInt[0]][1]=intVar[i][1];
-				intDrop[indInt[0]][2]=intVar[i][2];
 				if (indInt.length>1){
 					intDrop.splice(indInt[1],indInt.length-1);
 				}
@@ -1362,6 +1362,17 @@ function autoseg(data){
 				intDrop[i-1][1]=intDrop[i][1];
 				intDrop.splice(i,1);
 				i--;
+			}
+		}
+
+		//Find the rest of the intervals where some dataLocVar are above their threshold (nodiff zone)
+		for (var i = 0; i < intVar.length; i++) {
+			for (var j = 0; j < intDrop.length; j++) {
+				if (intDrop[j][1]<intVar[i][0]) {
+					break;
+				} else if (intDrop[j][1]>intVar[i][0] && intDrop[j][0]<intVar[i][1]){
+					indInt.push(j);
+				} 
 			}
 		}
 		
@@ -1458,13 +1469,15 @@ function interval2export(pos) {
 		}
 	}
 	if (flag) return;
+
+	var Tsamp=(graph_data[1][0]-graph_data[0][0]);
 	
 	var strain_ref = $('select[name="select_strain_global"]').val();
 	var comments = $('textarea[name="comments"]').val();
 	var od = $('input[name="od"]').val();
 	var dilutionf = $('input[name="dilutionf"]').val();
 	var celldiameter = $('input[name="celldiameter"]').val();
-	var name = '';
+	var name = $('input[name="created_on"]').val()+'('+graph_time[Math.floor(intStart/Tsamp)]+'-'+graph_time[Math.floor(intEnd/Tsamp)]+')_'+$('select[name="select_strain_global"] :selected').html();
 	var calintercept = [];
 	var calslope = [];
 	$('input[name="calibration_slope"]').each(function(){

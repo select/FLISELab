@@ -643,6 +643,7 @@ def import_file():
                 file_flise = dict((key.replace('flise_file.', ''), value if value != '<NULL>' else None) for (key, value) in file_flise.items())
                 file_flise['series_species'] = [x for x in file_flise['series_species'].split('|')[1:-1]] if file_flise['series_species'] != None else None
                 file_flise['series_show'] = [x for x in file_flise['series_show'].split('|')[1:-1]] if file_flise['series_show'] != None else None
+                file_flise['series_slope'] = [x for x in file_flise['series_slope'].split('|')[1:-1]] if file_flise['series_slope'] != None else None
                 file_flise['series_colors'] = [x for x in file_flise['series_colors'].split('|')[1:-1]] if file_flise['series_colors'] != None else None
                 file_flise['strain_id'] = strain_newindex[file_flise['strain_id']] if file_flise['strain_id'] != None else None
                 file_data = db.flise_file.file.store(zf.open('file.txt'))

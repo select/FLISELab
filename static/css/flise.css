@@ -71,7 +71,7 @@ background: url('../icons/tool-palette.png');
 	height: 33px;
 	display: inline-block;
 }
-#tool_nocut {
+#tool_nodiff {
 	background: url('../icons/tool-palette.png');
 	background-position: -64px 0px;
 	width: 33px;

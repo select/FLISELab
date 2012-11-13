@@ -148,7 +148,7 @@ db.define_table('flise_file',
         Field('sg_overlay', 'boolean', default=False, readable=False, writable=False),
         Field('dropT', 'text', readable=False, writable=False),  # JSON
         Field('cutT', 'text', readable=False, writable=False),  # JSON
-        Field('nocutT', 'text', readable=False, writable=False),  # JSON
+        Field('nodiffT', 'text', readable=False, writable=False),  # JSON
         Field('eventT', 'text', readable=False, writable=False),  # JSON
         )
 db.define_table('subintervals',

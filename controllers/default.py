@@ -53,14 +53,14 @@ def file():
     def on_accept(form):
         from gluon.contrib import simplejson
         global sampling_time_old
-        #update time of cutT, nocutT, dropT and evenT when sampling time is changed + subintervals definition
+        #update time of cutT, nodiffT, dropT and evenT when sampling time is changed + subintervals definition
         sfactor = float(form.vars.sampling_time) / sampling_time_old
         dropT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)] if (db.flise_file[form.vars.id].dropT != None) else []
         db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))
         cutT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].cutT)] if (db.flise_file[form.vars.id].cutT != None) else []
         db.flise_file[form.vars.id].update_record(cutT=simplejson.dumps(cutT))
-        nocutT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].nocutT)] if (db.flise_file[form.vars.id].nocutT != None) else []
-        db.flise_file[form.vars.id].update_record(nocutT=simplejson.dumps(nocutT))
+        nodiffT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].nodiffT)] if (db.flise_file[form.vars.id].nodiffT != None) else []
+        db.flise_file[form.vars.id].update_record(nodiffT=simplejson.dumps(nodiffT))
         eventT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].eventT)] if (db.flise_file[form.vars.id].eventT != None) else []
         db.flise_file[form.vars.id].update_record(eventT=simplejson.dumps(eventT))
         for record in db(db.event.flise_file_id == form.vars.id).select():

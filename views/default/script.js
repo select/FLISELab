@@ -9,13 +9,13 @@ var cur_id;//ID of the Flise-file
 
 //Global variables to save
 var cutT;
-var nocutT;
+var nodiffT;
 var dropT;
 var eventT;
 
 //Global variables not to save
 var prevcutT;
-var prevnocutT;
+var prevnodiffT;
 var prevdropT;
 var preveventT;
 var dataT;
@@ -112,17 +112,17 @@ function init_file(cur_id, name){
 		graph_time = data.timepoint;
 		//Load segmentation variables
 		cutT = undefined; //Array of time point
-		nocutT = undefined; //Array of Array([start,end])
+		nodiffT = undefined; //Array of Array([start,end])
 		dropT = undefined; //Array of Array([start,end])
 		eventT = undefined; //Array or list
 		//Present state
 		get_set_flisefile_option(cur_id, 'cutT');
-		get_set_flisefile_option(cur_id, 'nocutT');
+		get_set_flisefile_option(cur_id, 'nodiffT');
 		get_set_flisefile_option(cur_id, 'dropT');
 		get_set_flisefile_option(cur_id, 'eventT');
 		//Previous state
 		prevcutT = [];
-		prevnocutT = [];
+		prevnodiffT = [];
 		prevdropT = [];
 		preveventT = [];
 		event_del = [];
@@ -639,7 +639,7 @@ function init_file(cur_id, name){
 				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 				// -here: we use the Array.slice() method since otherwise the Array object is passed by reference.
 				cutT = prevcutT.slice();
-				nocutT = aOa_cp_val(prevnocutT);
+				nodiffT = aOa_cp_val(prevnodiffT);
 				dropT = aOa_cp_val(prevdropT);
 				eventT = preveventT.slice();
 				unifyT();
@@ -682,7 +682,7 @@ function init_file(cur_id, name){
 		$('#revert_tool').click(function(){
 			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 			cutT = prevcutT.slice();
-			nocutT = aOa_cp_val(prevnocutT);
+			nodiffT = aOa_cp_val(prevnodiffT);
 			dropT = aOa_cp_val(prevdropT);
 			unifyT();
 			// remove added evenT
@@ -889,10 +889,10 @@ function init_file(cur_id, name){
 				var diffdataT = [];
 				var iD = 0;
 				var resInt = dataT[iD].slice();
-				for (var iN = 0; iN < nocutT.length; iN++) {
+				for (var iN = 0; iN < nodiffT.length; iN++) {
 					flag = true;
 					while (flag){
-						resInt = rmInInt(nocutT[iN].slice(), resInt);
+						resInt = rmInInt(nodiffT[iN].slice(), resInt);
 						if (resInt.length == 0) {
 							iD++;
 							resInt = dataT[iD].slice();
@@ -901,7 +901,7 @@ function init_file(cur_id, name){
 						};
 					};
 				};
-				if (nocutT.length!=0) {
+				if (nodiffT.length!=0) {
 					if (resInt[0]!=resInt[1]) {
 						diffdataT.push(resInt);
 					};
@@ -1206,7 +1206,7 @@ function autoseg(data){
 	if (data.length>w){
 		//Backup previous state
 		prevcutT = cutT.slice();
-		prevnocutT = aOa_cp_val(nocutT);
+		prevnodiffT = aOa_cp_val(nodiffT);
 		prevdropT = aOa_cp_val(dropT);
 		preveventT = eventT.slice();
 		
@@ -1475,24 +1475,24 @@ function autoseg(data){
 			startX = intVar[i][0]*Tstep;
 			endX = intVar[i][1]*Tstep;
 			//If array is empty, initialize
-			if (nocutT.length==0){
-				nocutT.push([startX, endX])
+			if (nodiffT.length==0){
+				nodiffT.push([startX, endX])
 			} else {
-				//Test if [s,e] overlaps with any already existing nocutT interval, in which case it joins them.
+				//Test if [s,e] overlaps with any already existing nodiffT interval, in which case it joins them.
 				insertT = false;
 				flag = true;
-				for (j=0; j<nocutT.length; j++) {
-					if ((endX<=nocutT[j][1])&&(startX>=nocutT[j][0])){
+				for (j=0; j<nodiffT.length; j++) {
+					if ((endX<=nodiffT[j][1])&&(startX>=nodiffT[j][0])){
 						flag = false;
 						break;
 					} else {
-						if ((endX>nocutT[j][0])&&(startX<nocutT[j][0])){
+						if ((endX>nodiffT[j][0])&&(startX<nodiffT[j][0])){
 							insertT = true;
-							nocutT[j][0]=startX;
+							nodiffT[j][0]=startX;
 						}
-						if ((endX>nocutT[j][1])&&(startX<nocutT[j][1])){
+						if ((endX>nodiffT[j][1])&&(startX<nodiffT[j][1])){
 							insertT = true;
-							nocutT[j][1]=endX;
+							nodiffT[j][1]=endX;
 						}
 					}
 				}
@@ -1502,39 +1502,39 @@ function autoseg(data){
 					if (insertT){
 						countHowMany = 0;
 						indexI = 0;
-						for (j=1; j<nocutT.length; j++) {
-							if (nocutT[j-1][1]>=nocutT[j][0]){
+						for (j=1; j<nodiffT.length; j++) {
+							if (nodiffT[j-1][1]>=nodiffT[j][0]){
 								countHowMany++;
 								if (indexI==0){
 									indexI=j;
 								}
-								nocutT[indexI-1][1]=nocutT[j][1];
+								nodiffT[indexI-1][1]=nodiffT[j][1];
 							} else if (indexI!=0) {
 								j=j-countHowMany;
-								nocutT.splice(indexI, countHowMany);
+								nodiffT.splice(indexI, countHowMany);
 								indexI = 0;
 								countHowMany = 0;
 							}
-							if ((indexI!=0)&&(i==nocutT.length-1)) {
-								nocutT.splice(indexI, countHowMany);
+							if ((indexI!=0)&&(i==nodiffT.length-1)) {
+								nodiffT.splice(indexI, countHowMany);
 							}
 						}
 					} else {
 						flag = true;
-						if (endX<nocutT[0][0]){
-							nocutT.splice(0,0,[startX, endX]);
+						if (endX<nodiffT[0][0]){
+							nodiffT.splice(0,0,[startX, endX]);
 							flag = false;
 						} else {
-							for (j=1; j<nocutT.length; j++) {
-								if ((endX<nocutT[j][0])&&(startX>nocutT[j-1][1])){
-									nocutT.splice(j,0,[startX, endX]);
+							for (j=1; j<nodiffT.length; j++) {
+								if ((endX<nodiffT[j][0])&&(startX>nodiffT[j-1][1])){
+									nodiffT.splice(j,0,[startX, endX]);
 									flag = false;
 									break;
 								}
 							}	
 						}
 						if (flag){
-							nocutT.push([startX, endX]);
+							nodiffT.push([startX, endX]);
 						}
 					}
 				}
@@ -1673,10 +1673,10 @@ function interval2export(pos) {
 						var diffT = [];
 						var resInt = [intStart, intEnd];
 						var sInt, lInt;
-						for (var iN = 0; iN < nocutT.length; iN++) {
-							if (nocutT[iN][0]>=intEnd) {break;} 
+						for (var iN = 0; iN < nodiffT.length; iN++) {
+							if (nodiffT[iN][0]>=intEnd) {break;} 
 							else{
-								sInt = nocutT[iN].slice();
+								sInt = nodiffT[iN].slice();
 								lInt = resInt.slice();
 								if (sInt[0]>=lInt[0] && sInt[1]<=lInt[1]) {
 									if (sInt[0]!=lInt[0]) {diffT.push([lInt[0], sInt[0]]);};
@@ -2066,7 +2066,7 @@ function drawSelectRect(event, g, context) {
 										g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
 	}
 	
-	if (tool == 'nocut'){
+	if (tool == 'nodiff'){
 		ctx.fillStyle = "rgba(128,255,128,0.33)";
 	} else if (tool == 'cancel') {
 		ctx.fillStyle = "rgba(255,255,128,0.33)";
@@ -2146,7 +2146,7 @@ function finishSelect() {
 function save2undo(){
 	//Backup previous state
 	prevcutT = cutT.slice();
-	prevnocutT = aOa_cp_val(nocutT);
+	prevnodiffT = aOa_cp_val(nodiffT);
 	prevdropT = aOa_cp_val(dropT);
 	preveventT = eventT.slice();
 	$("#revert_tool").removeAttr("disabled").removeAttr("style");
@@ -2174,7 +2174,7 @@ function get_set_flisefile_option(record_id, var_name){
 }
 
 function unifyT() {
-	//Drop tool defines intervals to ignore (data to trash), therefore it has priority (one cannot insert a cut point or a nocut interval in a drop zone)
+	//Drop tool defines intervals to ignore (data to trash), therefore it has priority (one cannot insert a cut point or a nodiff interval in a drop zone)
 	for (var iD=0; iD<dropT.length; iD++) {
 		for (var iC=0; iC<cutT.length; iC++) {
 			if (cutT[iC]>dropT[iD][1]){break}
@@ -2183,29 +2183,29 @@ function unifyT() {
 				iC--;
 			}
 		}
-		for (var iN=0; iN<nocutT.length; iN++) {
-			if (nocutT[iN][0]>dropT[iD][1]){break}
-			if ((nocutT[iN][0]>=dropT[iD][0])&&(nocutT[iN][1]<=dropT[iD][1])){
-				nocutT.splice(iN,1);
+		for (var iN=0; iN<nodiffT.length; iN++) {
+			if (nodiffT[iN][0]>dropT[iD][1]){break}
+			if ((nodiffT[iN][0]>=dropT[iD][0])&&(nodiffT[iN][1]<=dropT[iD][1])){
+				nodiffT.splice(iN,1);
 				iN--;
-			} else if ((nocutT[iN][0]<dropT[iD][0])&&(nocutT[iN][1]>dropT[iD][0])){
-				if(nocutT[iN][1]>dropT[iD][1]){
-					nocutT.splice(iN, 1, [nocutT[iN][0], dropT[iD][0]], [dropT[iD][1], nocutT[iN][1]]);
+			} else if ((nodiffT[iN][0]<dropT[iD][0])&&(nodiffT[iN][1]>dropT[iD][0])){
+				if(nodiffT[iN][1]>dropT[iD][1]){
+					nodiffT.splice(iN, 1, [nodiffT[iN][0], dropT[iD][0]], [dropT[iD][1], nodiffT[iN][1]]);
 				} else {
-					nocutT[iN][1]=dropT[iD][0];
+					nodiffT[iN][1]=dropT[iD][0];
 				}
-			} else if ((nocutT[iN][0]<dropT[iD][1])&&(nocutT[iN][1]>dropT[iD][1])){
-				//here we should have (nocutT[iN][0]>dropT[iD][0]) only
-				nocutT[iN][0]=dropT[iD][1];
+			} else if ((nodiffT[iN][0]<dropT[iD][1])&&(nodiffT[iN][1]>dropT[iD][1])){
+				//here we should have (nodiffT[iN][0]>dropT[iD][0]) only
+				nodiffT[iN][0]=dropT[iD][1];
 			}
 		}
 	}
-	//Cut has priority over nocut interval.
+	//Cut has priority over nodiff interval.
 	for (iC=0; iC<cutT.length; iC++) {
-		for (iN=0; iN<nocutT.length; iN++) {
-			if ((nocutT[iN][0]<cutT[iC])&&(nocutT[iN][1]>cutT[iC])){
-				nocutT.splice(iN, 0, [nocutT[iN][0], cutT[iC]]);
-				nocutT[iN+1][0]=cutT[iC];
+		for (iN=0; iN<nodiffT.length; iN++) {
+			if ((nodiffT[iN][0]<cutT[iC])&&(nodiffT[iN][1]>cutT[iC])){
+				nodiffT.splice(iN, 0, [nodiffT[iN][0], cutT[iC]]);
+				nodiffT[iN+1][0]=cutT[iC];
 			}
 		}
 	}
@@ -2281,9 +2281,9 @@ function unifyT() {
 			for (iD=0; iD<dropT.length; iD++) {
 				drawInterval (g, canvas, dropT[iD][0], dropT[iD][1], [255,128,128]);
 			}
-			//Draw nocut intervals
-			for (iN=0; iN<nocutT.length; iN++) {
-				drawInterval (g, canvas, nocutT[iN][0], nocutT[iN][1], [128,255,128]);
+			//Draw nodiff intervals
+			for (iN=0; iN<nodiffT.length; iN++) {
+				drawInterval (g, canvas, nodiffT[iN][0], nodiffT[iN][1], [128,255,128]);
 			}
 			//Draw cut lines
 			for (iC=0; iC<cutT.length; iC++) {
@@ -2303,13 +2303,13 @@ function unifyT() {
 			}
 		}
 	});
-	//save dropT, cutT, nocutT to db.flise_file
+	//save dropT, cutT, nodiffT to db.flise_file
 	get_set_flisefile_option(cur_id, 'cutT');
-	get_set_flisefile_option(cur_id, 'nocutT');
+	get_set_flisefile_option(cur_id, 'nodiffT');
 	get_set_flisefile_option(cur_id, 'dropT');
 }
 
-function add2nocut(startX, endX) {
+function add2nodiff(startX, endX) {
 	save2undo();
 	//Check order
 	if (endX<startX){
@@ -2320,22 +2320,22 @@ function add2nocut(startX, endX) {
 		return;
 	}
 	//If array is empty, initialize
-	if (nocutT.length==0){
-		nocutT.push([startX, endX]);
+	if (nodiffT.length==0){
+		nodiffT.push([startX, endX]);
 	} else {
-		//Test if [s,e] overlaps with any already existing nocutT interval, in which case it joins them.
+		//Test if [s,e] overlaps with any already existing nodiffT interval, in which case it joins them.
 		var insertT = false;
-		for (i=0; i<nocutT.length; i++) {
-			if ((endX<=nocutT[i][1])&&(startX>=nocutT[i][0])){
+		for (i=0; i<nodiffT.length; i++) {
+			if ((endX<=nodiffT[i][1])&&(startX>=nodiffT[i][0])){
 				return;
 			} else {
-				if ((endX>nocutT[i][0])&&(startX<nocutT[i][0])){
+				if ((endX>nodiffT[i][0])&&(startX<nodiffT[i][0])){
 					insertT = true;
-					nocutT[i][0]=startX;
+					nodiffT[i][0]=startX;
 				}
-				if ((endX>nocutT[i][1])&&(startX<nocutT[i][1])){
+				if ((endX>nodiffT[i][1])&&(startX<nodiffT[i][1])){
 					insertT = true;
-					nocutT[i][1]=endX;
+					nodiffT[i][1]=endX;
 				}
 			}
 		}
@@ -2344,39 +2344,39 @@ function add2nocut(startX, endX) {
 		if (insertT){
 			var countHowMany = 0;
 			var index = 0;
-			for (i=1; i<nocutT.length; i++) {
-				if (nocutT[i-1][1]>=nocutT[i][0]){
+			for (i=1; i<nodiffT.length; i++) {
+				if (nodiffT[i-1][1]>=nodiffT[i][0]){
 					countHowMany++;
 					if (index==0){
 						index=i;
 					}
-					nocutT[index-1][1]=nocutT[i][1];
+					nodiffT[index-1][1]=nodiffT[i][1];
 				} else if (index!=0) {
 					i=i-countHowMany;
-					nocutT.splice(index, countHowMany);
+					nodiffT.splice(index, countHowMany);
 					index = 0;
 					countHowMany = 0;
 				}
-				if ((index!=0)&&(i==nocutT.length-1)){
-					nocutT.splice(index, countHowMany);
+				if ((index!=0)&&(i==nodiffT.length-1)){
+					nodiffT.splice(index, countHowMany);
 				}
 			}
 		} else {
 			var flag = true;
-			if (endX<nocutT[0][0]){
-				nocutT.splice(0,0,[startX, endX]);
+			if (endX<nodiffT[0][0]){
+				nodiffT.splice(0,0,[startX, endX]);
 				flag = false;
 			} else {
-				for (i=1; i<nocutT.length; i++) {
-					if ((endX<nocutT[i][0])&&(startX>nocutT[i-1][1])){
-						nocutT.splice(i,0,[startX, endX]);
+				for (i=1; i<nodiffT.length; i++) {
+					if ((endX<nodiffT[i][0])&&(startX>nodiffT[i-1][1])){
+						nodiffT.splice(i,0,[startX, endX]);
 						flag = false;
 						break
 					}
 				}	
 			}
 			if (flag){
-				nocutT.push([startX, endX]);
+				nodiffT.push([startX, endX]);
 			}
 		}
 	}
@@ -2480,9 +2480,9 @@ function erase(startX, endX) {
 			iC--;
 		}
 	}
-	for (var iN=0; iN<nocutT.length; iN++) {
-		if ((startX<=nocutT[iN][0])&&(endX>=nocutT[iN][1])){
-			nocutT.splice(iN,1);
+	for (var iN=0; iN<nodiffT.length; iN++) {
+		if ((startX<=nodiffT[iN][0])&&(endX>=nodiffT[iN][1])){
+			nodiffT.splice(iN,1);
 			iN--;
 		}
 	}
@@ -3528,7 +3528,7 @@ function createGraph(graph_data, labels){
 								Dygraph.defaultInteractionModel.mousedown(event, g, context);
 							} else {
 								context.initializeMouseDown(event, g, context);
-								if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
+								if (tool == 'nodiff' || tool == 'drop'  || tool == 'cancel') {
 									isSelecting = true; 
 								} else {
 									if (tool =='cut'){
@@ -3568,10 +3568,10 @@ function createGraph(graph_data, labels){
 							};
 							if (event.altKey || event.shiftKey) {
 								Dygraph.defaultInteractionModel.mousemove(event, g, context);
-							} else if (tool == 'nocut' || tool == 'drop'  || tool == 'cancel') {
-								if (tool == 'nocut'){
+							} else if (tool == 'nodiff' || tool == 'drop'  || tool == 'cancel') {
+								if (tool == 'nodiff'){
 									if (context.prevEndX != null){
-										add2nocut(getX(context.dragStartX,g),getX(context.dragEndX,g));
+										add2nodiff(getX(context.dragStartX,g),getX(context.dragEndX,g));
 									}
 								} else if (tool == 'drop'){
 									if (context.prevEndX != null){
@@ -3652,7 +3652,7 @@ window.onmouseup = finishSelect;
 /************* SELECTION TOOLS *********************/
 
 function change_tool(tool_div) {
-	var ids = ['tool_zoom', 'tool_cut', 'tool_nocut', 'tool_drop', 'tool_event', 'tool_cancel', 'tool_export'];
+	var ids = ['tool_zoom', 'tool_cut', 'tool_nodiff', 'tool_drop', 'tool_event', 'tool_cancel', 'tool_export'];
 	for (var i = 0; i < ids.length; i++) {
 		var div = document.getElementById(ids[i]);
 		if (div == tool_div) {
@@ -3666,7 +3666,7 @@ function change_tool(tool_div) {
 	var dg_div = document.getElementById("graphdiv");
 	if (tool == 'cut') {
 		dg_div.style.cursor = 'url(/flise/static/icons/cursor-cut.png) 1 30, auto';
-	} else if (tool == 'nocut') {
+	} else if (tool == 'nodiff') {
 		dg_div.style.cursor = 'url(/flise/static/icons/cursor-nodiff.png) 1 30, auto';
 	} else if (tool == 'drop') {
 		dg_div.style.cursor = 'url(/flise/static/icons/cursor-drop.png) 1 30, auto';

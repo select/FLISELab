@@ -1366,24 +1366,31 @@ function autoseg(data){
 		}
 
 		//Find the rest of the intervals where some dataLocVar are above their threshold (nodiff zone)
+		var j0 = 0;
 		for (var i = 0; i < intVar.length; i++) {
-			for (var j = 0; j < intDrop.length; j++) {
+			for (var j = j0; j < intDrop.length; j++) {
 				if (intDrop[j][1]<intVar[i][0]) {
+					j0 = j; //this trick should increase the speed since intDrop and intVar are in "increasing" order.
+				}
+				if (intDrop[j][0]>=intVar[i][1]) {
 					break;
 				} else {
-					if (intDrop[j][1]>intVar[i][0] && intDrop[j][0]<intVar[i][0]){
+					if (intDrop[j][1] > intVar[i][0] && intDrop[j][0] < intVar[i][0]){
 						intVar[i][0] = Math.min(intDrop[j][1], intVar[i][1]);
 					}
-					if (intDrop[j][1]>intVar[i][1] && intDrop[j][0]<intVar[i][1]){
-						intVar[i][1] = Math.max(intDrop[j][0], intVar[i][1]);
+					if (intDrop[j][1]>intVar[i][1] && intDrop[j][0] < intVar[i][1]){
+						intVar[i][1] = Math.max(intDrop[j][0], intVar[i][0]);
 					}
-					if (intVar[i][1]==intVar[i][0]){
+					if (intDrop[j][0] >= intVar[i][0] && intDrop[j][1] <= intVar[i][1]){
+						if (intDrop[j][1] != intVar[i][1]) {
+							intVar.splice(i+1, 0, [intDrop[j][1], intVar[i][1]]);
+						} 
+						intVar[i][1] = intDrop[j][0];
+					}
+					if (intVar[i][1] == intVar[i][0]){
 						intVar.splice(i,1);
 						i--;
-					}
-					if (intDrop[j][0]>intVar[i][0] && intDrop[j][1]<intVar[i][1]){
-						intVar.splice(i,0, [intDrop[j][1], intVar[i][1]]);
-						intVar[i][1] = intDrop[j][0];
+						break;
 					}
 				} 
 			}
@@ -1459,6 +1466,75 @@ function autoseg(data){
 						}
 						if (flag){
 							dropT.push([startX, endX]);
+						}
+					}
+				}
+			}
+		}
+		for (var i = 0; i < intVar.length; i++) {
+			startX = intVar[i][0]*Tstep;
+			endX = intVar[i][1]*Tstep;
+			//If array is empty, initialize
+			if (nocutT.length==0){
+				nocutT.push([startX, endX])
+			} else {
+				//Test if [s,e] overlaps with any already existing nocutT interval, in which case it joins them.
+				insertT = false;
+				flag = true;
+				for (j=0; j<nocutT.length; j++) {
+					if ((endX<=nocutT[j][1])&&(startX>=nocutT[j][0])){
+						flag = false;
+						break;
+					} else {
+						if ((endX>nocutT[j][0])&&(startX<nocutT[j][0])){
+							insertT = true;
+							nocutT[j][0]=startX;
+						}
+						if ((endX>nocutT[j][1])&&(startX<nocutT[j][1])){
+							insertT = true;
+							nocutT[j][1]=endX;
+						}
+					}
+				}
+				//if the interval overlaps with several existing intervals, then the previous joining makes them overlap, thus we have to clean
+				//otherwise, add the new segment at correct position so that it is sorted in increasing order.
+				if (flag){
+					if (insertT){
+						countHowMany = 0;
+						indexI = 0;
+						for (j=1; j<nocutT.length; j++) {
+							if (nocutT[j-1][1]>=nocutT[j][0]){
+								countHowMany++;
+								if (indexI==0){
+									indexI=j;
+								}
+								nocutT[indexI-1][1]=nocutT[j][1];
+							} else if (indexI!=0) {
+								j=j-countHowMany;
+								nocutT.splice(indexI, countHowMany);
+								indexI = 0;
+								countHowMany = 0;
+							}
+							if ((indexI!=0)&&(i==nocutT.length-1)) {
+								nocutT.splice(indexI, countHowMany);
+							}
+						}
+					} else {
+						flag = true;
+						if (endX<nocutT[0][0]){
+							nocutT.splice(0,0,[startX, endX]);
+							flag = false;
+						} else {
+							for (j=1; j<nocutT.length; j++) {
+								if ((endX<nocutT[j][0])&&(startX>nocutT[j-1][1])){
+									nocutT.splice(j,0,[startX, endX]);
+									flag = false;
+									break;
+								}
+							}	
+						}
+						if (flag){
+							nocutT.push([startX, endX]);
 						}
 					}
 				}

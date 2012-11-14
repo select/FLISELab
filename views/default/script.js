@@ -1395,6 +1395,36 @@ function autoseg(data){
 				} 
 			}
 		}
+		//Cleaning up by removing intervals that are too small and shrinking the rest to take into account the windowing of size w
+		var intVar0, intVar1;
+		var flag0, flag1;
+		j0 = 0;
+		for (var i = 0; i < intVar.length; i++) {
+			intVar0 = intVar[i][0];
+			intVar1 = intVar[i][1];
+			flag0 = true;
+			flag1 = true;
+			//Find if there is contact with intDropT
+			for (var j = j0; j < intDrop.length; j++) {
+				if (intDrop[j][1]<intVar0) {
+					j0 = j; //this trick should increase the speed since intDrop and intVar are in "increasing" order.
+				}
+				if (intVar0 == intDrop[j][1]) {flag0 = false;};
+				if (intVar1 == intDrop[j][0]) {flag1 = false;};
+				if (intDrop[j][0]>intVar1) {
+					break;
+				}
+			}
+			if (flag0) {intVar0 = intVar0+step;};
+			if (flag1) {intVar1 = intVar1-step;};
+			if (intVar1 > intVar0){
+				intVar[i][1] = intVar1;
+				intVar[i][0] = intVar0;
+			} else {
+				intVar.splice(i,1);
+				i--;
+			}
+		}
 		
 		//Passing them to graph and global variables
 		var Tstep = data[1][0]-data[0][0];

@@ -398,15 +398,18 @@ def subint_process_data():
     sg_win = record.sg_win
     sg_order = record.sg_order
     ts = float(record.sampling_time)
-    myinstance = savgol.Savgol(int(sg_win), int(sg_win), int(sg_order), 1)
+    SG0 = savgol.Savgol(int(sg_win), int(sg_win), int(sg_order), 0)
+    SG1 = savgol.Savgol(int(sg_win), int(sg_win), int(sg_order), 1)
     diffT = simplejson.loads(request.vars.interval_diff)
     datadiff = []
+    datasmooth = []
     for iS in range(len(data2diff)):
         if len(diffT) == 0:
             datadiff.append([None for x in range(len(data2diff[iS]))])
         else:
             seriesdiff = []
             series2diff = []
+            seriessmooth = []
             iD = 0
             flag = True
             for iP in range(len(data2diff[iS])):
@@ -417,14 +420,18 @@ def subint_process_data():
                     if flag:
                         flag = False
                         if len(series2diff) != 0:
-                            seriesdiff.extend(myinstance.filterTS(series2diff))
+                            seriesdiff.extend(SG1.filterTS(series2diff))
+                            seriessmooth.extend(SG0.filterTS(series2diff))
                         series2diff = []
                         if iD < len(diffT) - 1:
                             iD = iD + 1
                     seriesdiff.append(None)
+                    seriessmooth.append(None)
             if flag:
-                seriesdiff.extend(myinstance.filterTS(series2diff))
+                seriesdiff.extend(SG1.filterTS(series2diff))
+                seriessmooth.extend(SG0.filterTS(series2diff))
             datadiff.append([x / ts if x is not None else None for x in seriesdiff])
+            datasmooth.append([x if x is not None else None for x in seriessmooth])
     fluxes = []
     for iS in range(len(datadiff)):
         fluxes.append([-1e6 * vsr * x if x is not None else None for x in datadiff[iS]])  # m^3 m^-2 s^-1 mol L^-1 = 10^6 m s^-1 nmol m^-2 and influx is positive
@@ -493,7 +500,7 @@ def subint_process_data():
                 t = t + ts
             volume.append(volume_step[volume_index])
             ncell.append(volume_step_cell[volume_index] * optical_density * 1.2e7 * dilution_factor)
-    return dict(concentrations=data2diff, concentrationsDiff=datadiff, fluxes=fluxes, volume=volume, ncell=ncell, surf2vol_ratio=vsr, intEvents=intEvents, intSolutions=intSolutions)
+    return dict(concentrations=data2diff, concentrationsSmooth=datasmooth, concentrationsDiff=datadiff, fluxes=fluxes, volume=volume, ncell=ncell, surf2vol_ratio=vsr, intEvents=intEvents, intSolutions=intSolutions)
 
 
 def export_spreadsheet():

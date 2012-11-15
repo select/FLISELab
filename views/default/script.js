@@ -1744,6 +1744,7 @@ function interval2export(pos) {
 							type: 'POST',
 							success: function(data){
 								var concentrations = data.concentrations;
+								var concentrationsSmooth = data.concentrationsSmooth;
 								var concentrationsDiff = data.concentrationsDiff;
 								var fluxes = data.fluxes;
 								var volume = data.volume;
@@ -1760,6 +1761,9 @@ function interval2export(pos) {
 								for (var iS = 0; iS < concentrations.length; iS++) {
 									header_result.push('['+graph_labels[iS+1]+']cuv (mol/L)');
 								};
+								for (var iS = 0; iS < concentrationsSmooth.length; iS++) {
+									header_result.push('['+graph_labels[iS+1]+']cuv_smoothed (mol/L)');
+								};
 								for (var iS = 0; iS < concentrationsDiff.length; iS++) {
 									header_result.push('d/dt['+graph_labels[iS+1]+']cuv (mol/L/s)');
 								};
@@ -1772,6 +1776,9 @@ function interval2export(pos) {
 									result.push([raw_time_ref[iT], raw_time[iT]]);
 									for (var iS = 0; iS < concentrations.length; iS++) {
 										result[iT].push(concentrations[iS][iT]);
+									};
+									for (var iS = 0; iS < concentrationsSmooth.length; iS++) {
+										result[iT].push(concentrationsSmooth[iS][iT]);
 									};
 									for (var iS = 0; iS < concentrationsDiff.length; iS++) {
 										result[iT].push(concentrationsDiff[iS][iT]);

@@ -995,7 +995,7 @@ function init_file(cur_id, name){
 								dateWindow: g.xAxisRange(),
 								width: window.innerWidth-510,
 								height: Math.floor((window.innerHeight-90)/2),
-								strokeWidth: 0.5,
+								strokeWidth: 1.2,
 								gridLineColor: 'rgb(196, 196, 196)',
 								logscale : false,
 								drawCallback: function(me, is_initial){
@@ -3650,7 +3650,7 @@ function createGraph(graph_data, labels){
 						Dygraph.cancelEvent(event);
 					}
 				},
-				strokeWidth: 0.5,
+				strokeWidth: 1.2,
 				gridLineColor: 'rgb(196, 196, 196)',
 				logscale : false,
 				axes:{

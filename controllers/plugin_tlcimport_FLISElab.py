@@ -1,15 +1,14 @@
 def index():
     form = SQLFORM.factory(
         Field('file', 'upload', requires=IS_NOT_EMPTY(), uploadfield=False),
-        Field('created_by', db.auth_user,
-            requires=IS_IN_DB(db, '%s.id' % auth.settings.table_user._tablename, '%(first_name)s %(last_name)s', zero = None),
-            default=auth.user.id
-            ),
         Field('sop', db.tlc_mat_sop,
             label='SOP',
             requires=IS_IN_DB(db, 'tlc_mat_sop.id', '%(name)s (%(id)s)', zero=None)
             ),
-
+        Field('created_by', db.auth_user,
+            requires=IS_IN_DB(db, '%s.id' % auth.settings.table_user._tablename, '%(first_name)s %(last_name)s', zero = None),
+            default=auth.user.id
+            ),
     )
     if form.accepts(request.vars, session):
         flise_file_zip = request.vars.file.file

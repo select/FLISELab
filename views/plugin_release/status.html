@@ -15,9 +15,8 @@
     <br />2. Increase version number:
     {{=LOAD('plugin_release', 'edit_version', ajax=True)}}
     <br />3. Create distributions:
-    <div id="show"></div>
     {{=TABLE([TR(TD(type),TD(TAG['button']('create', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'full_release', vars=dict(type = type))), _class="button"))) for type in 'win src osx'.split()], _id="create_release_table")}}
     <br />
     {{=TAG['button']('create w2p package', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'core_release')), _class="button")}}
-    
+    <div id="show"></div>
 {{pass}}

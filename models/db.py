@@ -179,30 +179,6 @@ db.define_table('event',
         Field('volume', 'double'),
         Field('comment', 'text', readable=False, writable=False),
         )
-db.define_table('flise_lab',
-        Field('name', requires=IS_NOT_EMPTY()),
-        Field('processed_data', 'upload', autodelete=True, requires=IS_NOT_EMPTY()),
-        Field('raw_data', 'upload', autodelete=True, requires=IS_NOT_EMPTY(), label='RLV file'),
-        Field('flise_lab_file', 'upload', autodelete=True, requires=IS_NOT_EMPTY()),
-        #Field('sop', db.tlc_mat_sop, label = 'SOP', requires = IS_IN_DB(db, 'tlc_mat_sop.id', '%(name)s (%(id)s)', zero = None)),
-        Field('created_by', db.auth_user, requires=IS_IN_DB(db, '%s.id' % auth.settings.table_user._tablename, '%(first_name)s %(last_name)s', zero=None)),
-        Field('edited_by',db.auth_user,
-            label = 'Last Edit By',
-            writable=False,
-            requires = IS_IN_DB(db, '%s.id' % auth.settings.table_user._tablename, '%(first_name)s %(last_name)s')
-            ),
-        Field("created_on","datetime",
-            label = 'Last Edit Time',
-            default = request.now,
-            writable = False,
-            ),
-        Field("active", 'boolean',
-            default = True,
-            readable = False,
-            writable = False,
-            ),
-        format = '%(name)s', 
-        )
 
 JS = lambda x: SCRIPT(x, _type="text/javascript")
 

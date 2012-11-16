@@ -10,13 +10,14 @@
     <br />
 {{else:}}
     <h2>Create Releases</h2>
+    <br />1. Get the last common version:  <br />
+    {{=TAG['button']('SVN Update', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'svn_update')), _class="button")}}
+    <br />2. Increase version number:
+    {{=LOAD('plugin_release', 'edit_version', ajax=True)}}
+    <br />3. Create distributions:
     <div id="show"></div>
     {{=TABLE([TR(TD(type),TD(TAG['button']('create', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'full_release', vars=dict(type = type))), _class="button"))) for type in 'win src osx'.split()], _id="create_release_table")}}
     <br />
     {{=TAG['button']('create w2p package', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'core_release')), _class="button")}}
-    <br />
-    <br />
-    {{=LOAD('plugin_release', 'edit_version', ajax=True)}}
-    <br />
-    {{=TAG['button']('SVN Update', _onclick=XML("web2py_component('%s','show')"%URL(request.application, 'plugin_release', 'svn_update')), _class="button")}}
+    
 {{pass}}

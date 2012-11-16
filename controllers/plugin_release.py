@@ -525,3 +525,55 @@ def core_release():
     os.unlink(tarname)
     download_location = URL(request.application, 'static', 'web2py.app.%s.w2p'%APPLICATION_NAME)
     return TAG['']('Success, release can be downloaded from ', A(download_location, _href=download_location))
+
+@auth.requires_membership('admin')
+def all_release():
+    '''
+    create web2py .w2p package without the contents of e.g. the database folder
+    create a full release package for linux, windows and mac and put it in the configured location
+    '''
+    #-------------------------------------------
+    if not os.path.exists(RELEASE_FOLDER):
+        os.mkdir(RELEASE_FOLDER)
+    #--------------------W2P-----------------------
+    tarname = os.path.join(RELEASE_FOLDER,APPLICATION_NAME + '.tar')
+    tar = tarfile.TarFile(tarname, 'w')
+    for rdir in 'controllers cron languages models modules static views'.split():
+        compress(os.path.join(request.folder,rdir), tar, request.folder, 'tar')
+        #tar.add(os.path.join(request.folder, rdir), rdir, exclude = glob_match)
+    for rdir in 'databases cache'.split():
+        tar.add(os.path.join(request.folder, rdir), rdir, False)
+    for rfile in 'VERSION __init__.py ABOUT LICENSE'.split():
+        tar.add(os.path.join(request.folder, rfile), rfile)
+    tar.close()
+
+    w2pfp = gzopen(os.path.join(request.folder, 'static', 'web2py.app.%s.w2p'%APPLICATION_NAME), 'wb')
+    tarfp = open(tarname, 'rb')
+    w2pfp.write(tarfp.read())
+    w2pfp.close()
+    tarfp.close()
+    os.unlink(tarname)
+    #--------------------SRC WIN OSX----------------------
+    for release_type in 'win src osx'.split():
+        sub_release_folder = os.path.join(RELEASE_FOLDER, release_type)
+        release_web2py_base = os.path.join(sub_release_folder, 'web2py')
+        if release_type == 'osx':
+            release_web2py_base = os.path.join(sub_release_folder, 'web2py', 'web2py.app', 'Contents', 'Resources')
+        result = True
+        if not (os.path.exists(sub_release_folder) and os.path.exists(os.path.join( release_web2py_base, 'VERSION')) ):
+            result = create(sub_release_folder, release_type, release_web2py_base, True)
+        else:
+            current_web2py_version = open(os.path.join( release_web2py_base, 'VERSION')).read()
+            new_web2py_version, web2py_version_number = check_web2py_version(current_web2py_version, WEB2PY_VERSION_URL)
+            if new_web2py_version:
+                result = create(sub_release_folder, release_type, release_web2py_base, True)
+        if not os.path.exists(os.path.join(request.folder, 'static','%s_%s.zip'%(APPLICATION_NAME, release_type))) or not os.path.exists(os.path.join(release_web2py_base, 'applications', 'init', 'VERSION')):
+            result = create(sub_release_folder, release_type, release_web2py_base, False)
+        else:
+            release_version = open(os.path.join(release_web2py_base, 'applications', 'init', 'VERSION'),'r').read()
+            current_version = open(os.path.join(request.folder, 'VERSION'), 'r').read()
+            if release_version<current_version:
+                result = create(sub_release_folder, release_type, release_web2py_base, False)
+        if not result == True:
+            return result
+    return TAG['']('Success, release can be downloaded...')

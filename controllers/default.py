@@ -232,6 +232,9 @@ def store_option():
     var_name = request.vars.var_name
     if request.vars.val:
         val = request.vars.val
+        if 'series_' in var_name:
+            if type(val)==str:
+                val = [val]
         db.flise_file[int(record_id)].update_record(**{var_name: val})
     if request.extension == 'json':
         from gluon.contrib import simplejson
@@ -255,6 +258,9 @@ def store_subint_option():
     if request.vars.var_name:
         var_name = request.vars.var_name
         val = request.vars.val
+        if var_name in ['slope', 'intercept']:
+            if type(val)==str:
+                val = [val]
         if record:
             record.update_record(**{var_name: val})
         else:

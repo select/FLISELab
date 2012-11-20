@@ -130,7 +130,7 @@ db.define_table('flise_file',
         Field('sampling_time', 'double', default=0.5, requires=IS_NOT_EMPTY(), label='Sampling Time (s)'),
         Field('created_on', 'date', default=request.now),
         #Field('created_by', db.auth_user),
-        Field('series_species', 'list:string', readable=False, writable=False),
+        Field('series_species', 'list:string', readable=False, writable=False), # JSON list of strings
         Field('series_colors', 'list:string', readable=False, writable=False),
         Field('series_show', 'list:string', readable=False, writable=False),
         Field('series_slope', 'list:string', readable=False, writable=False),  # JSON list of doubles

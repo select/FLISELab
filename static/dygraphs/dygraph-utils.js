@@ -100,7 +100,12 @@ Dygraph.getContext = function(canvas) {
  */
 Dygraph.addEvent = function addEvent(elem, type, fn) {
   if (elem.addEventListener) {
-    elem.addEventListener(type, fn, false);
+    if (type=='mousewheel') {
+      var ntype = (/Firefox/i.test(navigator.userAgent))? "DOMMouseScroll" : "mousewheel"; //FF doesn't recognize mousewheel as of FF3.x
+      elem.addEventListener(ntype, fn, false);
+    } else{
+      elem.addEventListener(type, fn, false);
+    };
   } else {
     elem[type+fn] = function(){fn(window.event);};
     elem.attachEvent('on'+type, elem[type+fn]);

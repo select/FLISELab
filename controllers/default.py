@@ -55,24 +55,25 @@ def file():
         global sampling_time_old
         #update time of cutT, nodiffT, dropT and evenT when sampling time is changed + subintervals definition
         sfactor = float(form.vars.sampling_time) / sampling_time_old
-        dropT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)] if (db.flise_file[form.vars.id].dropT != None) else []
-        db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))
-        cutT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].cutT)] if (db.flise_file[form.vars.id].cutT != None) else []
-        db.flise_file[form.vars.id].update_record(cutT=simplejson.dumps(cutT))
-        nodiffT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].nodiffT)] if (db.flise_file[form.vars.id].nodiffT != None) else []
-        db.flise_file[form.vars.id].update_record(nodiffT=simplejson.dumps(nodiffT))
-        eventT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].eventT)] if (db.flise_file[form.vars.id].eventT != None) else []
-        db.flise_file[form.vars.id].update_record(eventT=simplejson.dumps(eventT))
-        for record in db(db.event.flise_file_id == form.vars.id).select():
-            time = record.time * sfactor
-            record.update_record(time=time)
-        for record in db(db.subintervals.flise_file_id == form.vars.id).select():
-            extract_time = record.extract_time
-            str_time = extract_time.split(':')
-            intStart = float(str_time[0]) * sfactor
-            intEnd = float(str_time[1]) * sfactor
-            extract_time = '%g:%g' % (intStart, intEnd)
-            record.update_record(extract_time=extract_time)
+        if sfactor != 1:
+            dropT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)] if (db.flise_file[form.vars.id].dropT != None) else []
+            db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))
+            cutT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].cutT)] if (db.flise_file[form.vars.id].cutT != None) else []
+            db.flise_file[form.vars.id].update_record(cutT=simplejson.dumps(cutT))
+            nodiffT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].nodiffT)] if (db.flise_file[form.vars.id].nodiffT != None) else []
+            db.flise_file[form.vars.id].update_record(nodiffT=simplejson.dumps(nodiffT))
+            eventT = [x * sfactor for x in simplejson.loads(db.flise_file[form.vars.id].eventT)] if (db.flise_file[form.vars.id].eventT != None) else []
+            db.flise_file[form.vars.id].update_record(eventT=simplejson.dumps(eventT))
+            for record in db(db.event.flise_file_id == form.vars.id).select():
+                time = record.time * sfactor
+                record.update_record(time=time)
+            for record in db(db.subintervals.flise_file_id == form.vars.id).select():
+                extract_time = record.extract_time
+                str_time = extract_time.split(':')
+                intStart = float(str_time[0]) * sfactor
+                intEnd = float(str_time[1]) * sfactor
+                extract_time = '%g:%g' % (intStart, intEnd)
+                record.update_record(extract_time=extract_time)
         response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; ' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
 
     def on_accept_create(form):
@@ -476,7 +477,7 @@ def subint_process_data():
             for intEvent in intEvents:
                 if intEvent['type'] == 'wash':
                     volume_now = float(intEvent['volume'])
-                    volume_now_cell = float(intEvent['volume'])
+                    volume_now_cell = float(intEvent['volume']) #only if the initial solution contains cells
                 elif intEvent['type'] == 'dilution':
                     volume_now = volume_now + float(intEvent['volume'])
                 elif intEvent['type'] == 'removal':
@@ -484,6 +485,7 @@ def subint_process_data():
                     volume_now_cell = volume_now_cell - float(intEvent['volume'])
                 elif intEvent['type'] == 'injection':
                     volume_now = volume_now + float(intEvent['volume'])
+                    #volume_now_cell = volume_now_cell + float(intEvent['volume']) * correction dilution #only if the injected solution contains cells
                 volume_step.append(volume_now)
                 volume_step_cell.append(volume_now_cell)
                 volume_time.append(intEvent['time'])

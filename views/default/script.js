@@ -3141,6 +3141,20 @@ function add2event(context,g){
 	}
 	
 	var time = selectedPoints[closestIdx].xval;
+
+	var radiustime = (g.dateWindow_ == null) ? ((g.rawData_[g.rawData_.length-1][0] - g.rawData_[0][0])/124) : ((g.dateWindow_[1] - g.dateWindow_[0])/124);
+	var closestiE = -1;
+	// Detect if their is an existing event
+	for (var iE = eventT.length - 1; iE >= 0; iE--) {
+		if (Math.abs(eventT[iE] - time) < radiustime) {
+			radiustime = Math.abs(eventT[iE] - time);
+			closestiE = iE;
+		}
+	};
+	if (closestiE != -1) {
+		time = eventT[closestiE];
+	};
+
 	var series_id = -1;
 	var series_name = 'all';
 	var solution_id = null;

@@ -22,7 +22,7 @@ def index():
     response.files.append(URL(request.application, 'static/colorpicker', 'jquery.colorPicker.js'))
     response.files.append(URL(request.application, 'static/colorpicker', 'colorPicker.css'))
     response.files.append(URL(request.application, 'static/css', 'flise.css'))
-    response.files.append(URL(request.application, 'static/js', 'jquery.simplemodal.1.4.1.min.js'))
+    response.files.append(URL(request.application, 'static/js', 'jquery.simplemodal.1.4.3.min.js'))
     #import os
     #data = open(os.path.join(request.folder, 'private', 'FLISE', 'data.csv')).readlines()
     #data = '\\n'.join([l[:-1] for l in data])

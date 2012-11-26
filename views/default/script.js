@@ -29,7 +29,7 @@ function aOa_cp_val(aOa){
 	var new_aOa = [];
 	for (var i = 0; i < aOa.length; i++) {
 		new_aOa.push(aOa[i].slice());
-	};
+	}
 	return new_aOa;
 }
 

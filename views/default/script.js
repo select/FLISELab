@@ -472,6 +472,8 @@ function init_file(cur_id, name){
 			});
 			//now that the series have a correct naming, disp event
 			g.setAnnotations(g.annotations());
+			//switch button
+			//$('input[name="show"]').checkbox();
 			//disp panel
 			$('#series_options').slideDown();
 		});

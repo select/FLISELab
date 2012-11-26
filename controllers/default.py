@@ -206,6 +206,7 @@ def species():
 
 def components():
     species = set()
+    species.add('* Studied organisms')
     records = db(db.flise_file.id > 0).select(db.flise_file.series_species)
     for record in records:
         if record.series_species:
@@ -216,7 +217,12 @@ def components():
         if record.components_name:
             for species_item in record.components_name:
                 species.add(species_item)
-    return SELECT([OPTION('')] + [OPTION(x, _value=x) for x in species], _name="select_components", _style="width:120px")
+    #sortedspecies = sorted(species, key=lambda item: (int(item.partition(' ')[0]) if item[0].isdigit() else float('inf'), item))
+    import re
+    convert = lambda text: int(text) if text.isdigit() else text 
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    sortedspecies = sorted(species, key = alphanum_key)
+    return SELECT([OPTION('')] + [OPTION(x, _value=x) for x in sortedspecies], _name="select_components", _style="width:120px")
 
 
 def strains():
@@ -470,28 +476,36 @@ def subint_process_data():
                     intSolutions.append({'name': solution_record.name, 'components_name': solution_record.components_name, 'components_ratio': solution_record.components_ratio})
             #make volume sequence
             volume_step = []
-            volume_step_cell = []
+            number_cell_step = []
             volume_time = []
             volume_now = 0
-            volume_now_cell = 0
+            number_now_cell = 0
             for intEvent in intEvents:
+                flagcell = False
+                for intSolution in intSolutions:
+                    if intEvent['solution_name'] == intSolution['name']:
+                        if '* Studied organisms' in intSolution['components_name']:
+                            flagcell = True
+                            break
                 if intEvent['type'] == 'wash':
                     volume_now = float(intEvent['volume'])
-                    volume_now_cell = float(intEvent['volume']) #only if the initial solution contains cells
+                    if flagcell:
+                        number_now_cell = float(intEvent['volume']) * 1000 * optical_density * 1.2e7 * dilution_factor #only if the initial solution contains cells
                 elif intEvent['type'] == 'dilution':
                     volume_now = volume_now + float(intEvent['volume'])
                 elif intEvent['type'] == 'removal':
+                    number_now_cell = number_now_cell * (1 - float(intEvent['volume']) / volume_now)
                     volume_now = volume_now - float(intEvent['volume'])
-                    volume_now_cell = volume_now_cell - float(intEvent['volume'])
                 elif intEvent['type'] == 'injection':
                     volume_now = volume_now + float(intEvent['volume'])
-                    #volume_now_cell = volume_now_cell + float(intEvent['volume']) * correction dilution #only if the injected solution contains cells
+                    if flagcell:
+                        number_now_cell = number_now_cell + float(intEvent['volume']) * 1000 * optical_density * 1.2e7 * dilution_factor #only if the injected solution contains cells
                 volume_step.append(volume_now)
-                volume_step_cell.append(volume_now_cell)
+                number_cell_step.append(number_now_cell)
                 volume_time.append(intEvent['time'])
             if len(volume_step) == 0:
                 volume_step.append(0)
-                volume_step_cell.append(0)
+                number_cell_step.append(0)
                 volume_time.append(intStart)
             volume_time.append(intEnd)
             t = intStart
@@ -504,10 +518,10 @@ def subint_process_data():
                 if volume_time[volume_index + 1] <= t:
                     volume_index += 1
                 volume.append(volume_step[volume_index])
-                ncell.append(volume_step_cell[volume_index] * 1000 * optical_density * 1.2e7 * dilution_factor)
+                ncell.append(number_cell_step[volume_index])
                 t = t + ts
             volume.append(volume_step[volume_index])
-            ncell.append(volume_step_cell[volume_index] * optical_density * 1.2e7 * dilution_factor)
+            ncell.append(number_cell_step[volume_index])
     return dict(concentrations=data2diff, concentrationsSmooth=datasmooth, concentrationsDiff=datadiff, fluxes=fluxes, volume=volume, ncell=ncell, surf2vol_ratio=vsr, intEvents=intEvents, intSolutions=intSolutions)
 
 

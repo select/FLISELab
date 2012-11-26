@@ -37,12 +37,10 @@
     <link rel="stylesheet" media="handheld" href="{{=URL('static','css/handheld.css')}}">
     
     <!-- All JavaScript at the bottom, except for Modernizr which enables HTML5 elements & feature detects -->
-    <script src="{{=URL('static','js/modernizr-1.7.min.js')}}"></script>
+    <script src="{{=URL('static','js/modernizr-2.6.1.js')}}"></script>
     
     {{#------  require CSS and JS files for this page (read info in base.css) ------}}
     {{response.files.append(URL('static','css/base.css'))}}
-    {{response.files.append(URL('static','css/superfish.css'))}}
-    {{response.files.append(URL('static','js/superfish.js'))}}
     {{#------ include web2py specific js code (jquery, calendar, form stuff) ------}}
     {{include 'web2py_ajax.html'}}
 
@@ -68,8 +66,8 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js" type="text/javascript"></script>
     
     uncomment to load jquery-ui -->
-	 {{response.files.append(URL('static','css/jquery-ui.css'))}}
-   {{response.files.append(URL('static','js/jquery-ui.min.js'))}}
+	 {{response.files.append(URL('static','css/jquery-ui-1.9.2.css'))}}
+   {{response.files.append(URL('static','js/jquery-ui-1.9.2.js'))}}
     
     
   </head>

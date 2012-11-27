@@ -473,7 +473,7 @@ function init_file(cur_id, name){
 			//now that the series have a correct naming, disp event
 			g.setAnnotations(g.annotations());
 			//switch button
-			//$('input[name="show"]').checkbox();
+			//$('input[name="show"]').checkbox(); ********************************************************************************************
 			//disp panel
 			$('#series_options').slideDown();
 		});
@@ -2622,6 +2622,7 @@ function add2event(context,g){
 		$('#solution').append(stsol);
 		$('#solution_warning').hide();
 		$('#solution_delete_refused').hide();
+		if (flag_unique) {$('#solution_exists').hide();};
 		$('#solution_name_warning').hide();
 		if (solution_id == null){
 			$('#solution_duplicate').hide();
@@ -3171,6 +3172,7 @@ function add2event(context,g){
 		series_id = closestIdx;
 		series_name = selectedPoint.name;
 	}
+	var flag_unique = true;
 	
 	$.ajax({
 		url: '{{=URL("store_event.json")}}',
@@ -3294,6 +3296,7 @@ function add2event(context,g){
 										solution_name = data['name'];
 										solution_components = data['components_name'];
 										solution_ratios = data['components_ratio'];
+										flag_unique = data['flagUnique'];
 									}
 									solution_panel(htmlstr);
 								}

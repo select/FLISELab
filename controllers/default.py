@@ -329,7 +329,7 @@ def store_solution():
         record = None
     if request.vars.var_name:
         var_name = request.vars.var_name
-        if var_name != ' name':
+        if var_name != 'name':
             val = request.vars.getlist('val')
         else:
             val = request.vars.val
@@ -337,9 +337,16 @@ def store_solution():
             record.update_record(**{var_name: val})
         else:
             record = db.solution.insert(**{var_name: val})
-            #record.update_record(**{var_name: val})
     if record:
-        return dict([(field, record[field]) for field in db.solution.fields])
+        if request.vars.solution_id:
+            #check if it is used in any other event whatever series
+            if db(db.event.solution_id == solution_id).count() > 1:
+                flag_unique = False
+            else:
+                flag_unique = True
+            return dict([(field, record[field]) for field in db.solution.fields] + [('flagUnique', flag_unique)])
+        else:
+            return dict([(field, record[field]) for field in db.solution.fields] + [('flagUnique', True)])
     else:
         return dict()
 

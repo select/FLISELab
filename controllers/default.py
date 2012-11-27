@@ -698,7 +698,9 @@ def import_file():
                     solution = dict((key.replace('solution.', ''), value if value != '<NULL>' else None) for (key, value) in solution.items())
                     solution['components_name'] = [x for x in solution['components_name'].split('|')[1:-1]] if solution['components_name'] != None else None
                     solution['components_ratio'] = [x for x in solution['components_ratio'].split('|')[1:-1]] if solution['components_ratio'] != None else None
-                    db_solution = db.solution.insert(**solution)
+                    db_solution = db(db.solution.name == solution['name'])(db.solution.components_name == solution['components_name'])(db.solution.components_ratio == solution['components_ratio']).select().first()
+                    if not db_solution:
+                        db_solution = db.solution.insert(**solution)
                     solution_newindex[-1].append(db_solution.id)
                 solution_newindex = dict((x[0], x[1]) for x in solution_newindex)
                 #events

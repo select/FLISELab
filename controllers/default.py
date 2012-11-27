@@ -23,8 +23,8 @@ def index():
     response.files.append(URL(request.application, 'static/colorpicker', 'colorPicker.css'))
     response.files.append(URL(request.application, 'static/css', 'flise.css'))
     response.files.append(URL(request.application, 'static/js', 'jquery.simplemodal.1.4.3.min.js'))
-    response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.checkbox.js'))
-    response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.checkbox.css'))
+    #response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.checkbox.js'))
+    #response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.checkbox.css'))
     #import os
     #data = open(os.path.join(request.folder, 'private', 'FLISE', 'data.csv')).readlines()
     #data = '\\n'.join([l[:-1] for l in data])
@@ -76,7 +76,9 @@ def file():
                 intEnd = float(str_time[1]) * sfactor
                 extract_time = '%g:%g' % (intStart, intEnd)
                 record.update_record(extract_time=extract_time)
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; ' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
+            response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; update_graph();' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
+        else:
+            response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; ' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
 
     def on_accept_create(form):
         #import time
@@ -500,6 +502,8 @@ def subint_process_data():
                     volume_now = float(intEvent['volume'])
                     if flagcell:
                         number_now_cell = float(intEvent['volume']) * 1000 * optical_density * 1.2e7 * dilution_factor #only if the initial solution contains cells
+                    else:
+                        number_now_cell = 0
                 elif intEvent['type'] == 'dilution':
                     volume_now = volume_now + float(intEvent['volume'])
                 elif intEvent['type'] == 'removal':

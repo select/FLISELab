@@ -2052,7 +2052,17 @@ function interval2export(pos) {
 				//Make popup
 				event_modal = $("#subinterval").modal({
 					overlayClose:true,
-					opacity:20
+					opacity:20,
+					onOpen: function (dialog) {
+						dialog.overlay.fadeIn(100, function () {
+							dialog.container.fadeIn(5, function () {
+								dialog.data.fadeIn('fast');
+							});
+						});
+					},
+				    onShow: function (dialog) {
+				        dialog.container.css("height", "auto");
+				    },
 				});
 			});
 		}
@@ -2958,6 +2968,13 @@ function add2event(context,g){
 									escClose:false,
 									persist:true,
 									opacity:20,
+									onOpen: function (dialog) {
+										dialog.overlay.fadeIn(100, function () {
+											dialog.container.fadeIn(5, function () {
+												dialog.data.fadeIn('fast');
+											});
+										});
+									},
 								});
 								$('input[name="edit_solution"]').parent().parent().find('th').attr('style','color:red');
 								$('input[name="edit_solution"]').attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
@@ -2995,6 +3012,13 @@ function add2event(context,g){
 					escClose:false,
 					persist:true,
 					opacity:20,
+					onOpen: function (dialog) {
+						dialog.overlay.fadeIn(100, function () {
+							dialog.container.fadeIn(5, function () {
+								dialog.data.fadeIn('fast');
+							});
+						});
+					},
 				});
 				$('#simplemodal-container').css('height', 'auto');
 			}, 30);
@@ -3076,6 +3100,13 @@ function add2event(context,g){
 						escClose:false,
 						persist:true,
 						opacity:20,
+						onOpen: function (dialog) {
+							dialog.overlay.fadeIn(100, function () {
+								dialog.container.fadeIn(5, function () {
+									dialog.data.fadeIn('fast');
+								});
+							});
+						}
 					});
 					$('#simplemodal-container').css('height', 'auto');
 					//Update select_option
@@ -3535,6 +3566,13 @@ function add2event(context,g){
 					escClose:false,
 					persist:true,
 					opacity:20,
+					onOpen: function (dialog) {
+						dialog.overlay.fadeIn(100, function () {
+							dialog.container.fadeIn(5, function () {
+								dialog.data.fadeIn('fast');
+							});
+						});
+					},
 				});
 				$('#simplemodal-container').css('height', 'auto');
 				//Hide fields according to type

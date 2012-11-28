@@ -87,137 +87,9 @@ function init_files(){
 	});
 }
 
-/**************** INIT ********************/
+/**************** INIT Graph ********************/
 function init_file(cur_id, name){
-	//Show data extraction zone
-	$('#my_records').slideUp();
-	$('#edit_record').slideUp();
-	$('#section_data').parent().attr('style','width:455px');
-	$('#section_data').show('slow');
-	//Show which file is selected
-	
-	$('.current_record').html(name);
-	$('.current_record').attr('id', cur_id);
-	$('.current_record').show().prev().show();
-	//Rearrange which panel is developped or not
-	$('#upload_flise').slideUp();
-	$('#edit_record').slideDown();
-	$('#series_options').slideUp();
-	$('#global_options').slideUp();
-	$('#section_file').slideToggle();
-	
-	//Load time-series and associated data, then display graph and initiate callbacks			
-	$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
-		//Load raw data
-		graph_data = data.result;
-		graph_time = data.timepoint;
-		//Load segmentation variables
-		cutT = undefined; //Array of time point
-		nodiffT = undefined; //Array of Array([start,end])
-		dropT = undefined; //Array of Array([start,end])
-		eventT = undefined; //Array or list
-		//Present state
-		get_set_flisefile_option(cur_id, 'cutT');
-		get_set_flisefile_option(cur_id, 'nodiffT');
-		get_set_flisefile_option(cur_id, 'dropT');
-		get_set_flisefile_option(cur_id, 'eventT');
-		//Previous state
-		prevcutT = [];
-		prevnodiffT = [];
-		prevdropT = [];
-		preveventT = [];
-		event_del = [];
-		dataT = [];
-		//Reset the global graph object "g"
-		g=undefined;
-		g2=undefined;
-		$('#graphdiv2').hide();
-		$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
-		//Verif if same name is used, and thus update series name in g, and eventually add number if same name for several series
-		graph_labels = data.labels;
-		graph_labels.splice(0,1);
-		var listSim=[];
-		var flag=false;
-		var iL;
-		for (var i=0; i<graph_labels.length-1; i++){
-			//find if it belongs to one list of similarities
-			flag=false;
-			if (listSim != []){
-				for (var iL1=0;iL1<listSim.length;iL1++){
-					for (var iL2=0;iL2<listSim[iL1].length;iL2++){
-						if (listSim[iL1][iL2]==i){
-							flag=true;
-							break;
-						}
-					}
-					if (flag){break;}
-				}
-			}
-			//if not...
-			if (!flag){
-				iL=listSim.length;
-				listSim[iL]=[i];
-				//find companions
-				for (var j=i+1; j<graph_labels.length; j++){
-					if (graph_labels[i]==graph_labels[j]){
-						listSim[iL].push(j);
-					}
-				}
-				//alter names with index so that graph labels are different
-				if (listSim[iL].length>1){
-					for (var j=0; j<listSim[iL].length; j++){
-						graph_labels[listSim[iL][j]]=graph_labels[listSim[iL][j]]+j;
-					}
-				}
-			}
-		}
-		graph_labels.splice(0,0,"Time");
-		//Create "g": main series plot
-		createGraph(graph_data, graph_labels);
-		g.resize(window.innerWidth-510, (window.innerHeight-90));
-		//Initiate graph underlaycallback based on cutT, etc...
-		unifyT();
-		//Display events if they are some
-		var anns = g.annotations(); //=[];
-		for (var iE=0; iE<eventT.length; iE++) {
-			for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
-				$.ajax({
-					url: '{{=URL("store_event.json")}}',
-					data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
-					traditional: true,
-					success: function(data){
-						if (Object.getOwnPropertyNames(data).length !== 0){
-							//add it to g annotations
-							if (data['series_id']==-1){
-								for (var i = 0; i < g.colors_.length; i++) {
-									anns.push({
-										series: g.user_attrs_['labels'][i+1],
-										xval: data['time'],
-										icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-										width: 16,
-										height: 16,
-										tickHeight: 2,
-										text: data['type']
-									});
-								}
-							} else {
-								anns.push({
-									series: data['series_name'],
-									xval: data['time'],
-									icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-									width: 16,
-									height: 16,
-									tickHeight: 2,
-									text: data['type']
-								});
-							}
-						}
-					}
-				});
-			}
-		}
-		g.setAnnotations(anns);
-		
+	completeLoad = function(){
 		//Load series options and create corresponding panel
 		$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
 			//Reset the panel
@@ -587,7 +459,34 @@ function init_file(cur_id, name){
 			});
 			$('#global_options').slideDown();
 		});
-	});
+	}
+
+	//Show data extraction zone
+	$('#my_records').slideUp();
+	$('#edit_record').slideUp();
+	$('#section_data').parent().attr('style','width:455px');
+	$('#section_data').show('slow');
+	//Show which file is selected
+	
+	$('.current_record').html(name);
+	$('.current_record').attr('id', cur_id);
+	$('.current_record').show().prev().show();
+	//Rearrange which panel is developped or not
+	$('#upload_flise').slideUp();
+	$('#edit_record').slideDown();
+	$('#series_options').slideUp();
+	$('#global_options').slideUp();
+	$('#section_file').slideToggle();
+	//Refresh Previous state Variables
+	prevcutT = [];
+	prevnodiffT = [];
+	prevdropT = [];
+	preveventT = [];
+	event_del = [];
+	dataT = [];
+	
+	//Load time-series and associated data, then display graph and initiate callbacks
+	makeGraph(completeLoad);
 
 	// Load autosegmentation panel
 	$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
@@ -3742,8 +3641,35 @@ function createGraph(graph_data, labels){
 	}
 }
 
-/**************** REPLOT Graph ************/
-function updateGraph(){
+/**************** REPLOT Graph after 'sampling time' update ************/
+function updateGraph(series_name){
+	simpleUpdate = function(){
+		//Update colors
+		var colors = [];
+		$('input[name="color"]').each(function (){
+			colors.push($(this).val());
+		});
+		g.updateOptions({'colors': colors});
+
+	    //Update visibilities
+		var visibilities = [];
+		$('input[name="show"]').each(function (){
+			visibilities.push($(this).is(':checked'));
+		});
+		g.updateOptions({'visibility': visibilities});
+
+		//Update smoothingroller
+		if ($('input[name="smooth"]').is(':checked')) g.updateOptions({rollPeriod: parseFloat($('input[name="smooth_val"]').val())});
+	}
+
+	//Update name
+	$('#my_records > ul').find('#'+cur_id).find('.flise_select').html(series_name); 
+	$(".current_record").html(series_name);
+	//Load time-series and associated data, then display graph and initiate callbacks
+	makeGraph(simpleUpdate);
+}
+/**************** PLOT Graph  ************/
+function makeGraph(onsuccess){
 	$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 		//Load raw data
 		graph_data = data.result;
@@ -3808,14 +3734,6 @@ function updateGraph(){
 		g.resize(window.innerWidth-510, (window.innerHeight-90));
 		//Initiate graph underlaycallback based on cutT, etc...
 		unifyT();
-
-		//Update colors
-		var colors = [];
-		$('input[name="color"]').each(function (){
-			colors.push($(this).val());
-		});
-		g.updateOptions({'colors':colors});
-
 		//Display events if they are some
 		for (var iE=0; iE<eventT.length; iE++) {
 			for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
@@ -3823,6 +3741,7 @@ function updateGraph(){
 					url: '{{=URL("store_event.json")}}',
 					data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
 					traditional: true,
+					async: false,
 					success: function(data){
 						if (Object.getOwnPropertyNames(data).length !== 0){
 							//add it to g annotations
@@ -3854,19 +3773,8 @@ function updateGraph(){
 				});
 			}
 		}
-		setTimeout(function() {
-		    g.setAnnotations(g.annotations());
-
-		    //Update visibilities
-			var visibilities = [];
-			$('input[name="show"]').each(function (){
-				visibilities.push($(this).is(':checked'));
-			});
-			g.updateOptions({'visibility': visibilities});
-		}, 200);
-
-		//Update smoothingroller
-		if ($('input[name="smooth"]').is(':checked')) g.updateOptions({rollPeriod: parseFloat($('input[name="smooth_val"]').val())});
+	    g.setAnnotations(g.annotations());
+	    onsuccess();	    
 	});
 }
 

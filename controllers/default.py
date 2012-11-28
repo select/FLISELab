@@ -43,6 +43,8 @@ def files():
 
 def file():
     sampling_time_old = None
+    global execonsuccess
+    execonsuccess = ''
     if request.vars.delr:
         #FIXME add authentication here
         del db.flise_file[int(request.vars.delr)]
@@ -55,6 +57,7 @@ def file():
     def on_accept(form):
         from gluon.contrib import simplejson
         global sampling_time_old
+        global execonsuccess
         #update time of cutT, nodiffT, dropT and evenT when sampling time is changed + subintervals definition
         sfactor = float(form.vars.sampling_time) / sampling_time_old
         if sfactor != 1:
@@ -76,19 +79,20 @@ def file():
                 intEnd = float(str_time[1]) * sfactor
                 extract_time = '%g:%g' % (intStart, intEnd)
                 record.update_record(extract_time=extract_time)
-            response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; updateGraph();' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
+            execonsuccess = 'updateGraph("%s");' % form.vars.name
         else:
-            response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; ' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
+            execonsuccess = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; ' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
 
     def on_accept_create(form):
+        global execonsuccess
         #import time
         #from datetime import datetime
         #record = db.flise_file[form.vars.id]
         #filename, file = db.flise_file.file.retrieve(record.file)
         #record.update_record(created_on=datetime.fromtimestamp(os.path.getctime(os.path.join(request.folder,'uploads',record.file))))
         ##?-> http://stackoverflow.com/questions/946967/get-file-creation-time-with-python-on-mac
-        #response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");' % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
-        response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records");' % (URL(r=request, f='files'))
+        #execonsuccess = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");' % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
+        execonsuccess = 'web2py_ajax_page("GET","%s","","my_records");' % (URL(r=request, f='files'))
 
     if request.args(0):
         db.flise_file.file.readable, db.flise_file.file.writable = False, False
@@ -98,7 +102,7 @@ def file():
     else:
         db.flise_file.created_on.readable, db.flise_file.created_on.writable = False, False
         form = crud.create(db.flise_file, onaccept=on_accept_create)
-    return TAG[''](JS(response.headers['web2py-component-command']) if 'web2py-component-command' in response.headers else '', form)
+    return TAG[''](JS(execonsuccess) if execonsuccess else '', form)
 
 
 def get_data():

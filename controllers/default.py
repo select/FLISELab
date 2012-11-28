@@ -76,7 +76,7 @@ def file():
                 intEnd = float(str_time[1]) * sfactor
                 extract_time = '%g:%g' % (intStart, intEnd)
                 record.update_record(extract_time=extract_time)
-            response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; update_graph();' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
+            response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; updateGraph();' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
         else:
             response.headers['web2py-component-command'] = 'web2py_ajax_page("GET","%s","","my_records"); $(".current_record").html("%s"); cur_id=%s; ' % (URL(r=request, f='files'), form.vars.name, form.vars.id)
 

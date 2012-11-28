@@ -62,7 +62,7 @@ function init_files(){
 	$('.flise_file .flise_select').unbind('click');
 	$('.flise_file .flise_select').click(function(){
 		cur_id = $(this).parent().attr('id');
-		init_file(cur_id, $(this).html());
+		initGraph(cur_id, $(this).html());
 		//Load Raw Data Description Panel
 		web2py_component('{{=URL('file')}}/' + cur_id, 'edit_record');
 	});
@@ -84,987 +84,6 @@ function init_files(){
 		stopAfter:'ok',
 		wrapper: '<div style="width:130px;background-color: orange;" class="flise_del"></div>',
 		timeout:3000
-	});
-}
-
-/**************** INIT Graph ********************/
-function init_file(cur_id, name){
-	completeLoad = function(){
-		//Load series options and create corresponding panel
-		$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
-			//Reset the panel
-			$('#series_options').html('');
-			//Color choice for timeseries
-			var colors = data.color;
-			//If not previously defined, use the default color from dygraph
-			for (var i = colors.length - 1; i >= 0; i--) {
-				if (colors[i] == null) colors[i] = g.colors_[i];
-			};
-			g.updateOptions({'colors':colors, 'visibility': data.show});
-			//Adapt panel HTML
-			for (var i = 0;i<data.num_series;i++){
-				var st = series_template;
-				st = st.replace(/%select_species%/, $('#species_store > div').html());
-				if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
-				else st = st.replace(/%show%/, '');
-				st = st.replace(/%color%/, colors[i]);
-				st = st.replace(/%calibration_slope%/, (data.slope[i]=='null' || data.slope[i]==null) ? '' : data.slope[i])
-				$('#series_options').append('<table id="series'+i+'">'+st+'</table>');
-				$('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
-			}
-			$('.add_species').unbind('click');
-			$('.add_species').click(function () {
-				var new_species = $(this).parent().find('.new_species').val()
-				$('select[name="select_species"]').each(function(){
-					$(this).append('<option value="'+new_species+'">'+new_species+'</option>'); 
-				});
-				$(this).parent().find('select option[value="'+new_species+'"]').attr('selected', 'selected');
-				$(this).parent().find('select').change();
-			});
-			//Series name input
-			$('select[name="select_species"]').unbind('change');
-			$('select[name="select_species"]').change(function(){
-				graph_labels = [];
-				$('select[name="select_species"]').each(function(){
-					if (! $(this).val() ) graph_labels.push('Species');
-					else graph_labels.push($(this).val());
-				});
-				graph_labels = graph_labels.slice(0,-1)
-				//Save new series name
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'series_species', val: graph_labels},
-					traditional: true
-				});
-				//Update series name in g, and eventually add number if same name for several series
-				var listSim=[];
-				var flag=false;
-				var iL;
-				for (var i=0; i<graph_labels.length-1; i++){
-					//find if it belongs to one list of similarities
-					flag=false;
-					if (!(listSim==[])){
-						for (var iL1=0;iL1<listSim.length;iL1++){
-							for (var iL2=0;iL2<listSim[iL1].length;iL2++){
-								if (listSim[iL1][iL2]==i){
-									flag=true;
-									break;
-								}
-							}
-							if (flag){break;}
-						}
-					}
-					//if not...
-					if (!flag){
-						iL=listSim.length;
-						listSim[iL]=[i];
-						//find companions
-						for (var j=i+1; j<graph_labels.length; j++){
-							if (graph_labels[i]==graph_labels[j]){
-								listSim[iL].push(j);
-							}
-						}
-						//alter names with index so that graph labels are different
-						if (listSim[iL].length>1){
-							for (var j=0; j<listSim[iL].length; j++){
-								graph_labels[listSim[iL][j]]=graph_labels[listSim[iL][j]]+j;
-							}
-						}
-					}
-				}
-				graph_labels.splice(0,0,"Time");
-				g.updateOptions({'labels':graph_labels});
-				//Update series name db.event and series name in g annotations
-				for (var iE=0; iE<eventT.length; iE++) {
-					if (!(iE == eventT.length-1)){
-						for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
-								traditional: true,
-								success: function(data){
-									if (!(Object.getOwnPropertyNames(data).length === 0)){
-										//if found, update db.event
-										if (!(data['series_id']==-1)){
-											$.ajax({
-												url: '{{=URL("store_event.json")}}',
-												data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id'], var_name:'series_name', val: g.attr_('labels')[data['series_id']+1]},
-												traditional: true
-											});
-										}
-										//add it to g annotations
-										if (data['series_id']==-1){
-											var flag = true;
-										} else {
-											var flag = false;
-										}
-										for (var iA = g.annotations_.length - 1; iA >= 0; iA--) {
-											if (g.annotations_[iA].xval == data['time']){
-												if (flag){
-													g.annotations_.splice(iA,1);
-												} else {
-													if (g.annotations_[iA].series == data['series_name']) {
-														g.annotations_[iA].series = g.attr_('labels')[data['series_id']+1];
-													};
-												}
-											}
-										};
-										if (flag) {
-											for (var i = 0; i < g.colors_.length; i++) {
-												g.annotations_.push({
-													series: g.user_attrs_['labels'][i+1],
-													xval: data['time'],
-													icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-													width: 16,
-													height: 16,
-													tickHeight: 2,
-													text: data['type']
-												});
-											}
-										}
-									}
-								}
-							});
-						}
-					} else {
-						for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
-								traditional: true,
-								success: function(data){
-									if (!(Object.getOwnPropertyNames(data).length === 0)){
-										//if found, update db.event
-										if (!(data['series_id']==-1)){
-											$.ajax({
-												url: '{{=URL("store_event.json")}}',
-												data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id'], var_name:'series_name', val: g.attr_('labels')[data['series_id']+1]},
-												traditional: true
-											});
-										}
-										//add it to g annotations
-										if (data['series_id']==-1){
-											var flag = true;
-										} else {
-											var flag = false;
-										}
-										for (var iA = g.annotations_.length - 1; iA >= 0; iA--) {
-											if (g.annotations_[iA].xval == data['time']){
-												if (flag){
-													g.annotations_.splice(iA,1);
-												} else {
-													if (g.annotations_[iA].series == data['series_name']) {
-														g.annotations_[iA].series = g.attr_('labels')[data['series_id']+1];
-													};
-												}
-											}
-										};
-										if (flag) {
-											for (var i = 0; i < g.colors_.length; i++) {
-												g.annotations_.push({
-													series: g.user_attrs_['labels'][i+1],
-													xval: data['time'],
-													icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-													width: 16,
-													height: 16,
-													tickHeight: 2,
-													text: data['type']
-												});
-											}
-										}
-										//Update annotation display
-										g.setAnnotations(g.annotations_);
-									}
-								}
-							});
-						}
-					}
-				}
-				//Update event_del[].series_name
-				for (var i = event_del.length - 1; i >= 0; i--) {
-					if (!(event_del[i].series_id == -1)) {
-						event_del[i].series_name=items[event_del[i].series_id+1];
-					};
-				};
-			});
-			//Color picker creation
-			$('input[name="color"]').unbind('change');
-			$('input[name="color"]').colorPicker();
-			$('input[name="color"]').change(function(){
-				var items = [];
-				$('input[name="color"]').each(function(){
-					items.push($(this).val());
-				});
-				g.updateOptions({'colors':items, 'file': graph_data});
-				//Save color change
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'series_colors', val: items},
-					traditional: true
-				});
-			});
-			//Check box to activate or not display of series
-			$('input[name="show"]').unbind('click');
-			$('input[name="show"]').click(function(){
-				var vis = []
-				$('input[name="show"]').each(function (){
-					if ($(this).is(':checked')) vis.push(true);
-					else vis.push(false);
-				});
-				//Pass visibility option to graph object
-				if (typeof g2 === "undefined")
-					g.updateOptions({visibility: vis});
-				else {
-					if ($("#overlay").is(':checked'))
-						g.updateOptions({visibility: vis.concat(vis)});
-					else
-						g.updateOptions({visibility: vis});
-					g2.updateOptions({visibility: vis});
-				}
-
-				//Save
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'series_show', val: vis},
-					traditional: true
-				});
-			});
-			//Calibration slope
-			$('input[name="calibration_slope"]').unbind('change');
-			$('input[name="calibration_slope"]').change(function(){
-				var items = [];
-				$('input[name="calibration_slope"]').each(function(){
-					items.push(($(this).val()=='') ? null : $(this).val());
-				});
-				//Save calibration_slope change
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'series_slope', val: items},
-					traditional: true
-				});
-			});
-			//now that the series have a correct naming, disp event
-			g.setAnnotations(g.annotations());
-			//switch button
-			//$('input[name="show"]').checkbox(); ********************************************************************************************
-			//disp panel
-			$('#series_options').slideDown();
-		});
-		
-		//Load global series options and create corresponding panel
-		$.getJSON('{{=URL('global_options.json')}}/'+cur_id,function(data){
-			//Reset the panel
-			$('#global_options').html('');
-			//Adapt panel HTML
-			var st = global_template;
-			//st = st.replace(/%strain_ref%/, data.strain);
-			st = st.replace(/%strain_ref%/, $('#strains_store > div').html());
-			st = st.replace(/%comments%/, data.comments);
-			if (data.smooth == true) st = st.replace(/%smooth%/, 'checked');
-			else st = st.replace(/%smooth%/, '');
-			st = st.replace(/%smooth_value%/, data.smooth_value);
-			if(data.od == null) st = st.replace(/%od%/, '');
-			else st = st.replace(/%od%/, data.od);
-			st = st.replace(/%dilutionf%/, data.dilution);
-			st = st.replace(/%celldiameter%/, data.celld);
-			$('#global_options').append('<table>'+st+'</table>');
-			$('select[name="select_strain"]').attr('name','select_strain_global');
-			if (!(data.strain_id==null)) $('select[name="select_strain_global"] option[value="'+data.strain_id+'"]').attr('selected', 'selected');
-			//Strain reference input
-			$('select[name="select_strain_global"]').unbind('change');
-			$('select[name="select_strain_global"]').change(function(){
-				//Save new strain reference
-				$.ajax({
-					url: '{{=URL("store_strain")}}',
-					data: {record_id:cur_id, val: $(this).val()},
-					traditional: true
-				});
-			});
-			//OD input
-			$('input[name="od"]').unbind('change');
-			$('input[name="od"]').change(function(){
-				//Save OD
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'optical_density', val: $(this).val()},
-					traditional: true
-				});
-			});
-			//Dilution factor input
-			$('input[name="dilutionf"]').unbind('change');
-			$('input[name="dilutionf"]').change(function(){
-				//Save dilution factor
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'dilution_factor', val: $(this).val()},
-					traditional: true
-				});
-			});
-			//Cell diameter input
-			$('input[name="celldiameter"]').unbind('change');
-			$('input[name="celldiameter"]').change(function(){
-				//Save cell diameter
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'cell_diameter', val: $(this).val()},
-					traditional: true
-				});
-			});
-			//Comments free text area
-			$('textarea[name="comments"]').unbind('change');
-			$('textarea[name="comments"]').change(function(){
-				//Save comments
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'comments', val: $('textarea[name="comments"]').val()},
-					traditional: true
-				});
-			});
-			//Init slider
-			smooth_val = data.smooth_value;
-			//Update graph "g" options
-			if (data.smooth) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
-			else g.updateOptions({file: graph_data, rollPeriod: 1});
-			//Activate smoothing (only on "g")
-			$('input[name="smooth"]').unbind('click');
-			$('input[name="smooth"]').click(function(){
-				//Save checked state
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'disp_smooth', val: $(this).is(':checked')},
-					traditional: true
-				});
-				//Apply visual smoothing
-				if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
-				else g.updateOptions({file: graph_data, rollPeriod: 1});
-			});
-			$('input[name="smooth_val"]').unbind();
-			//Value next to slider
-			$('input[name="smooth_val"]').each(function(){
-				$(this).parent().find('span').eq(0).html($(this).val());
-			});
-			//Update smooth value
-			$('input[name="smooth_val"]').change(function(){
-				$(this).parent().find('span').eq(0).html($(this).val());
-			});
-			$('input[name="smooth_val"]').mouseup(function(){
-				//Save new smooth_value
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'disp_smooth_value', val: $(this).val()},
-					traditional: true
-				});
-				smooth_val = parseFloat($(this).attr("value"));
-				if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
-			});
-			$('#global_options').slideDown();
-		});
-	}
-
-	//Show data extraction zone
-	$('#my_records').slideUp();
-	$('#edit_record').slideUp();
-	$('#section_data').parent().attr('style','width:455px');
-	$('#section_data').show('slow');
-	//Show which file is selected
-	
-	$('.current_record').html(name);
-	$('.current_record').attr('id', cur_id);
-	$('.current_record').show().prev().show();
-	//Rearrange which panel is developped or not
-	$('#upload_flise').slideUp();
-	$('#edit_record').slideDown();
-	$('#series_options').slideUp();
-	$('#global_options').slideUp();
-	$('#section_file').slideToggle();
-	//Refresh Previous state Variables
-	prevcutT = [];
-	prevnodiffT = [];
-	prevdropT = [];
-	preveventT = [];
-	event_del = [];
-	dataT = [];
-	
-	//Load time-series and associated data, then display graph and initiate callbacks
-	makeGraph(completeLoad);
-
-	// Load autosegmentation panel
-	$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
-		var autoseg_str = data;
-		//Reset the panel
-		$('#autoseg_options').html('');
-		//Create panel
-		$.getJSON('{{=URL('autoseg_options.json')}}/'+cur_id,function(data){
-			autoseg_str = autoseg_str.replace(/%autoseg_win%/, data.autoseg_win);
-			autoseg_str = autoseg_str.replace(/%autoseg_fuse%/, data.autoseg_fuse);
-			$('#autoseg_options').append(autoseg_str);
-			//Unbind
-			$('input[class="segmentation_slider"]').unbind();
-			//Value next to slider
-			$('input[class="segmentation_slider"]').each(function(){
-				$(this).parent().find('span').html($(this).val());
-			});
-			//When slider moves, update displayed value
-			$('input[class="segmentation_slider"]').change(function(){
-				$(this).parent().find('span').html($(this).val());
-			});
-			//Update in db
-			$('#locw').mouseup(function(){
-				//Save new smooth_value
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'autoseg_win', val: $(this).val()},
-					traditional: true
-				});
-			});
-			$('#fusw').mouseup(function(){
-				//Save new smooth_value
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'autoseg_fuse', val: $(this).val()},
-					traditional: true
-				});
-			});
-			//Autosegmentation start button
-			// -here: when we launch autosegmentation, the button is disabled, as well as the Undo button from Tools panel, and only the Revert button is unabled.
-			$('#autoseg').unbind('click');
-			$('#autoseg').click(function(){
-				$("#autoseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				autoseg(graph_data);
-				$("#revertseg").removeAttr("disabled").removeAttr("style");
-			});
-			//Autosegmentation revert button
-			// -here: when we go back to previous state, the button is disabled, and only the start button is unabled. The Undo button is not restored since we store only one previous state. The "Undo" and "Revert" are redundant, but it is for sake of clarity since they don't belong to the same panel.
-			$('#revertseg').unbind('click');
-			$('#revertseg').click(function(){
-				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				// -here: we use the Array.slice() method since otherwise the Array object is passed by reference.
-				cutT = prevcutT.slice();
-				nodiffT = aOa_cp_val(prevnodiffT);
-				dropT = aOa_cp_val(prevdropT);
-				eventT = preveventT.slice();
-				unifyT();
-				$("#autoseg").removeAttr("disabled").removeAttr("style");
-			});
-			//Default button unabling
-			$("#autoseg").removeAttr("disabled").removeAttr("style");
-			$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-		});
-	});
-	
-	//Load Tools panel
-	$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
-		//Initialize tool variables
-		isSelecting = false;
-		tool = 'zoom'; // Default tool
-		
-		//Reset panel
-		$('#tools').html('');
-		//Load the panel
-		htmlstr = data;
-		htmlstr = htmlstr.replace(/%img%/g, "{{=URL(request.application, 'static/icons', '%img%')}}");
-		htmlstr = htmlstr.replace(/%img%/g, "");
-		$('#tools').append(htmlstr);
-		$('#tools_info').hide();
-		
-		//Load Tool Export panel
-		$.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {
-			//Reset panel
-			$('#export').html('');
-			//Load the panel
-			$('#export').append(data);
-			
-			//Initialize default tool
-			change_tool(document.getElementById("tool_"+tool));
-		});
-		
-		//Undo button (see button Revert in Autosegmentation panel)
-		$('#revert_tool').unbind('click');
-		$('#revert_tool').click(function(){
-			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-			cutT = prevcutT.slice();
-			nodiffT = aOa_cp_val(prevnodiffT);
-			dropT = aOa_cp_val(prevdropT);
-			unifyT();
-			// remove added evenT
-			var flag
-			for (var iE=0; iE<eventT.length; iE++) {
-				flag = true;
-				for (var iP = preveventT.length - 1; iP >= 0; iP--) {
-					if (preveventT[iP] == eventT[iE]){
-						flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
-						break;
-					}
-				};
-				if (flag){
-					//remove from db
-					for (var iS=-1;iS<graph_data[0].length-1;iS++){
-						//loop to find the correct series: drawback = if several events at the same time index, all of them could be removed, but in fact, since we can only undo once, none of them are to be removed. (BUG)
-						$.ajax({
-							url: '{{=URL("store_event.json")}}',
-							data: {flise_record_id:cur_id, time:eventT[iE], series_id:iS},
-							traditional: true,
-							success: function(data){
-								if (!(Object.getOwnPropertyNames(data).length === 0)){
-									//remove it
-									$.ajax({
-										url: '{{=URL("del_event.json")}}',
-										data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id']},
-										traditional: true
-									});
-								}
-							}
-						});
-					}
-					//remove from g
-					var anns = g.annotations();
-					for (var iA=0;iA<anns.length;iA++){
-						if (anns[iA].xval==eventT[iE]){
-							anns.splice(iA,1);
-							iA--;
-						}
-					}
-					g.setAnnotations(anns);
-					//remove from eventT
-					eventT.splice(iE,1);
-					iE--;
-				}
-			}
-			// add removed evenT
-			var flag_exist
-			var anns = g.annotations();
-			for (var iP = preveventT.length - 1; iP >= 0; iP--) {
-				flag = true;
-				for (var iE=0; iE<eventT.length; iE++) {
-					if (preveventT[iP] == eventT[iE]){
-						flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
-						break;
-					}
-				};
-				if (flag){
-					//add db
-					for (var iE = event_del.length - 1; iE >= 0; iE--) {
-						if (event_del[iE].time == preveventT[iP]){
-							//create it
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'type', val: event_del[iE].type},
-								traditional: true
-							});
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'series_name', val: event_del[iE].series_name},
-								traditional: true
-							});
-							if (!(event_del[iE].solution_id == null)){
-								$.ajax({
-									url: '{{=URL("store_event.json")}}',
-									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'solution_id', val: event_del[iE].solution_id},
-									traditional: true
-								});
-							}
-							if (event_del[iE].volume == null) {event_del[iE].volume=''};
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'volume', val: event_del[iE].volume},
-								traditional: true
-							});
-							if (event_del[iE].concentration == null) {event_del[iE].concentration=''};
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'concentration', val: event_del[iE].concentration},
-								traditional: true
-							});
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'comment', val: event_del[iE].comment},
-								traditional: true
-							});
-							//add to g
-							if (event_del[iE].series_id==-1){
-								for (var i = 0; i < g.colors_.length; i++) {
-									anns.push({
-										series: g.user_attrs_['labels'][i+1],
-										xval: event_del[iE].time,
-										icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-										width: 16,
-										height: 16,
-										tickHeight: 2,
-										text: event_del[iE].type
-									});
-								}
-							} else {
-								anns.push({
-									series: g.user_attrs_['labels'][event_del[iE].series_id+1],
-									xval: event_del[iE].time,
-									icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-									width: 16,
-									height: 16,
-									tickHeight: 2,
-									text: event_del[iE].type
-								});
-							}
-							event_del.splice(iE,1);
-						}
-					};
-				}
-			}
-			g.setAnnotations(anns);
-			//save eventT to db.flise_file
-			eventT = preveventT.slice();
-			get_set_flisefile_option(cur_id, 'eventT');
-		});
-		$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-	});
-	
-	//Load preprocessing panel
-	$.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
-		var sg_str = data;
-		//Reset panel
-		$('#deriv').html('');
-		//Load panel
-		$.getJSON('{{=URL('sg_options.json')}}/'+cur_id,function(data){
-			//Load values
-			sg_str = sg_str.replace(/%sg_win%/, data.sg_win);
-			sg_str = sg_str.replace(/%sg_order%/, data.sg_order);
-			if(data.sg_overlay == true){
-				sg_str = sg_str.replace(/%sg_overlay%/, 'checked');
-			} else {
-				sg_str = sg_str.replace(/%sg_overlay%/, '');
-			}
-			//Write panel
-			$('#deriv').append(sg_str);
-			//Hide info
-			$('#SG_info').hide();
-			//Value next to slider
-			$('input[class="savgol_slider"]').unbind();
-			$('input[class="savgol_slider"]').each(function(){
-				$(this).parent().find('span').html($(this).val());
-			});
-			$('input[class="savgol_slider"]').change(function(){
-				$(this).parent().find('span').html($(this).val());
-			});
-			//Update in db
-			$('#lochw').mouseup(function(){
-				//Save new smooth_value
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'sg_win', val: $(this).val()},
-					traditional: true
-				});
-			});
-			$('#order').mouseup(function(){
-				//Save new smooth_value
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'sg_order', val: $(this).val()},
-					traditional: true
-				});
-			});
-			//Check box to activate or not overlay of smoothed data on original series
-			$('#overlay').unbind('click');
-			$('#overlay').click(function(){
-				$.ajax({
-					url: '{{=URL("store_option")}}',
-					data: {record_id:cur_id, var_name:'sg_overlay', val: $(this).is(':checked')},
-					traditional: true
-				});
-			});
-			//Force local window to be big enought for polynomial order: min loc half window (lochw) of size 6 and max polynomial order (porder) of 10 insures that porder<2*lochw.
-			//Preprocessing button
-			$('#preproc').unbind('click');
-			$('#preproc').click(function(){
-				//Disable button
-				$("#preproc").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				//Substract from segmentation intervals the intervals not to differentiate
-				function rmInInt(sInt, lInt){
-					if (sInt[0]>=lInt[0] && sInt[1]<=lInt[1]) {
-						if (sInt[0]!=lInt[0]) {diffdataT.push([lInt[0], sInt[0]]);};
-						return [sInt[1], lInt[1]];
-					} else {
-						if (lInt[0]!=lInt[1]) {diffdataT.push(lInt);};
-						return [];
-					};
-				}
-				var diffdataT = [];
-				var iD = 0;
-				var resInt = dataT[iD].slice();
-				for (var iN = 0; iN < nodiffT.length; iN++) {
-					flag = true;
-					while (flag){
-						resInt = rmInInt(nodiffT[iN].slice(), resInt);
-						if (resInt.length == 0) {
-							iD++;
-							resInt = dataT[iD].slice();
-						} else {
-							flag = false;
-						};
-					};
-				};
-				if (nodiffT.length!=0) {
-					if (resInt[0]!=resInt[1]) {
-						diffdataT.push(resInt);
-					};
-					iD++;
-				};
-				for (var iD2 = iD; iD2 < dataT.length; iD2++) {
-					diffdataT.push(dataT[iD2].slice());
-				};
-				//Get processing parameters
-				var lochw = parseFloat($("#lochw").attr("value"));
-				var porder = parseFloat($("#order").attr("value"));
-				//Shape data to smooth/derivate
-				var data2derive=[];
-				var Tsamp=(graph_data[1][0]-graph_data[0][0]);
-				var iDpass=0;
-				for (var iD=0; iD<diffdataT.length; iD++){
-					//prevent small intervals to be passed
-					if (Math.ceil((diffdataT[iD][1]-diffdataT[iD][0])/Tsamp)<=(2*lochw+1)){
-						iDpass++;
-						continue;
-					}
-					//collect interval
-					data2derive.push([]);
-					for (var iS=1; iS<graph_data[0].length;iS++){
-						data2derive[iD-iDpass].push([]);
-						data2derive[iD-iDpass][iS-1]=[];
-						for (var iP=0; iP<graph_data.length;iP++){
-							if ((graph_data[iP][0]>=diffdataT[iD][0])&&(graph_data[iP][0]<=diffdataT[iD][1])){
-								data2derive[iD-iDpass][iS-1].push(graph_data[iP][iS]);
-							}
-						}
-					}
-				}
-				//Pass it to Savgol module
-				$.ajax({
-					url: '{{=URL('get_savgol.json')}}',
-					data: {w:lochw,order:porder,deriv:1,data:JSON.stringify(data2derive)},
-					traditional: true,
-					type: 'POST',
-					success: function(data){
-						var result = data.result;
-						g.resize(window.innerWidth-510, Math.floor((window.innerHeight-90)/2));
-						//Shape data to plot
-						var data2plot=[];
-						for (var iP=0; iP<graph_data.length;iP++){
-							//initialize to null
-							data2plot.push([graph_data[iP][0]]);//recopy time
-							for (var iS=1; iS<graph_data[0].length;iS++){
-								data2plot[iP].push(null);
-							}
-						}
-						var Tsamp=(graph_data[1][0]-graph_data[0][0]);
-						var iIpass=0;
-						for (var iI=0; iI<diffdataT.length; iI++){
-							//prevent small intervals to be passed
-							if (Math.ceil((diffdataT[iI][1]-diffdataT[iI][0])/Tsamp)<=(2*lochw+1)){
-								iIpass++;
-								continue;
-							}
-							//find index when graph_data[iP][0]==diffdataT[iI][0]
-							for (iP=0; iP<graph_data.length;iP++){
-								if (graph_data[iP][0]==diffdataT[iI][0]){break;}
-							}
-							//place values
-							for (iS=0; iS<result[iI-iIpass].length;iS++){
-								for (var iP2=0; iP2<result[iI-iIpass][iS].length;iP2++){
-									data2plot[iP+iP2][iS+1]=result[iI-iIpass][iS][iP2] / Tsamp;
-								}
-							}
-						}
-						//Plot
-						$('#graphdiv2').show();
-						var derivlabels=['Time'];
-						for (var i=0; i<graph_labels.length; i++){
-							derivlabels.push('SG1_'+graph_labels[i+1]);
-						}
-						var colors = [];
-						$('input[name="color"]').each(function(){
-							colors.push($(this).val());
-						});
-						var vis = []
-						$('input[name="show"]').each(function (){
-							if ($(this).is(':checked')) vis.push(true);
-							else vis.push(false);
-						});
-						g2 = new Dygraph(document.getElementById("graphdiv2"), data2plot,
-							{
-								labels: derivlabels,
-								colors: colors,
-								visibility: vis,
-								dateWindow: g.xAxisRange(),
-								width: window.innerWidth-510,
-								height: Math.floor((window.innerHeight-90)/2),
-								strokeWidth: 1.2,
-								gridLineColor: 'rgb(196, 196, 196)',
-								logscale : false,
-								drawCallback: function(me, is_initial){
-									if (is_initial){return;}
-									if (!isDrawing){
-										isDrawing=true;
-										var range = me.xAxisRange();
-										g.updateOptions( {
-										  dateWindow: range
-										} );
-										isDrawing=false;
-									}
-								},
-								interactionModel: {
-									mousedown: function (event, me, context) {
-										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-											Dygraph.defaultInteractionModel.mousedown(event, me, context);
-										}
-									},
-									mousemove: function (event, me, context) {
-										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-											Dygraph.defaultInteractionModel.mousemove(event, me, context);
-										}
-									},
-									mouseup: function(event, me, context) {
-										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-											Dygraph.defaultInteractionModel.mouseup(event, me, context);
-										}
-									},
-									mouseout: function(event, me, context) {
-										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-											Dygraph.defaultInteractionModel.mouseout(event, me, context);
-										}
-									},
-									dblclick: function(event, me, context) {
-										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-											Dygraph.defaultInteractionModel.dblclick(event, me, context);
-										}
-									},
-									mousewheel: function(event, me, context) {
-										var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;
-										var percentage = normal / 50;
-										var axis = me.xAxisRange();
-										var xOffset = me.toDomCoords(axis[0], null)[0];
-										var x = event.offsetX - xOffset;
-										var w = me.toDomCoords(axis[1], null)[0] - xOffset;
-										var xPct = w == 0 ? 0 : (x / w);
-								
-										var delta = axis[1] - axis[0];
-										var increment = delta * percentage;
-										var foo = [increment * xPct, increment * (1 - xPct)];
-										var dateWindow = [ axis[0] + foo[0], axis[1] - foo[1] ];
-								
-										me.updateOptions({
-											dateWindow: dateWindow
-										});
-										Dygraph.cancelEvent(event);
-									}
-								}
-							});
-						// Enable close plot button
-						$("#preproc_close").removeAttr("disabled").removeAttr("style");
-						// Enable button
-						$("#preproc").attr("value", "Extract, reprocess and plot").removeAttr("disabled").removeAttr("style");
-					}
-				});
-				//Get the smoothed data and overlay
-				if ($("#overlay").is(':checked')){
-					//Force to remove Dygraph smoothing
-					if ($('input[name="smooth"]').is(':checked')){
-						g.updateOptions({rollPeriod: 1});
-						$('input[name="smooth"]').attr('checked', false).attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-						$('input[name="smooth_val"]').parent().find('span').eq(1).html('(disabled to overlay)');
-						$.ajax({
-							url: '{{=URL("store_option")}}',
-							data: {record_id:cur_id, var_name:'disp_smooth', val: $('input[name="smooth"]').is(':checked')},
-							traditional: true
-						});
-					}
-					$.ajax({
-						url: '{{=URL('get_savgol.json')}}',
-						data: {w:lochw,order:porder,deriv:0,data:JSON.stringify(data2derive)},
-						traditional: true,
-						type: 'POST',
-						success: function(data){
-							var result = data.result;
-							//Shape data to plot
-							var data2plot=[];
-							var nS = graph_data[0].length;
-							for (var iP=0; iP<graph_data.length;iP++){
-								data2plot.push([graph_data[iP][0]]);//recopy time
-								//recopy graph_data points
-								for (var iS=1; iS<nS;iS++){
-									data2plot[iP].push([graph_data[iP][iS]]);
-								}
-								//initialize to null
-								for (var iS=1; iS<nS;iS++){
-									data2plot[iP].push(null);
-								}
-							}
-							var Tsamp=(graph_data[1][0]-graph_data[0][0]);
-							var iIpass=0;
-							for (var iI=0; iI<diffdataT.length; iI++){
-								//prevent small intervals to be passed
-								if (Math.ceil((diffdataT[iI][1]-diffdataT[iI][0])/Tsamp)<=(2*lochw+1)){
-									iIpass++;
-									continue;
-								}
-								//find index when graph_data[iP][0]==diffdataT[iI][0]
-								for (iP=0; iP<graph_data.length;iP++){
-									if (graph_data[iP][0]==diffdataT[iI][0]){break;}
-								}
-								//place values
-								for (iS=0; iS<result[iI-iIpass].length;iS++){
-									for (var iP2=0; iP2<result[iI-iIpass][iS].length;iP2++){
-										data2plot[iP+iP2][iS+nS]=result[iI-iIpass][iS][iP2];
-									}
-								}
-							}
-							//Plot in g
-							var colors = [];
-							$('input[name="color"]').each(function(){
-								colors.push($(this).val());
-							});
-							var labels = graph_labels.slice();
-							for (var iS =  1; iS < nS; iS++) {
-								colors.push("#000000");
-								labels.push('SG0_'+graph_labels[iS]);
-							};
-							var vis = []
-							$('input[name="show"]').each(function (){
-								if ($(this).is(':checked')) vis.push(true);
-								else vis.push(false);
-							});
-							g.updateOptions({ 
-								file: data2plot,
-								labels: labels,
-								colors: colors,
-								visibility: vis.concat(vis)
-							});
-						}
-					});
-				}
-			});
-			$('#preproc_close').unbind('click');
-			$('#preproc_close').click(function(){
-				$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-				$("#preproc").attr("value", "Extract, process and plot");
-				g2 = undefined;
-				$('#graphdiv2').hide();
-				$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
-				var colors = [];
-				$('input[name="color"]').each(function(){
-					colors.push($(this).val());
-				});
-				g.updateOptions({ 
-					file: graph_data,
-					labels: graph_labels,
-					colors: colors
-				});
-				g.resize(window.innerWidth-510, (window.innerHeight-90));
-				$('input[name="smooth_val"]').parent().find('span').eq(1).html('');
-				$('input[name="smooth"]').removeAttr("disabled").removeAttr("style");
-			});
-			//Default button unabling
-			$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-		});
 	});
 }
 
@@ -3641,6 +2660,987 @@ function createGraph(graph_data, labels){
 	}
 }
 
+
+/**************** INIT Graph and controls ********************/
+function initGraph(cur_id, name){
+	completeLoad = function(){
+		//***** Load series options and create corresponding panel
+		$.getJSON('{{=URL('series_options.json')}}/'+cur_id,function(data){
+			//Reset the panel
+			$('#series_options').html('');
+			//Color choice for timeseries
+			var colors = data.color;
+			//If not previously defined, use the default color from dygraph
+			for (var i = colors.length - 1; i >= 0; i--) {
+				if (colors[i] == null) colors[i] = g.colors_[i];
+			};
+			g.updateOptions({'colors':colors, 'visibility': data.show});
+			//Adapt panel HTML
+			for (var i = 0;i<data.num_series;i++){
+				var st = series_template;
+				st = st.replace(/%select_species%/, $('#species_store > div').html());
+				if(data.show[i] == true) st = st.replace(/%show%/, 'checked');
+				else st = st.replace(/%show%/, '');
+				st = st.replace(/%color%/, colors[i]);
+				st = st.replace(/%calibration_slope%/, (data.slope[i]=='null' || data.slope[i]==null) ? '' : data.slope[i])
+				$('#series_options').append('<table id="series'+i+'">'+st+'</table>');
+				$('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
+			}
+			$('.add_species').unbind('click');
+			$('.add_species').click(function () {
+				var new_species = $(this).parent().find('.new_species').val()
+				$('select[name="select_species"]').each(function(){
+					$(this).append('<option value="'+new_species+'">'+new_species+'</option>'); 
+				});
+				$(this).parent().find('select option[value="'+new_species+'"]').attr('selected', 'selected');
+				$(this).parent().find('select').change();
+			});
+			//Series name input
+			$('select[name="select_species"]').unbind('change');
+			$('select[name="select_species"]').change(function(){
+				graph_labels = [];
+				$('select[name="select_species"]').each(function(){
+					if (! $(this).val() ) graph_labels.push('Species');
+					else graph_labels.push($(this).val());
+				});
+				graph_labels = graph_labels.slice(0,-1)
+				//Save new series name
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'series_species', val: graph_labels},
+					traditional: true
+				});
+				//Update series name in g, and eventually add number if same name for several series
+				var listSim=[];
+				var flag=false;
+				var iL;
+				for (var i=0; i<graph_labels.length-1; i++){
+					//find if it belongs to one list of similarities
+					flag=false;
+					if (!(listSim==[])){
+						for (var iL1=0;iL1<listSim.length;iL1++){
+							for (var iL2=0;iL2<listSim[iL1].length;iL2++){
+								if (listSim[iL1][iL2]==i){
+									flag=true;
+									break;
+								}
+							}
+							if (flag){break;}
+						}
+					}
+					//if not...
+					if (!flag){
+						iL=listSim.length;
+						listSim[iL]=[i];
+						//find companions
+						for (var j=i+1; j<graph_labels.length; j++){
+							if (graph_labels[i]==graph_labels[j]){
+								listSim[iL].push(j);
+							}
+						}
+						//alter names with index so that graph labels are different
+						if (listSim[iL].length>1){
+							for (var j=0; j<listSim[iL].length; j++){
+								graph_labels[listSim[iL][j]]=graph_labels[listSim[iL][j]]+j;
+							}
+						}
+					}
+				}
+				graph_labels.splice(0,0,"Time");
+				g.updateOptions({'labels':graph_labels});
+				//Update series name db.event and series name in g annotations
+				for (var iE=0; iE<eventT.length; iE++) {
+					if (!(iE == eventT.length-1)){
+						for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+								traditional: true,
+								success: function(data){
+									if (!(Object.getOwnPropertyNames(data).length === 0)){
+										//if found, update db.event
+										if (!(data['series_id']==-1)){
+											$.ajax({
+												url: '{{=URL("store_event.json")}}',
+												data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id'], var_name:'series_name', val: g.attr_('labels')[data['series_id']+1]},
+												traditional: true
+											});
+										}
+										//add it to g annotations
+										if (data['series_id']==-1){
+											var flag = true;
+										} else {
+											var flag = false;
+										}
+										for (var iA = g.annotations_.length - 1; iA >= 0; iA--) {
+											if (g.annotations_[iA].xval == data['time']){
+												if (flag){
+													g.annotations_.splice(iA,1);
+												} else {
+													if (g.annotations_[iA].series == data['series_name']) {
+														g.annotations_[iA].series = g.attr_('labels')[data['series_id']+1];
+													};
+												}
+											}
+										};
+										if (flag) {
+											for (var i = 0; i < g.colors_.length; i++) {
+												g.annotations_.push({
+													series: g.user_attrs_['labels'][i+1],
+													xval: data['time'],
+													icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
+													width: 16,
+													height: 16,
+													tickHeight: 2,
+													text: data['type']
+												});
+											}
+										}
+									}
+								}
+							});
+						}
+					} else {
+						for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
+								traditional: true,
+								success: function(data){
+									if (!(Object.getOwnPropertyNames(data).length === 0)){
+										//if found, update db.event
+										if (!(data['series_id']==-1)){
+											$.ajax({
+												url: '{{=URL("store_event.json")}}',
+												data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id'], var_name:'series_name', val: g.attr_('labels')[data['series_id']+1]},
+												traditional: true
+											});
+										}
+										//add it to g annotations
+										if (data['series_id']==-1){
+											var flag = true;
+										} else {
+											var flag = false;
+										}
+										for (var iA = g.annotations_.length - 1; iA >= 0; iA--) {
+											if (g.annotations_[iA].xval == data['time']){
+												if (flag){
+													g.annotations_.splice(iA,1);
+												} else {
+													if (g.annotations_[iA].series == data['series_name']) {
+														g.annotations_[iA].series = g.attr_('labels')[data['series_id']+1];
+													};
+												}
+											}
+										};
+										if (flag) {
+											for (var i = 0; i < g.colors_.length; i++) {
+												g.annotations_.push({
+													series: g.user_attrs_['labels'][i+1],
+													xval: data['time'],
+													icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
+													width: 16,
+													height: 16,
+													tickHeight: 2,
+													text: data['type']
+												});
+											}
+										}
+										//Update annotation display
+										g.setAnnotations(g.annotations_);
+									}
+								}
+							});
+						}
+					}
+				}
+				//Update event_del[].series_name
+				for (var i = event_del.length - 1; i >= 0; i--) {
+					if (!(event_del[i].series_id == -1)) {
+						event_del[i].series_name=items[event_del[i].series_id+1];
+					};
+				};
+			});
+			//Color picker creation
+			$('input[name="color"]').unbind('change');
+			$('input[name="color"]').colorPicker();
+			$('input[name="color"]').change(function(){
+				var items = [];
+				$('input[name="color"]').each(function(){
+					items.push($(this).val());
+				});
+				g.updateOptions({'colors':items, 'file': graph_data});
+				//Save color change
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'series_colors', val: items},
+					traditional: true
+				});
+			});
+			//Check box to activate or not display of series
+			$('input[name="show"]').unbind('click');
+			$('input[name="show"]').click(function(){
+				var vis = []
+				$('input[name="show"]').each(function (){
+					if ($(this).is(':checked')) vis.push(true);
+					else vis.push(false);
+				});
+				//Pass visibility option to graph object
+				if (typeof g2 === "undefined")
+					g.updateOptions({visibility: vis});
+				else {
+					if ($("#overlay").is(':checked'))
+						g.updateOptions({visibility: vis.concat(vis)});
+					else
+						g.updateOptions({visibility: vis});
+					g2.updateOptions({visibility: vis});
+				}
+
+				//Save
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'series_show', val: vis},
+					traditional: true
+				});
+			});
+			//Calibration slope
+			$('input[name="calibration_slope"]').unbind('change');
+			$('input[name="calibration_slope"]').change(function(){
+				var items = [];
+				$('input[name="calibration_slope"]').each(function(){
+					items.push(($(this).val()=='') ? null : $(this).val());
+				});
+				//Save calibration_slope change
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'series_slope', val: items},
+					traditional: true
+				});
+			});
+			//now that the series have a correct naming, disp event
+			g.setAnnotations(g.annotations());
+			//switch button
+			//$('input[name="show"]').checkbox(); ********************************************************************************************
+			//disp panel
+			$('#series_options').slideDown();
+		});
+		
+		//***** Load global series options and create corresponding panel
+		$.getJSON('{{=URL('global_options.json')}}/'+cur_id,function(data){
+			//Reset the panel
+			$('#global_options').html('');
+			//Adapt panel HTML
+			var st = global_template;
+			//st = st.replace(/%strain_ref%/, data.strain);
+			st = st.replace(/%strain_ref%/, $('#strains_store > div').html());
+			st = st.replace(/%comments%/, data.comments);
+			if (data.smooth == true) st = st.replace(/%smooth%/, 'checked');
+			else st = st.replace(/%smooth%/, '');
+			st = st.replace(/%smooth_value%/, data.smooth_value);
+			if(data.od == null) st = st.replace(/%od%/, '');
+			else st = st.replace(/%od%/, data.od);
+			st = st.replace(/%dilutionf%/, data.dilution);
+			st = st.replace(/%celldiameter%/, data.celld);
+			$('#global_options').append('<table>'+st+'</table>');
+			$('select[name="select_strain"]').attr('name','select_strain_global');
+			if (!(data.strain_id==null)) $('select[name="select_strain_global"] option[value="'+data.strain_id+'"]').attr('selected', 'selected');
+			//Strain reference input
+			$('select[name="select_strain_global"]').unbind('change');
+			$('select[name="select_strain_global"]').change(function(){
+				//Save new strain reference
+				$.ajax({
+					url: '{{=URL("store_strain")}}',
+					data: {record_id:cur_id, val: $(this).val()},
+					traditional: true
+				});
+			});
+			//OD input
+			$('input[name="od"]').unbind('change');
+			$('input[name="od"]').change(function(){
+				//Save OD
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'optical_density', val: $(this).val()},
+					traditional: true
+				});
+			});
+			//Dilution factor input
+			$('input[name="dilutionf"]').unbind('change');
+			$('input[name="dilutionf"]').change(function(){
+				//Save dilution factor
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'dilution_factor', val: $(this).val()},
+					traditional: true
+				});
+			});
+			//Cell diameter input
+			$('input[name="celldiameter"]').unbind('change');
+			$('input[name="celldiameter"]').change(function(){
+				//Save cell diameter
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'cell_diameter', val: $(this).val()},
+					traditional: true
+				});
+			});
+			//Comments free text area
+			$('textarea[name="comments"]').unbind('change');
+			$('textarea[name="comments"]').change(function(){
+				//Save comments
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'comments', val: $('textarea[name="comments"]').val()},
+					traditional: true
+				});
+			});
+			//Init slider
+			smooth_val = data.smooth_value;
+			//Update graph "g" options
+			if (data.smooth) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
+			else g.updateOptions({file: graph_data, rollPeriod: 1});
+			//Activate smoothing (only on "g")
+			$('input[name="smooth"]').unbind('click');
+			$('input[name="smooth"]').click(function(){
+				//Save checked state
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'disp_smooth', val: $(this).is(':checked')},
+					traditional: true
+				});
+				//Apply visual smoothing
+				if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
+				else g.updateOptions({file: graph_data, rollPeriod: 1});
+			});
+			$('input[name="smooth_val"]').unbind();
+			//Value next to slider
+			$('input[name="smooth_val"]').each(function(){
+				$(this).parent().find('span').eq(0).html($(this).val());
+			});
+			//Update smooth value
+			$('input[name="smooth_val"]').change(function(){
+				$(this).parent().find('span').eq(0).html($(this).val());
+			});
+			$('input[name="smooth_val"]').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'disp_smooth_value', val: $(this).val()},
+					traditional: true
+				});
+				smooth_val = parseFloat($(this).attr("value"));
+				if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
+			});
+			$('#global_options').slideDown();
+		});
+	}
+
+	//Show data extraction zone
+	$('#my_records').slideUp();
+	$('#edit_record').slideUp();
+	$('#section_data').parent().attr('style','width:455px');
+	$('#section_data').show('slow');
+	//Show which file is selected
+	
+	$('.current_record').html(name);
+	$('.current_record').attr('id', cur_id);
+	$('.current_record').show().prev().show();
+	//Rearrange which panel is developped or not
+	$('#upload_flise').slideUp();
+	$('#edit_record').slideDown();
+	$('#series_options').slideUp();
+	$('#global_options').slideUp();
+	$('#section_file').slideToggle();
+	//Refresh Previous state Variables
+	prevcutT = [];
+	prevnodiffT = [];
+	prevdropT = [];
+	preveventT = [];
+	event_del = [];
+	dataT = [];
+	
+	//***** Load time-series and associated data, then display graph and initiate callbacks
+	makeGraph(completeLoad);
+
+	//***** Load autosegmentation panel
+	$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
+		var autoseg_str = data;
+		//Reset the panel
+		$('#autoseg_options').html('');
+		//Create panel
+		$.getJSON('{{=URL('autoseg_options.json')}}/'+cur_id,function(data){
+			autoseg_str = autoseg_str.replace(/%autoseg_win%/, data.autoseg_win);
+			autoseg_str = autoseg_str.replace(/%autoseg_fuse%/, data.autoseg_fuse);
+			$('#autoseg_options').append(autoseg_str);
+			//Unbind
+			$('input[class="segmentation_slider"]').unbind();
+			//Value next to slider
+			$('input[class="segmentation_slider"]').each(function(){
+				$(this).parent().find('span').html($(this).val());
+			});
+			//When slider moves, update displayed value
+			$('input[class="segmentation_slider"]').change(function(){
+				$(this).parent().find('span').html($(this).val());
+			});
+			//Update in db
+			$('#locw').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'autoseg_win', val: $(this).val()},
+					traditional: true
+				});
+			});
+			$('#fusw').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'autoseg_fuse', val: $(this).val()},
+					traditional: true
+				});
+			});
+			//Autosegmentation start button
+			// -here: when we launch autosegmentation, the button is disabled, as well as the Undo button from Tools panel, and only the Revert button is unabled.
+			$('#autoseg').unbind('click');
+			$('#autoseg').click(function(){
+				$("#autoseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				autoseg(graph_data);
+				$("#revertseg").removeAttr("disabled").removeAttr("style");
+			});
+			//Autosegmentation revert button
+			// -here: when we go back to previous state, the button is disabled, and only the start button is unabled. The Undo button is not restored since we store only one previous state. The "Undo" and "Revert" are redundant, but it is for sake of clarity since they don't belong to the same panel.
+			$('#revertseg').unbind('click');
+			$('#revertseg').click(function(){
+				$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				// -here: we use the Array.slice() method since otherwise the Array object is passed by reference.
+				cutT = prevcutT.slice();
+				nodiffT = aOa_cp_val(prevnodiffT);
+				dropT = aOa_cp_val(prevdropT);
+				eventT = preveventT.slice();
+				unifyT();
+				$("#autoseg").removeAttr("disabled").removeAttr("style");
+			});
+			//Default button unabling
+			$("#autoseg").removeAttr("disabled").removeAttr("style");
+			$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+		});
+	});
+	
+	//***** Load Tools panel
+	$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
+		//Initialize tool variables
+		isSelecting = false;
+		tool = 'zoom'; // Default tool
+		
+		//Reset panel
+		$('#tools').html('');
+		//Load the panel
+		htmlstr = data;
+		htmlstr = htmlstr.replace(/%img%/g, "{{=URL(request.application, 'static/icons', '%img%')}}");
+		htmlstr = htmlstr.replace(/%img%/g, "");
+		$('#tools').append(htmlstr);
+		$('#tools_info').hide();
+		
+		//Load Tool Export panel
+		$.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {
+			//Reset panel
+			$('#export').html('');
+			//Load the panel
+			$('#export').append(data);
+			
+			//Initialize default tool
+			change_tool(document.getElementById("tool_"+tool));
+		});
+		
+		//Undo button (see button Revert in Autosegmentation panel)
+		$('#revert_tool').unbind('click');
+		$('#revert_tool').click(function(){
+			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+			cutT = prevcutT.slice();
+			nodiffT = aOa_cp_val(prevnodiffT);
+			dropT = aOa_cp_val(prevdropT);
+			unifyT();
+			// remove added evenT
+			var flag
+			for (var iE=0; iE<eventT.length; iE++) {
+				flag = true;
+				for (var iP = preveventT.length - 1; iP >= 0; iP--) {
+					if (preveventT[iP] == eventT[iE]){
+						flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
+						break;
+					}
+				};
+				if (flag){
+					//remove from db
+					for (var iS=-1;iS<graph_data[0].length-1;iS++){
+						//loop to find the correct series: drawback = if several events at the same time index, all of them could be removed, but in fact, since we can only undo once, none of them are to be removed. (BUG)
+						$.ajax({
+							url: '{{=URL("store_event.json")}}',
+							data: {flise_record_id:cur_id, time:eventT[iE], series_id:iS},
+							traditional: true,
+							success: function(data){
+								if (!(Object.getOwnPropertyNames(data).length === 0)){
+									//remove it
+									$.ajax({
+										url: '{{=URL("del_event.json")}}',
+										data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id']},
+										traditional: true
+									});
+								}
+							}
+						});
+					}
+					//remove from g
+					var anns = g.annotations();
+					for (var iA=0;iA<anns.length;iA++){
+						if (anns[iA].xval==eventT[iE]){
+							anns.splice(iA,1);
+							iA--;
+						}
+					}
+					g.setAnnotations(anns);
+					//remove from eventT
+					eventT.splice(iE,1);
+					iE--;
+				}
+			}
+			// add removed evenT
+			var flag_exist
+			var anns = g.annotations();
+			for (var iP = preveventT.length - 1; iP >= 0; iP--) {
+				flag = true;
+				for (var iE=0; iE<eventT.length; iE++) {
+					if (preveventT[iP] == eventT[iE]){
+						flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
+						break;
+					}
+				};
+				if (flag){
+					//add db
+					for (var iE = event_del.length - 1; iE >= 0; iE--) {
+						if (event_del[iE].time == preveventT[iP]){
+							//create it
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'type', val: event_del[iE].type},
+								traditional: true
+							});
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'series_name', val: event_del[iE].series_name},
+								traditional: true
+							});
+							if (!(event_del[iE].solution_id == null)){
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'solution_id', val: event_del[iE].solution_id},
+									traditional: true
+								});
+							}
+							if (event_del[iE].volume == null) {event_del[iE].volume=''};
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'volume', val: event_del[iE].volume},
+								traditional: true
+							});
+							if (event_del[iE].concentration == null) {event_del[iE].concentration=''};
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'concentration', val: event_del[iE].concentration},
+								traditional: true
+							});
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'comment', val: event_del[iE].comment},
+								traditional: true
+							});
+							//add to g
+							if (event_del[iE].series_id==-1){
+								for (var i = 0; i < g.colors_.length; i++) {
+									anns.push({
+										series: g.user_attrs_['labels'][i+1],
+										xval: event_del[iE].time,
+										icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
+										width: 16,
+										height: 16,
+										tickHeight: 2,
+										text: event_del[iE].type
+									});
+								}
+							} else {
+								anns.push({
+									series: g.user_attrs_['labels'][event_del[iE].series_id+1],
+									xval: event_del[iE].time,
+									icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
+									width: 16,
+									height: 16,
+									tickHeight: 2,
+									text: event_del[iE].type
+								});
+							}
+							event_del.splice(iE,1);
+						}
+					};
+				}
+			}
+			g.setAnnotations(anns);
+			//save eventT to db.flise_file
+			eventT = preveventT.slice();
+			get_set_flisefile_option(cur_id, 'eventT');
+		});
+		$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+	});
+	
+	//***** Load preprocessing panel
+	$.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
+		var sg_str = data;
+		//Reset panel
+		$('#deriv').html('');
+		//Load panel
+		$.getJSON('{{=URL('sg_options.json')}}/'+cur_id,function(data){
+			//Load values
+			sg_str = sg_str.replace(/%sg_win%/, data.sg_win);
+			sg_str = sg_str.replace(/%sg_order%/, data.sg_order);
+			if(data.sg_overlay == true){
+				sg_str = sg_str.replace(/%sg_overlay%/, 'checked');
+			} else {
+				sg_str = sg_str.replace(/%sg_overlay%/, '');
+			}
+			//Write panel
+			$('#deriv').append(sg_str);
+			//Hide info
+			$('#SG_info').hide();
+			//Value next to slider
+			$('input[class="savgol_slider"]').unbind();
+			$('input[class="savgol_slider"]').each(function(){
+				$(this).parent().find('span').html($(this).val());
+			});
+			$('input[class="savgol_slider"]').change(function(){
+				$(this).parent().find('span').html($(this).val());
+			});
+			//Update in db
+			$('#lochw').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'sg_win', val: $(this).val()},
+					traditional: true
+				});
+			});
+			$('#order').mouseup(function(){
+				//Save new smooth_value
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'sg_order', val: $(this).val()},
+					traditional: true
+				});
+			});
+			//Check box to activate or not overlay of smoothed data on original series
+			$('#overlay').unbind('click');
+			$('#overlay').click(function(){
+				$.ajax({
+					url: '{{=URL("store_option")}}',
+					data: {record_id:cur_id, var_name:'sg_overlay', val: $(this).is(':checked')},
+					traditional: true
+				});
+			});
+			//Force local window to be big enought for polynomial order: min loc half window (lochw) of size 6 and max polynomial order (porder) of 10 insures that porder<2*lochw.
+			//Preprocessing button
+			$('#preproc').unbind('click');
+			$('#preproc').click(function(){
+				//Disable button
+				$("#preproc").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				//Substract from segmentation intervals the intervals not to differentiate
+				function rmInInt(sInt, lInt){
+					if (sInt[0]>=lInt[0] && sInt[1]<=lInt[1]) {
+						if (sInt[0]!=lInt[0]) {diffdataT.push([lInt[0], sInt[0]]);};
+						return [sInt[1], lInt[1]];
+					} else {
+						if (lInt[0]!=lInt[1]) {diffdataT.push(lInt);};
+						return [];
+					};
+				}
+				var diffdataT = [];
+				var iD = 0;
+				var resInt = dataT[iD].slice();
+				for (var iN = 0; iN < nodiffT.length; iN++) {
+					flag = true;
+					while (flag){
+						resInt = rmInInt(nodiffT[iN].slice(), resInt);
+						if (resInt.length == 0) {
+							iD++;
+							resInt = dataT[iD].slice();
+						} else {
+							flag = false;
+						};
+					};
+				};
+				if (nodiffT.length!=0) {
+					if (resInt[0]!=resInt[1]) {
+						diffdataT.push(resInt);
+					};
+					iD++;
+				};
+				for (var iD2 = iD; iD2 < dataT.length; iD2++) {
+					diffdataT.push(dataT[iD2].slice());
+				};
+				//Get processing parameters
+				var lochw = parseFloat($("#lochw").attr("value"));
+				var porder = parseFloat($("#order").attr("value"));
+				//Shape data to smooth/derivate
+				var data2derive=[];
+				var Tsamp=(graph_data[1][0]-graph_data[0][0]);
+				var iDpass=0;
+				for (var iD=0; iD<diffdataT.length; iD++){
+					//prevent small intervals to be passed
+					if (Math.ceil((diffdataT[iD][1]-diffdataT[iD][0])/Tsamp)<=(2*lochw+1)){
+						iDpass++;
+						continue;
+					}
+					//collect interval
+					data2derive.push([]);
+					for (var iS=1; iS<graph_data[0].length;iS++){
+						data2derive[iD-iDpass].push([]);
+						data2derive[iD-iDpass][iS-1]=[];
+						for (var iP=0; iP<graph_data.length;iP++){
+							if ((graph_data[iP][0]>=diffdataT[iD][0])&&(graph_data[iP][0]<=diffdataT[iD][1])){
+								data2derive[iD-iDpass][iS-1].push(graph_data[iP][iS]);
+							}
+						}
+					}
+				}
+				//Pass it to Savgol module
+				$.ajax({
+					url: '{{=URL('get_savgol.json')}}',
+					data: {w:lochw,order:porder,deriv:1,data:JSON.stringify(data2derive)},
+					traditional: true,
+					type: 'POST',
+					success: function(data){
+						var result = data.result;
+						g.resize(window.innerWidth-510, Math.floor((window.innerHeight-90)/2));
+						//Shape data to plot
+						var data2plot=[];
+						for (var iP=0; iP<graph_data.length;iP++){
+							//initialize to null
+							data2plot.push([graph_data[iP][0]]);//recopy time
+							for (var iS=1; iS<graph_data[0].length;iS++){
+								data2plot[iP].push(null);
+							}
+						}
+						var Tsamp=(graph_data[1][0]-graph_data[0][0]);
+						var iIpass=0;
+						for (var iI=0; iI<diffdataT.length; iI++){
+							//prevent small intervals to be passed
+							if (Math.ceil((diffdataT[iI][1]-diffdataT[iI][0])/Tsamp)<=(2*lochw+1)){
+								iIpass++;
+								continue;
+							}
+							//find index when graph_data[iP][0]==diffdataT[iI][0]
+							for (iP=0; iP<graph_data.length;iP++){
+								if (graph_data[iP][0]==diffdataT[iI][0]){break;}
+							}
+							//place values
+							for (iS=0; iS<result[iI-iIpass].length;iS++){
+								for (var iP2=0; iP2<result[iI-iIpass][iS].length;iP2++){
+									data2plot[iP+iP2][iS+1]=result[iI-iIpass][iS][iP2] / Tsamp;
+								}
+							}
+						}
+						//Plot
+						$('#graphdiv2').show();
+						var derivlabels=['Time'];
+						for (var i=0; i<graph_labels.length; i++){
+							derivlabels.push('SG1_'+graph_labels[i+1]);
+						}
+						var colors = [];
+						$('input[name="color"]').each(function(){
+							colors.push($(this).val());
+						});
+						var vis = []
+						$('input[name="show"]').each(function (){
+							if ($(this).is(':checked')) vis.push(true);
+							else vis.push(false);
+						});
+						g2 = new Dygraph(document.getElementById("graphdiv2"), data2plot,
+							{
+								labels: derivlabels,
+								colors: colors,
+								visibility: vis,
+								dateWindow: g.xAxisRange(),
+								width: window.innerWidth-510,
+								height: Math.floor((window.innerHeight-90)/2),
+								strokeWidth: 1.2,
+								gridLineColor: 'rgb(196, 196, 196)',
+								logscale : false,
+								drawCallback: function(me, is_initial){
+									if (is_initial){return;}
+									if (!isDrawing){
+										isDrawing=true;
+										var range = me.xAxisRange();
+										g.updateOptions( {
+										  dateWindow: range
+										} );
+										isDrawing=false;
+									}
+								},
+								interactionModel: {
+									mousedown: function (event, me, context) {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
+											Dygraph.defaultInteractionModel.mousedown(event, me, context);
+										}
+									},
+									mousemove: function (event, me, context) {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
+											Dygraph.defaultInteractionModel.mousemove(event, me, context);
+										}
+									},
+									mouseup: function(event, me, context) {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
+											Dygraph.defaultInteractionModel.mouseup(event, me, context);
+										}
+									},
+									mouseout: function(event, me, context) {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
+											Dygraph.defaultInteractionModel.mouseout(event, me, context);
+										}
+									},
+									dblclick: function(event, me, context) {
+										if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
+											Dygraph.defaultInteractionModel.dblclick(event, me, context);
+										}
+									},
+									mousewheel: function(event, me, context) {
+										var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;
+										var percentage = normal / 50;
+										var axis = me.xAxisRange();
+										var xOffset = me.toDomCoords(axis[0], null)[0];
+										var x = event.offsetX - xOffset;
+										var w = me.toDomCoords(axis[1], null)[0] - xOffset;
+										var xPct = w == 0 ? 0 : (x / w);
+								
+										var delta = axis[1] - axis[0];
+										var increment = delta * percentage;
+										var foo = [increment * xPct, increment * (1 - xPct)];
+										var dateWindow = [ axis[0] + foo[0], axis[1] - foo[1] ];
+								
+										me.updateOptions({
+											dateWindow: dateWindow
+										});
+										Dygraph.cancelEvent(event);
+									}
+								}
+							});
+						// Enable close plot button
+						$("#preproc_close").removeAttr("disabled").removeAttr("style");
+						// Enable button
+						$("#preproc").attr("value", "Extract, reprocess and plot").removeAttr("disabled").removeAttr("style");
+					}
+				});
+				//Get the smoothed data and overlay
+				if ($("#overlay").is(':checked')){
+					//Force to remove Dygraph smoothing
+					if ($('input[name="smooth"]').is(':checked')){
+						g.updateOptions({rollPeriod: 1});
+						$('input[name="smooth"]').attr('checked', false).attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+						$('input[name="smooth_val"]').parent().find('span').eq(1).html('(disabled to overlay)');
+						$.ajax({
+							url: '{{=URL("store_option")}}',
+							data: {record_id:cur_id, var_name:'disp_smooth', val: $('input[name="smooth"]').is(':checked')},
+							traditional: true
+						});
+					}
+					$.ajax({
+						url: '{{=URL('get_savgol.json')}}',
+						data: {w:lochw,order:porder,deriv:0,data:JSON.stringify(data2derive)},
+						traditional: true,
+						type: 'POST',
+						success: function(data){
+							var result = data.result;
+							//Shape data to plot
+							var data2plot=[];
+							var nS = graph_data[0].length;
+							for (var iP=0; iP<graph_data.length;iP++){
+								data2plot.push([graph_data[iP][0]]);//recopy time
+								//recopy graph_data points
+								for (var iS=1; iS<nS;iS++){
+									data2plot[iP].push([graph_data[iP][iS]]);
+								}
+								//initialize to null
+								for (var iS=1; iS<nS;iS++){
+									data2plot[iP].push(null);
+								}
+							}
+							var Tsamp=(graph_data[1][0]-graph_data[0][0]);
+							var iIpass=0;
+							for (var iI=0; iI<diffdataT.length; iI++){
+								//prevent small intervals to be passed
+								if (Math.ceil((diffdataT[iI][1]-diffdataT[iI][0])/Tsamp)<=(2*lochw+1)){
+									iIpass++;
+									continue;
+								}
+								//find index when graph_data[iP][0]==diffdataT[iI][0]
+								for (iP=0; iP<graph_data.length;iP++){
+									if (graph_data[iP][0]==diffdataT[iI][0]){break;}
+								}
+								//place values
+								for (iS=0; iS<result[iI-iIpass].length;iS++){
+									for (var iP2=0; iP2<result[iI-iIpass][iS].length;iP2++){
+										data2plot[iP+iP2][iS+nS]=result[iI-iIpass][iS][iP2];
+									}
+								}
+							}
+							//Plot in g
+							var colors = [];
+							$('input[name="color"]').each(function(){
+								colors.push($(this).val());
+							});
+							var labels = graph_labels.slice();
+							for (var iS =  1; iS < nS; iS++) {
+								colors.push("#000000");
+								labels.push('SG0_'+graph_labels[iS]);
+							};
+							var vis = []
+							$('input[name="show"]').each(function (){
+								if ($(this).is(':checked')) vis.push(true);
+								else vis.push(false);
+							});
+							g.updateOptions({ 
+								file: data2plot,
+								labels: labels,
+								colors: colors,
+								visibility: vis.concat(vis)
+							});
+						}
+					});
+				}
+			});
+			$('#preproc_close').unbind('click');
+			$('#preproc_close').click(function(){
+				$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				$("#preproc").attr("value", "Extract, process and plot");
+				g2 = undefined;
+				$('#graphdiv2').hide();
+				$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
+				var colors = [];
+				$('input[name="color"]').each(function(){
+					colors.push($(this).val());
+				});
+				g.updateOptions({ 
+					file: graph_data,
+					labels: graph_labels,
+					colors: colors
+				});
+				g.resize(window.innerWidth-510, (window.innerHeight-90));
+				$('input[name="smooth_val"]').parent().find('span').eq(1).html('');
+				$('input[name="smooth"]').removeAttr("disabled").removeAttr("style");
+			});
+			//Default button unabling
+			$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+		});
+	});
+}
 /**************** REPLOT Graph after 'sampling time' update ************/
 function updateGraph(series_name){
 	simpleUpdate = function(){

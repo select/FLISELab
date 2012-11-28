@@ -59,7 +59,10 @@ def file():
         global sampling_time_old
         global execonsuccess
         #update time of cutT, nodiffT, dropT and evenT when sampling time is changed + subintervals definition
-        sfactor = float(form.vars.sampling_time) / sampling_time_old
+        if float(form.vars.sampling_time)>0:
+            sfactor = float(form.vars.sampling_time) / sampling_time_old
+        else:
+            sfactor = 1 #do nothing
         if sfactor != 1:
             dropT = [[x * sfactor for x in y] for y in simplejson.loads(db.flise_file[form.vars.id].dropT)] if (db.flise_file[form.vars.id].dropT != None) else []
             db.flise_file[form.vars.id].update_record(dropT=simplejson.dumps(dropT))
@@ -91,7 +94,7 @@ def file():
         #filename, file = db.flise_file.file.retrieve(record.file)
         #record.update_record(created_on=datetime.fromtimestamp(os.path.getctime(os.path.join(request.folder,'uploads',record.file))))
         ##?-> http://stackoverflow.com/questions/946967/get-file-creation-time-with-python-on-mac
-        #execonsuccess = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; init_file(%s,"%s");' % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
+        #execonsuccess = 'web2py_ajax_page("GET","%s","","my_records"); web2py_component("%s","edit_record"); $(".current_record").html("%s"); cur_id=%s; initGraph(%s,"%s");' % (URL(r=request, f='files'), URL('file', args=form.vars.id), form.vars.name, form.vars.id, form.vars.id, form.vars.name)
         execonsuccess = 'web2py_ajax_page("GET","%s","","my_records");' % (URL(r=request, f='files'))
 
     if request.args(0):

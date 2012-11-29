@@ -1129,7 +1129,6 @@ function get_set_flisefile_option(record_id, var_name){
 	}
 	$.ajax({
 		dataType: 'json',
-		async: false,
 		url: '{{=URL('store_option.json')}}',
 		data: data,
 		success: function(data){
@@ -1141,6 +1140,42 @@ function get_set_flisefile_option(record_id, var_name){
 	});
 }
 
+function dataZones() {
+	//Data zones are intervals between drop zones and cuts.
+	var dataT = [];
+	dataT.push([0]);
+	for (iD=0; iD<dropT.length; iD++) {
+		dataT[dataT.length-1].push(dropT[iD][0]);
+		dataT.push([dropT[iD][1]]);
+	}
+	dataT[dataT.length-1].push(graph_data[graph_data.length-1][0]);
+	iD=0;
+	var flag = true;
+	for (iC=0; iC<cutT.length; iC++){
+		flag = true;
+		while (flag){
+			if ((dataT[iD][0]==cutT[iC])||(dataT[iD][1]==cutT[iC])){
+				flag=false;
+			} else if ((dataT[iD][0]<cutT[iC])&&(dataT[iD][1]>cutT[iC])){
+				flag=false;
+				dataT.splice(iD,0,dataT[iD].slice());
+				dataT[iD][1]=cutT[iC];
+				dataT[iD+1][0]=cutT[iC];
+				iD++;
+			} else {
+				iD++;
+			}
+		}
+	}
+	for (iD=0; iD<dataT.length; iD++) {
+		//may happen at 0 and at end
+		if (dataT[iD][0]==dataT[iD][1]){
+			dataT.splice(iD,1);
+			iD--;
+		}
+	}
+	return dataT;
+}
 function unifyT() {
 	//Drop tool defines intervals to ignore (data to trash), therefore it has priority (one cannot insert a cut point or a nodiff interval in a drop zone)
 	for (var iD=0; iD<dropT.length; iD++) {
@@ -1177,40 +1212,9 @@ function unifyT() {
 			}
 		}
 	}
-	//Data zones are intervals between drop zones and cuts.
+	//Calculate data zones
 	var prevdataT = dataT;
-	dataT = [];
-	dataT.push([0]);
-	for (iD=0; iD<dropT.length; iD++) {
-		dataT[dataT.length-1].push(dropT[iD][0]);
-		dataT.push([dropT[iD][1]]);
-	}
-	dataT[dataT.length-1].push(graph_data[graph_data.length-1][0]);
-	iD=0;
-	var flag = true;
-	for (iC=0; iC<cutT.length; iC++){
-		flag = true;
-		while (flag){
-			if ((dataT[iD][0]==cutT[iC])||(dataT[iD][1]==cutT[iC])){
-				flag=false;
-			} else if ((dataT[iD][0]<cutT[iC])&&(dataT[iD][1]>cutT[iC])){
-				flag=false;
-				dataT.splice(iD,0,dataT[iD].slice());
-				dataT[iD][1]=cutT[iC];
-				dataT[iD+1][0]=cutT[iC];
-				iD++;
-			} else {
-				iD++;
-			}
-		}
-	}
-	for (iD=0; iD<dataT.length; iD++) {
-		//may happen at 0 and at end
-		if (dataT[iD][0]==dataT[iD][1]){
-			dataT.splice(iD,1);
-			iD--;
-		}
-	}
+	dataT = dataZones();
 	//Delete subintervals that have been modified
 	for (var iP=0; iP<prevdataT.length; iP++){
 		//find difference between prevdataT and dataT
@@ -3675,19 +3679,15 @@ function makeGraph(onsuccess){
 		graph_data = data.result;
 		graph_time = data.timepoint;
 		//Load segmentation variables
-		cutT = undefined; //Array of time point
-		nodiffT = undefined; //Array of Array([start,end])
-		dropT = undefined; //Array of Array([start,end])
-		eventT = undefined; //Array or list
-		//Present state
-		get_set_flisefile_option(cur_id, 'cutT');
-		get_set_flisefile_option(cur_id, 'nodiffT');
-		get_set_flisefile_option(cur_id, 'dropT');
-		get_set_flisefile_option(cur_id, 'eventT');
+		cutT = (data.cutT != null)?JSON.parse(data.cutT):[]; //Array of time point
+		nodiffT = (data.nodiffT != null)?JSON.parse(data.nodiffT):[]; //Array of Array([start,end])
+		dropT = (data.dropT != null)?JSON.parse(data.dropT):[]; //Array of Array([start,end])
+		eventT = (data.eventT != null)?JSON.parse(data.eventT):[]; //Array or list
+		dataT = dataZones();
 		//Reset the global graph object "g"
-		g=undefined;
+		g = undefined;
 		//Enforce closing of "g2"
-		g2=undefined;
+		g2 = undefined;
 		$('#graphdiv2').hide();
 		$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
 		//Verif if same name is used, and thus update series name in g, and eventually add number if same name for several series
@@ -3733,7 +3733,37 @@ function makeGraph(onsuccess){
 		createGraph(graph_data, graph_labels);
 		g.resize(window.innerWidth-510, (window.innerHeight-90));
 		//Initiate graph underlaycallback based on cutT, etc...
-		unifyT();
+		g.updateOptions({ 
+			underlayCallback: function(canvas, area, g) {
+				var area = g.layout_.getPlotArea();
+				var altColor = false;
+				canvas.clearRect(area.x, area.y, area.w, area.h);
+				//Draw drop intervals
+				for (iD=0; iD<dropT.length; iD++) {
+					drawInterval (g, canvas, dropT[iD][0], dropT[iD][1], [255,128,128]);
+				}
+				//Draw nodiff intervals
+				for (iN=0; iN<nodiffT.length; iN++) {
+					drawInterval (g, canvas, nodiffT[iN][0], nodiffT[iN][1], [128,255,128]);
+				}
+				//Draw cut lines
+				for (iC=0; iC<cutT.length; iC++) {
+					drawVerticalLine(g, canvas, cutT[iC], "#7fbf7f")
+				}
+				//Draw data zones
+				if (dataT.length>1){
+					for (iD=0; iD<dataT.length; iD++) {
+						if (altColor){
+							drawDataZone (g, canvas, dataT[iD][0], dataT[iD][1], [128,128,255]);
+							altColor = false;
+						} else {
+							drawDataZone (g, canvas, dataT[iD][0], dataT[iD][1], [51,204,255]);
+							altColor = true;
+						}
+					}
+				}
+			}
+		});
 		//Display events if they are some
 		for (var iE=0; iE<eventT.length; iE++) {
 			for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){

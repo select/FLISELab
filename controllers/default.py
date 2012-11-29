@@ -119,7 +119,7 @@ def get_data():
     timepoint = [line[-1] for line in reader]
     labels = ['Time'] + labels
     if request.extension == 'json':
-        return dict(result=csv_data, labels=labels, timepoint=timepoint)
+        return dict(result=csv_data, labels=labels, timepoint=timepoint, cutT=record.cutT, nodiffT=record.nodiffT, dropT=record.dropT, eventT=record.eventT)
     #not really working so better not use it
     data = '\\n'.join([','.join([str(x) for x in line]) for line in csv_data])
     return data

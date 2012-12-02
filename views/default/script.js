@@ -3678,12 +3678,6 @@ function makeGraph(onsuccess){
 		//Load raw data
 		graph_data = data.result;
 		graph_time = data.timepoint;
-		//Load segmentation variables
-		cutT = (data.cutT != null)?JSON.parse(data.cutT):[]; //Array of time point
-		nodiffT = (data.nodiffT != null)?JSON.parse(data.nodiffT):[]; //Array of Array([start,end])
-		dropT = (data.dropT != null)?JSON.parse(data.dropT):[]; //Array of Array([start,end])
-		eventT = (data.eventT != null)?JSON.parse(data.eventT):[]; //Array or list
-		dataT = dataZones();
 		//Reset the global graph object "g"
 		g = undefined;
 		//Enforce closing of "g2"
@@ -3732,6 +3726,13 @@ function makeGraph(onsuccess){
 		//Create "g": main series plot
 		createGraph(graph_data, graph_labels);
 		g.resize(window.innerWidth-510, (window.innerHeight-90));
+
+		//Load segmentation variables
+		cutT = (data.cutT != null)?JSON.parse(data.cutT):[]; //Array of time point
+		nodiffT = (data.nodiffT != null)?JSON.parse(data.nodiffT):[]; //Array of Array([start,end])
+		dropT = (data.dropT != null)?JSON.parse(data.dropT):[]; //Array of Array([start,end])
+		eventT = (data.eventT != null)?JSON.parse(data.eventT):[]; //Array or list
+		dataT = dataZones();
 		//Initiate graph underlaycallback based on cutT, etc...
 		g.updateOptions({ 
 			underlayCallback: function(canvas, area, g) {
@@ -3764,42 +3765,31 @@ function makeGraph(onsuccess){
 				}
 			}
 		});
+		
 		//Display events if they are some
-		for (var iE=0; iE<eventT.length; iE++) {
-			for (var series_id=-1;series_id<graph_data[0].length-1;series_id++){
-				$.ajax({
-					url: '{{=URL("store_event.json")}}',
-					data: {flise_record_id:cur_id, time:eventT[iE], series_id:series_id},
-					traditional: true,
-					async: false,
-					success: function(data){
-						if (Object.getOwnPropertyNames(data).length !== 0){
-							//add it to g annotations
-							if (data['series_id']==-1){
-								for (var i = 0; i < g.colors_.length; i++) {
-									g.annotations_.push({
-										series: g.user_attrs_['labels'][i+1],
-										xval: data['time'],
-										icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-										width: 16,
-										height: 16,
-										tickHeight: 2,
-										text: data['type']
-									});
-								}
-							} else {
-								g.annotations_.push({
-									series: data['series_name'],
-									xval: data['time'],
-									icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-									width: 16,
-									height: 16,
-									tickHeight: 2,
-									text: data['type']
-								});
-							}
-						}
-					}
+		for (var iE=0; iE<data.events['id'].length; iE++) {
+			//add it to g annotations
+			if (data.events['series_id'][iE]==-1){
+				for (var i = 0; i < g.colors_.length; i++) {
+					g.annotations_.push({
+						series: g.user_attrs_['labels'][i+1],
+						xval: data.events['time'][iE],
+						icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
+						width: 16,
+						height: 16,
+						tickHeight: 2,
+						text: data.events['type'][iE]
+					});
+				}
+			} else {
+				g.annotations_.push({
+					series: data.events['series_name'][iE],
+					xval: data.events['time'][iE],
+					icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
+					width: 16,
+					height: 16,
+					tickHeight: 2,
+					text: data.events['type'][iE]
 				});
 			}
 		}

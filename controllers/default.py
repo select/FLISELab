@@ -118,8 +118,10 @@ def get_data():
     labels = record.series_species if record.series_species else ['Species%s' % i for i, x in enumerate(csv_data[0][1:])]
     timepoint = [line[-1] for line in reader]
     labels = ['Time'] + labels
+    sel_set_events = db(db.event.flise_file_id == int(request.args(0)))
+    events = dict([(field, [record_event[field] for record_event in sel_set_events.select()]) for field in db.event.fields]) if sel_set_events else None
     if request.extension == 'json':
-        return dict(result=csv_data, labels=labels, timepoint=timepoint, cutT=record.cutT, nodiffT=record.nodiffT, dropT=record.dropT, eventT=record.eventT)
+        return dict(result=csv_data, labels=labels, timepoint=timepoint, cutT=record.cutT, nodiffT=record.nodiffT, dropT=record.dropT, eventT=record.eventT, events=events)
     #not really working so better not use it
     data = '\\n'.join([','.join([str(x) for x in line]) for line in csv_data])
     return data

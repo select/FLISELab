@@ -3423,8 +3423,8 @@ function initGraph(cur_id, name){
 							//Plot
 							$('#graphdiv2').show();
 							var derivlabels=['Time'];
-							for (var i=0; i<graph_labels.length; i++){
-								derivlabels.push('SG1_'+graph_labels[i+1]);
+							for (var i=1; i<graph_labels.length; i++){
+								derivlabels.push('SG1_'+graph_labels[i]);
 							}
 							var colors = [];
 							$('input[name="color"]').each(function(){

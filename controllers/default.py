@@ -150,7 +150,14 @@ def get_options():
             smooth_value = 10,
             OD = None,
             dilution = 50,
-            cell_diameter = 4.5
+            cell_diameter = 4.5,
+            #autoseg options
+            autoseg_win = 25,
+            autoseg_fuse = 60,
+            #sg options
+            sg_win = 60,
+            sg_order = 4,
+            sg_overlay = False
         )
     defaults = get_defaults()
     name = record.series_species or defaults["name"]
@@ -170,88 +177,15 @@ def get_options():
         smooth_value = record.disp_smooth_value or defaults["smooth_value"],
         OD = record.optical_density or defaults["OD"],
         dilution = record.dilution_factor or defaults["dilution"],
-        cell_diameter = record.cell_diameter or defaults["celld"]
+        cell_diameter = record.cell_diameter or defaults["cell_diameter"],
+        #autoseg options
+        autoseg_win = record.autoseg_win or defaults["autoseg_win"],
+        autoseg_fuse = record.autoseg_fuse or defaults["autoseg_fuse"],
+        #sg options
+        sg_win = record.sg_win or defaults["sg_win"],
+        sg_order = record.sg_order or defaults["sg_order"],
+        sg_overlay = record.sg_overlay or defaults["sg_overlay"]
     )
-
-
-def series_options():
-    response.generic_patterns = ['json']
-    record = db.flise_file[int(request.args(0))]
-
-    def get_defaults():
-        filename, raw_file = db.flise_file.file.retrieve(record.file)
-        import csv
-        reader = list(csv.reader(raw_file, delimiter="\t"))
-        num_series = len(reader[0]) - 1
-        name = ['Species%s' % i for i in range(num_series)]
-        slope = [None for i in range(num_series)]
-        colors = ['#0000ff', '#ff0000', '#008000', '#ff6600', '#008080', '#333300']  # Default colors
-        color = [colors[i] for i in range(min(num_series, len(colors)))] + [None for i in range(max(num_series - len(colors), 0))]
-        show = ['true' for i in range(num_series)]
-        return dict(name=name, color=color, show=show, num_series=num_series, slope=slope)
-    defaults = get_defaults()
-    name = record.series_species or defaults["name"]
-    num_series = len(name) or defaults["num_series"]
-    color = record.series_colors or defaults["color"]
-    show = record.series_show or defaults["show"]
-    #convert to boolean
-    show_bool = [s in ['true', 'True', '1'] for s in show]
-    slope = record.series_slope or defaults["slope"]
-    return dict(name=name, color=color, show=show_bool, num_series=num_series, slope=slope)
-
-
-def global_options():
-    response.generic_patterns = ['json']
-    record = db.flise_file[int(request.args(0))]
-
-    def get_defaults():
-        strain = None  # 'BN-1???'
-        comments = 'General description, or any particular problem with the series...'
-        smooth = False
-        smooth_value = 10
-        OD = None
-        dilution = 50
-        cell_diameter = 4.5
-        return dict(strain=strain, comments=comments, smooth=smooth, smooth_value=smooth_value, OD=OD, dilution=dilution, celld=cell_diameter)
-    defaults = get_defaults()
-    strain_id = record.strain_id or defaults["strain"]
-    comments = record.comments or defaults["comments"]
-    smooth = record.disp_smooth or defaults["smooth"]
-    smooth_value = record.disp_smooth_value or defaults["smooth_value"]
-    OD = record.optical_density or defaults["OD"]
-    dilution = record.dilution_factor or defaults["dilution"]
-    cell_diameter = record.cell_diameter or defaults["celld"]
-    return dict(strain_id=strain_id, comments=comments, smooth=smooth, smooth_value=smooth_value, od=OD, dilution=dilution, celld=cell_diameter)
-
-
-def autoseg_options():
-    response.generic_patterns = ['json']
-    record = db.flise_file[int(request.args(0))]
-
-    def get_defaults():
-        autoseg_win = 25
-        autoseg_fuse = 60
-        return dict(autoseg_win=autoseg_win, autoseg_fuse=autoseg_fuse)
-    defaults = get_defaults()
-    autoseg_win = record.autoseg_win or defaults["autoseg_win"]
-    autoseg_fuse = record.autoseg_fuse or defaults["autoseg_fuse"]
-    return dict(autoseg_win=autoseg_win, autoseg_fuse=autoseg_fuse)
-
-
-def sg_options():
-    response.generic_patterns = ['json']
-    record = db.flise_file[int(request.args(0))]
-
-    def get_defaults():
-        sg_win = 60
-        sg_order = 4
-        sg_overlay = False
-        return dict(sg_win=sg_win, sg_order=sg_order, sg_overlay=sg_overlay)
-    defaults = get_defaults()
-    sg_win = record.sg_win or defaults["sg_win"]
-    sg_order = record.sg_order or defaults["sg_order"]
-    sg_overlay = record.sg_overlay or defaults["sg_overlay"]
-    return dict(sg_win=sg_win, sg_order=sg_order, sg_overlay=sg_overlay)
 
 
 def species():

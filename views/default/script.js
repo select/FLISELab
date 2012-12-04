@@ -3062,15 +3062,13 @@ function initGraph(cur_id, name){
 			if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
 		});
 		$('#global_options').slideDown();
-	});
 
-	//***** Load autosegmentation panel
-	$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
-		var autoseg_str = data;
-		//Reset the panel
-		$('#autoseg_options').html('');
-		//Create panel
-		$.getJSON('{{=URL('autoseg_options.json')}}/'+cur_id,function(data){
+		//***** Load autosegmentation panel
+		$.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
+			var autoseg_str = data;
+			//Reset the panel
+			$('#autoseg_options').html('');
+			//Create panel
 			autoseg_str = autoseg_str.replace(/%autoseg_win%/, data.autoseg_win);
 			autoseg_str = autoseg_str.replace(/%autoseg_fuse%/, data.autoseg_fuse);
 			$('#autoseg_options').append(autoseg_str);
@@ -3127,141 +3125,151 @@ function initGraph(cur_id, name){
 			$("#autoseg").removeAttr("disabled").removeAttr("style");
 			$("#revertseg").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 		});
-	});
-	
-	//***** Load Tools panel
-	$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
-		//Initialize tool variables
-		isSelecting = false;
-		tool = 'zoom'; // Default tool
-		
-		//Reset panel
-		$('#tools').html('');
-		//Load the panel
-		htmlstr = data;
-		htmlstr = htmlstr.replace(/%img%/g, "{{=URL(request.application, 'static/icons', '%img%')}}");
-		htmlstr = htmlstr.replace(/%img%/g, "");
-		$('#tools').append(htmlstr);
-		$('#tools_info').hide();
-		
-		//Load Tool Export panel
-		$.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {
-			//Reset panel
-			$('#export').html('');
-			//Load the panel
-			$('#export').append(data);
+
+		//***** Load Tools panel
+		$.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
+			//Initialize tool variables
+			isSelecting = false;
+			tool = 'zoom'; // Default tool
 			
-			//Initialize default tool
-			change_tool(document.getElementById("tool_"+tool));
-		});
-		
-		//Undo button (see button Revert in Autosegmentation panel)
-		$('#revert_tool').unbind('click');
-		$('#revert_tool').click(function(){
-			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-			cutT = prevcutT.slice();
-			nodiffT = aOa_cp_val(prevnodiffT);
-			dropT = aOa_cp_val(prevdropT);
-			unifyT();
-			// remove added evenT
-			var flag
-			for (var iE=0; iE<eventT.length; iE++) {
-				flag = true;
-				for (var iP = preveventT.length - 1; iP >= 0; iP--) {
-					if (preveventT[iP] == eventT[iE]){
-						flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
-						break;
+			//Reset panel
+			$('#tools').html('');
+			//Load the panel
+			htmlstr = data;
+			htmlstr = htmlstr.replace(/%img%/g, "{{=URL(request.application, 'static/icons', '%img%')}}");
+			htmlstr = htmlstr.replace(/%img%/g, "");
+			$('#tools').append(htmlstr);
+			$('#tools_info').hide();
+			
+			//Load Tool Export panel
+			$.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {
+				//Reset panel
+				$('#export').html('');
+				//Load the panel
+				$('#export').append(data);
+				
+				//Initialize default tool
+				change_tool(document.getElementById("tool_"+tool));
+			});
+			
+			//Undo button (see button Revert in Autosegmentation panel)
+			$('#revert_tool').unbind('click');
+			$('#revert_tool').click(function(){
+				$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
+				cutT = prevcutT.slice();
+				nodiffT = aOa_cp_val(prevnodiffT);
+				dropT = aOa_cp_val(prevdropT);
+				unifyT();
+				// remove added evenT
+				var flag
+				for (var iE=0; iE<eventT.length; iE++) {
+					flag = true;
+					for (var iP = preveventT.length - 1; iP >= 0; iP--) {
+						if (preveventT[iP] == eventT[iE]){
+							flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
+							break;
+						}
+					};
+					if (flag){
+						//remove from db
+						for (var iS=-1;iS<graph_data[0].length-1;iS++){
+							//loop to find the correct series: drawback = if several events at the same time index, all of them could be removed, but in fact, since we can only undo once, none of them are to be removed. (BUG)
+							$.ajax({
+								url: '{{=URL("store_event.json")}}',
+								data: {flise_record_id:cur_id, time:eventT[iE], series_id:iS},
+								traditional: true,
+								success: function(data){
+									if (!(Object.getOwnPropertyNames(data).length === 0)){
+										//remove it
+										$.ajax({
+											url: '{{=URL("del_event.json")}}',
+											data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id']},
+											traditional: true
+										});
+									}
+								}
+							});
+						}
+						//remove from g
+						var anns = g.annotations();
+						for (var iA=0;iA<anns.length;iA++){
+							if (anns[iA].xval==eventT[iE]){
+								anns.splice(iA,1);
+								iA--;
+							}
+						}
+						g.setAnnotations(anns);
+						//remove from eventT
+						eventT.splice(iE,1);
+						iE--;
 					}
-				};
-				if (flag){
-					//remove from db
-					for (var iS=-1;iS<graph_data[0].length-1;iS++){
-						//loop to find the correct series: drawback = if several events at the same time index, all of them could be removed, but in fact, since we can only undo once, none of them are to be removed. (BUG)
-						$.ajax({
-							url: '{{=URL("store_event.json")}}',
-							data: {flise_record_id:cur_id, time:eventT[iE], series_id:iS},
-							traditional: true,
-							success: function(data){
-								if (!(Object.getOwnPropertyNames(data).length === 0)){
-									//remove it
+				}
+				// add removed evenT
+				var flag_exist
+				var anns = g.annotations();
+				for (var iP = preveventT.length - 1; iP >= 0; iP--) {
+					flag = true;
+					for (var iE=0; iE<eventT.length; iE++) {
+						if (preveventT[iP] == eventT[iE]){
+							flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
+							break;
+						}
+					};
+					if (flag){
+						//add db
+						for (var iE = event_del.length - 1; iE >= 0; iE--) {
+							if (event_del[iE].time == preveventT[iP]){
+								//create it
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'type', val: event_del[iE].type},
+									traditional: true
+								});
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'series_name', val: event_del[iE].series_name},
+									traditional: true
+								});
+								if (!(event_del[iE].solution_id == null)){
 									$.ajax({
-										url: '{{=URL("del_event.json")}}',
-										data: {flise_record_id:data['flise_file_id'], time:data['time'], series_id:data['series_id']},
+										url: '{{=URL("store_event.json")}}',
+										data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'solution_id', val: event_del[iE].solution_id},
 										traditional: true
 									});
 								}
-							}
-						});
-					}
-					//remove from g
-					var anns = g.annotations();
-					for (var iA=0;iA<anns.length;iA++){
-						if (anns[iA].xval==eventT[iE]){
-							anns.splice(iA,1);
-							iA--;
-						}
-					}
-					g.setAnnotations(anns);
-					//remove from eventT
-					eventT.splice(iE,1);
-					iE--;
-				}
-			}
-			// add removed evenT
-			var flag_exist
-			var anns = g.annotations();
-			for (var iP = preveventT.length - 1; iP >= 0; iP--) {
-				flag = true;
-				for (var iE=0; iE<eventT.length; iE++) {
-					if (preveventT[iP] == eventT[iE]){
-						flag = false;// flag marking a difference was not found, meaning it was there before, and as a consequence, no undo applies...
-						break;
-					}
-				};
-				if (flag){
-					//add db
-					for (var iE = event_del.length - 1; iE >= 0; iE--) {
-						if (event_del[iE].time == preveventT[iP]){
-							//create it
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'type', val: event_del[iE].type},
-								traditional: true
-							});
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'series_name', val: event_del[iE].series_name},
-								traditional: true
-							});
-							if (!(event_del[iE].solution_id == null)){
+								if (event_del[iE].volume == null) {event_del[iE].volume=''};
 								$.ajax({
 									url: '{{=URL("store_event.json")}}',
-									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'solution_id', val: event_del[iE].solution_id},
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'volume', val: event_del[iE].volume},
 									traditional: true
 								});
-							}
-							if (event_del[iE].volume == null) {event_del[iE].volume=''};
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'volume', val: event_del[iE].volume},
-								traditional: true
-							});
-							if (event_del[iE].concentration == null) {event_del[iE].concentration=''};
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'concentration', val: event_del[iE].concentration},
-								traditional: true
-							});
-							$.ajax({
-								url: '{{=URL("store_event.json")}}',
-								data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'comment', val: event_del[iE].comment},
-								traditional: true
-							});
-							//add to g
-							if (event_del[iE].series_id==-1){
-								for (var i = 0; i < g.colors_.length; i++) {
+								if (event_del[iE].concentration == null) {event_del[iE].concentration=''};
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'concentration', val: event_del[iE].concentration},
+									traditional: true
+								});
+								$.ajax({
+									url: '{{=URL("store_event.json")}}',
+									data: {flise_record_id:event_del[iE].flise_file_id, time:event_del[iE].time, series_id:event_del[iE].series_id, var_name:'comment', val: event_del[iE].comment},
+									traditional: true
+								});
+								//add to g
+								if (event_del[iE].series_id==-1){
+									for (var i = 0; i < g.colors_.length; i++) {
+										anns.push({
+											series: g.user_attrs_['labels'][i+1],
+											xval: event_del[iE].time,
+											icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
+											width: 16,
+											height: 16,
+											tickHeight: 2,
+											text: event_del[iE].type
+										});
+									}
+								} else {
 									anns.push({
-										series: g.user_attrs_['labels'][i+1],
+										series: g.user_attrs_['labels'][event_del[iE].series_id+1],
 										xval: event_del[iE].time,
 										icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
 										width: 16,
@@ -3270,37 +3278,26 @@ function initGraph(cur_id, name){
 										text: event_del[iE].type
 									});
 								}
-							} else {
-								anns.push({
-									series: g.user_attrs_['labels'][event_del[iE].series_id+1],
-									xval: event_del[iE].time,
-									icon: '{{=URL(request.application, 'static/icons','mark-event.png')}}',
-									width: 16,
-									height: 16,
-									tickHeight: 2,
-									text: event_del[iE].type
-								});
+								event_del.splice(iE,1);
 							}
-							event_del.splice(iE,1);
-						}
-					};
+						};
+					}
 				}
-			}
-			g.setAnnotations(anns);
-			//save eventT to db.flise_file
-			eventT = preveventT.slice();
-			get_set_flisefile_option(cur_id, 'eventT');
+				g.setAnnotations(anns);
+				//save eventT to db.flise_file
+				eventT = preveventT.slice();
+				get_set_flisefile_option(cur_id, 'eventT');
+			});
+			$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 		});
-		$("#revert_tool").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-	});
-	
-	//***** Load preprocessing panel
-	$.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
-		var sg_str = data;
-		//Reset panel
-		$('#deriv').html('');
-		//Load panel
-		$.getJSON('{{=URL('sg_options.json')}}/'+cur_id,function(data){
+
+
+		//***** Load preprocessing panel
+		$.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
+			var sg_str = data;
+			//Reset panel
+			$('#deriv').html('');
+			//Load panel
 			//Load values
 			sg_str = sg_str.replace(/%sg_win%/, data.sg_win);
 			sg_str = sg_str.replace(/%sg_order%/, data.sg_order);

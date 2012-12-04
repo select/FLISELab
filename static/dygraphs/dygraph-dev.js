@@ -18,6 +18,9 @@
   var source_files = [
     "strftime/strftime-min.js",
     "rgbcolor/rgbcolor.js",
+    "stacktrace.js",
+    "dashed-canvas.js",
+    "dygraph-options.js",
     "dygraph-layout.js",
     "dygraph-canvas.js",
     "dygraph.js",
@@ -26,6 +29,13 @@
     "dygraph-interaction-model.js",
     "dygraph-range-selector.js",
     "dygraph-tickers.js",
+    "plugins/base.js",
+    "plugins/annotations.js",
+    "plugins/axes.js",
+    "plugins/chart-labels.js",
+    "plugins/grid.js",
+    "plugins/legend.js",
+    "plugins/install.js",
     "dygraph-options-reference.js"  // Shouldn't be included in generate-combined.sh
   ];
 

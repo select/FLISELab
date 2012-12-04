@@ -126,6 +126,53 @@ def get_data():
     data = '\\n'.join([','.join([str(x) for x in line]) for line in csv_data])
     return data
 
+def get_options():
+    response.generic_patterns = ['json']
+    record = db.flise_file[int(request.args(0))]
+
+    def get_defaults():
+        filename, raw_file = db.flise_file.file.retrieve(record.file)
+        import csv
+        reader = list(csv.reader(raw_file, delimiter="\t"))
+        num_series = len(reader[0]) - 1
+        colors = ['#0000ff', '#ff0000', '#008000', '#ff6600', '#008080', '#333300']  # Default colors
+        return dict(
+            #series options
+            name = ['Species%s' % i for i in range(num_series)],
+            num_series = num_series,
+            slope = [None for i in range(num_series)],
+            color = [colors[i] for i in range(min(num_series, len(colors)))] + [None for i in range(max(num_series - len(colors), 0))],
+            show = ['true' for i in range(num_series)],
+            #global options
+            strain = None,
+            comments = 'General description, or any particular problem with the series...',
+            smooth = False,
+            smooth_value = 10,
+            OD = None,
+            dilution = 50,
+            cell_diameter = 4.5
+        )
+    defaults = get_defaults()
+    name = record.series_species or defaults["name"]
+    show = record.series_show or defaults["show"]
+    show_bool = [s in ['true', 'True', '1'] for s in show] #convert to boolean
+    return dict(
+        #series options
+        name = name,
+        num_series = len(name) or defaults["num_series"],
+        color = record.series_colors or defaults["color"],
+        show = show_bool,
+        slope = record.series_slope or defaults["slope"],
+        #global options
+        strain_id = record.strain_id or defaults["strain"],
+        comments = record.comments or defaults["comments"],
+        smooth = record.disp_smooth or defaults["smooth"],
+        smooth_value = record.disp_smooth_value or defaults["smooth_value"],
+        OD = record.optical_density or defaults["OD"],
+        dilution = record.dilution_factor or defaults["dilution"],
+        cell_diameter = record.cell_diameter or defaults["celld"]
+    )
+
 
 def series_options():
     response.generic_patterns = ['json']

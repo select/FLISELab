@@ -3312,6 +3312,18 @@ function initGraph(cur_id, name){
 				//Check box to activate or not overlay of smoothed data on original series
 				$('#overlay').unbind('click');
 				$('#overlay').click(function(){
+					//When unchek while g2 is displayed, remove the overlayed smoothed data
+					if (!($(this).is(':checked')) && (typeof g2 !== "undefined")) {
+						var colors = [];
+						$('input[name="color"]').each(function(){
+							colors.push($(this).val());
+						});
+						g.updateOptions({ 
+							file: graph_data,
+							labels: graph_labels,
+							colors: colors
+						});
+					};
 					$.ajax({
 						url: '{{=URL("store_option")}}',
 						data: {record_id:cur_id, var_name:'sg_overlay', val: $(this).is(':checked')},
@@ -3600,9 +3612,9 @@ function initGraph(cur_id, name){
 				$('#preproc_close').click(function(){
 					$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 					$("#preproc").attr("value", "Extract, process and plot");
+					$('#graphdiv2').hide();
 					if (g2) { g2.destroy(); }
 					g2 = undefined;
-					$('#graphdiv2').hide();
 					$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
 					var colors = [];
 					$('input[name="color"]').each(function(){

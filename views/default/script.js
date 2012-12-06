@@ -34,6 +34,7 @@ function aOa_cp_val(aOa){
 }
 
 /************ Init **************/
+$('#loadgraph').hide();
 $('#create_record').show();
 $('.current_record').hide().prev().hide();
 $('.local-help').hide();
@@ -2530,6 +2531,7 @@ function add2event(context,g){
 
 function createGraph(graph_data, labels){
 	if (g==undefined){
+		if (g) { g.destroy(); }
 		g = new Dygraph(document.getElementById("graphdiv"), graph_data,
 			{
 				labels: labels,
@@ -2650,7 +2652,6 @@ function createGraph(graph_data, labels){
 				},
 				drawCallback: function(me, is_initial){
 					if (is_initial){return;}
-					var range = me.xAxisRange();
 					if ((g2 != undefined)&&(!isDrawing)){
 						isDrawing=true;
 						var range = me.xAxisRange();
@@ -3390,8 +3391,9 @@ function initGraph(cur_id, name){
 						traditional: true,
 						type: 'POST',
 						success: function(data){
+							$('#loadgraph').show();
 							var result = data.result;
-							g.resize(window.innerWidth-510, Math.floor((window.innerHeight-90)/2));
+							g.resize(window.innerWidth-530, Math.floor((window.innerHeight-90)/2));
 							//Shape data to plot
 							var data2plot=[];
 							for (var iP=0; iP<graph_data.length;iP++){
@@ -3435,13 +3437,15 @@ function initGraph(cur_id, name){
 								if ($(this).is(':checked')) vis.push(true);
 								else vis.push(false);
 							});
+							if (g2) { g2.destroy(); }
 							g2 = new Dygraph(document.getElementById("graphdiv2"), data2plot,
 								{
 									labels: derivlabels,
+									labelsDiv: "labelsdiv2",
 									colors: colors,
 									visibility: vis,
 									dateWindow: g.xAxisRange(),
-									width: window.innerWidth-510,
+									width: window.innerWidth-530,
 									height: Math.floor((window.innerHeight-90)/2),
 									strokeWidth: 1.2,
 									gridLineColor: 'rgb(196, 196, 196)',
@@ -3508,6 +3512,9 @@ function initGraph(cur_id, name){
 							$("#preproc_close").removeAttr("disabled").removeAttr("style");
 							// Enable button
 							$("#preproc").attr("value", "Extract, reprocess and plot").removeAttr("disabled").removeAttr("style");
+							if (!($("#overlay").is(':checked'))) {
+								$('#loadgraph').hide();
+							}
 						}
 					});
 					//Get the smoothed data and overlay
@@ -3584,6 +3591,7 @@ function initGraph(cur_id, name){
 									colors: colors,
 									visibility: vis.concat(vis)
 								});
+								$('#loadgraph').hide();
 							}
 						});
 					}
@@ -3592,6 +3600,7 @@ function initGraph(cur_id, name){
 				$('#preproc_close').click(function(){
 					$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 					$("#preproc").attr("value", "Extract, process and plot");
+					if (g2) { g2.destroy(); }
 					g2 = undefined;
 					$('#graphdiv2').hide();
 					$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
@@ -3604,7 +3613,7 @@ function initGraph(cur_id, name){
 						labels: graph_labels,
 						colors: colors
 					});
-					g.resize(window.innerWidth-510, (window.innerHeight-90));
+					g.resize(window.innerWidth-530, (window.innerHeight-90));
 					$('input[name="smooth_val"]').parent().find('span').eq(1).html('');
 					$('input[name="smooth"]').removeAttr("disabled").removeAttr("style");
 				});
@@ -3612,10 +3621,13 @@ function initGraph(cur_id, name){
 				$("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
 			});
 			$('#graphdiv').show();
+			g.resize(window.innerWidth-530, (window.innerHeight-90));
 		});
+		$('#loadgraph').hide();
 	}
 
 	//Show data extraction zone
+	$('#loadgraph').show();
 	$('#my_records').slideUp();
 	$('#edit_record').slideUp();
 	$('#section_data').parent().attr('style','width:455px');
@@ -3663,8 +3675,10 @@ function updateGraph(series_name){
 
 		//Update smoothingroller
 		if ($('input[name="smooth"]').is(':checked')) g.updateOptions({rollPeriod: parseFloat($('input[name="smooth_val"]').val())});
+		$('#loadgraph').hide();
 	}
 
+	$('#loadgraph').show();
 	//Update name
 	$('#my_records > ul').find('#'+cur_id).find('.flise_select').html(series_name); 
 	$(".current_record").html(series_name);
@@ -3678,8 +3692,10 @@ function makeGraph(onsuccess){
 		graph_data = data.result;
 		graph_time = data.timepoint;
 		//Reset the global graph object "g"
+		if (g) { g.destroy(); }
 		g = undefined;
 		//Enforce closing of "g2"
+		if (g2) { g2.destroy(); }
 		g2 = undefined;
 		$('#graphdiv2').hide();
 		$('#graphdiv2:parent').html('<div id="graphdiv2"></div>');
@@ -3724,7 +3740,6 @@ function makeGraph(onsuccess){
 		graph_labels.splice(0,0,"Time");
 		//Create "g": main series plot
 		createGraph(graph_data, graph_labels);
-		g.resize(window.innerWidth-510, (window.innerHeight-90));
 
 		//Load segmentation variables
 		cutT = (data.cutT != null)?JSON.parse(data.cutT):[]; //Array of time point

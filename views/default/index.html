@@ -3,10 +3,9 @@
 		<table style="width:100%; table-layout:fixed;">
 			<tr>
 				<td>
-					<div id="graphdiv"></div>
-					<div id="labelsdiv" style="z-index:1; position:relative; bottom:40px; left:100px"></div>
+					<div id="loadgraph">Loading interactive data display... <img src="{{=URL('static','images/loading.gif')}}"></div>
 				</td>
-				<td style="width:99%" rowspan="2">
+				<td style="width:99%" rowspan="3">
 					<h2 onclick="collapse('section_file')">1. File</h2>
 					<div id="section_file">
 							<h3>Current File</h3>
@@ -47,7 +46,15 @@
 			</tr>
 			<tr>
 				<td>
+					<div id="graphdiv"></div>
+					<div id="labelsdiv" style="z-index:-1; position:relative; bottom:40px; left:100px"></div>
+				</td>
+			</tr>
+			<tr>
+				<td>
 					<div id="graphdiv2" style="cursor:crosshair"></div>
+					<div id="labelsdiv2" style="z-index:-1; position:relative; bottom:40px; left:100px">
+					</div>
 				</td>
 			</tr>
 		</table>

@@ -482,12 +482,16 @@ def hg_update():
         TR(TD('pull'), TD(pstdout),TD(pstderr)),
         TR(TD('update'), TD(ustdout),TD(ustderr)),
         ))
-    #from mercurial import ui, hg
-    #from mercurial.node import hex
-    #'hg pull init'
-    #'hg update'
-    #repo = hg.repository('/path/to/repo/root', ui.ui())
-    #fctx = repo.filectx('/path/to/file', 'tip')
+
+@auth.requires_membership('admin')
+def git_update():
+    import subprocess
+    p = subprocess.Popen(['git','pull'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd = request.folder)
+    ustdout,ustderr = p.communicate()
+    return TAG[''](TABLE(
+        TR(TH('command'), TH('stdout'), TH('stderr')),
+        TR(TD('update'), TD(ustdout),TD(ustderr)),
+        ))
 
 def glob_ignore(path):
     '''returns True it path matches a pattern from IGNORE_PATTERNS'''

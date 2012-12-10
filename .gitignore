@@ -1,1 +1,4 @@
 .DS_Store
+private/auth.key
+private/release
+.svn

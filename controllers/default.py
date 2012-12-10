@@ -16,7 +16,7 @@ def index():
     rendered by views/default/index.html or views/generic.html
     """
     check_first_user()#check if the first users exits if not redirect to setup
-    response.files.append(URL(request.application, 'static/dygraphs', 'dygraph-combined.js'))
+    response.files.append(URL(request.application, 'static/dygraphs', 'dygraph-dev.js'))
     response.files.append(URL(request.application, 'static/html5slider', 'html5slider.js'))      # to REMOVE in the end
     response.files.append(URL(request.application, 'static/js', 'jquery.confirm.js'))
     response.files.append(URL(request.application, 'static/colorpicker', 'jquery.colorPicker.js'))

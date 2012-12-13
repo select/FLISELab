@@ -147,7 +147,7 @@ def get_options():
             strain = None,
             comments = 'General description, or any particular problem with the series...',
             smooth = False,
-            smooth_value = 10,
+            smooth_value = 0.1,
             OD = None,
             dilution = 50,
             cell_diameter = 4.5,

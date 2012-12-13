@@ -1,40 +1,46 @@
 <tr>
-	<th>Strain reference</th>
-	<td>
-		%strain_ref%
-	</td>
+    <th>Strain reference</th>
+    <td>
+        %strain_ref%
+    </td>
 </tr>
 <tr>
-	<th>Optical density</th>
-	<td>
-		<input name="od" type="text" value="%od%" style="width:100px" class="double"/>(1.2 x 10^7 cells / OD-unit / mL)
-	</td>
+    <th>Optical density</th>
+    <td>
+        <input name="od" type="text" value="%od%" style="width:100px" class="double"/>(1.2 x 10^7 cells / OD-unit / mL)
+    </td>
 </tr>
 <tr>
-	<th>Dilution factor</th>
-	<td>
-		<input name="dilutionf" type="text" value="%dilutionf%" style="width:100px" class="double"/>(for OD measurement)
-	</td>
+    <th>Dilution factor</th>
+    <td>
+        <input name="dilutionf" type="text" value="%dilutionf%" style="width:100px" class="double"/>(for OD measurement)
+    </td>
 </tr>
 <tr>
-	<th>Cell diameter</th>
-	<td>
-		<input name="celldiameter" type="text" value="%celldiameter%" style="width:100px" class="double"/>(10^-6 m)
-	</td>
+    <th>Cell diameter</th>
+    <td>
+        <input name="celldiameter" type="text" value="%celldiameter%" style="width:100px" class="double"/>(10^-6 m)
+    </td>
 </tr>
 <tr>
-	<th>Description</th>
-	<td>
-		<textarea name="comments" rows="4">%comments%</textarea>
-	</td>
+    <th>Description</th>
+    <td>
+        <textarea name="comments" rows="4">%comments%</textarea>
+    </td>
 </tr>
 <tr>
     <td colspan="2"><hr/></td>
 </tr>
 <tr>
-	<th>Smoothing roller</th>
+    <th>Pre-smoothing</th>
    <td> 
-        <input name="smooth" type="checkbox" %smooth%/> 
-        <input type="range" name="smooth_val" min="1" max="70" step="1" value="%smooth_value%"/> <span/> <span/>
+        <input name="smooth" type="checkbox" %smooth%/>
+        <span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <input type="range" name="smooth_val" min="0.1" max="0.9" step="0.008" value="%smooth_value%"/>
+            <span/>
+            <span/>
+        </span>
+        (strength)
    </td>
 </tr>

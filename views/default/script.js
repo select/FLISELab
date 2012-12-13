@@ -2707,6 +2707,14 @@ function initGraph(cur_id, name){
 				$('#series_options').append('<table id="series'+i+'">'+st+'</table>');
 				$('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
 			}
+			//switch button iOS-iPhone style
+			$('#series_options').show(); //FIX: this is a dirty fix, otherwise width is not properly initialized
+			$('input[name="show"]').iphoneStyle({
+				checkedLabel: 'Show',
+				uncheckedLabel: 'Hide'
+			});
+			$('#series_options').hide(); //FIX: cf. above
+			//
 			$('.add_species').unbind('click');
 			$('.add_species').click(function () {
 				var new_species = $(this).parent().find('.new_species').val()
@@ -2940,8 +2948,6 @@ function initGraph(cur_id, name){
 			});
 			//now that the series have a correct naming, disp event
 			g.setAnnotations(g.annotations());
-			//switch button
-			//$('input[name="show"]').checkbox(); ********************************************************************************************
 			//disp panel
 			$('#series_options').slideDown();
 

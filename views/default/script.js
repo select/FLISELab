@@ -3731,8 +3731,8 @@ function updateGraph(series_name){
 function makeGraph(onsuccess){
 	$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 		//Load raw data
-		var smooth_factor = 10;
-		smooth_factor = 1;// - Math.pow(10,(-smooth_factor));
+		var smooth_factor = 0.8; //from 0.1 (very little smoothing) to 0.9 (quite strong smoothing) for a smooth_factor from 1-10^(-20) to 1-10^(-10) 
+		smooth_factor = 1;// - Math.pow(10,(-((1-(smooth_factor-0.1)/0.8)*10+10)));
 		var smooth_it = true;
 		if (smooth_it && (smooth_factor != 1)) {
 			var data_series = [];

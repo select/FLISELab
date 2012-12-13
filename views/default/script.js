@@ -991,13 +991,13 @@ function interval2export(pos) {
 
 /******************* GRAPH ************************/
 function getX(canvasx, g) {
-	var points = g.layout_.points;
+	var points = g.layout_.points[0];
 	if (points === undefined) return;
 	var xval = -1;
 	//Make a guess for position, and go back 10 before
-	var istart = Math.max(0,Math.floor((points[0].canvasx-canvasx)*points.length/(g.rawData_[0].length-1)/(points[0].canvasx-points[points.length-1].canvasx)-10));
+	var istart = Math.max(0, Math.floor((points[0].canvasx-canvasx)*points.length/(points[0].canvasx-points[points.length-1].canvasx)-10));
 	// Loop through surroundings points and find the time nearest to our current location.
-	var minDist = 1e+100;
+	var minDist = Infinity;
 	var idx = -1;
 	for (var i = istart; i < points.length; i++) {
 		var point = points[i];
@@ -1044,7 +1044,7 @@ function drawSelectRect(event, g, context) {
 	} else {
 		ctx.fillStyle = "rgba(128,128,128,0.33)";
 	}
-	// Draw a light-grey (default) rectangle to show the new viewing area
+	// Draw a rectangle to show the new viewing area
 	if (context.dragDirection == Dygraph.HORIZONTAL) {
 		if (context.dragEndX && context.dragStartX) {
 		ctx.fillRect(Math.min(context.dragStartX, context.dragEndX), g.layout_.getPlotArea().y,
@@ -1071,8 +1071,8 @@ function drawSelectRect(event, g, context) {
 	g.canvas_ctx_.clearRect(g.layout_.getPlotArea().x, Math.min(context.dragStartY, context.prevEndY),
 					g.layout_.getPlotArea().w, Math.abs(context.dragStartY - context.prevEndY));
 	}	
-	// Update point display
-	g.updateSelection_();  
+	// Update point display (not needed anymore)
+	//g.updateSelection_();  
 }
 
 function drawDataZone(g, ctx, startX, endX, color) {
@@ -2541,21 +2541,21 @@ function createGraph(graph_data, labels){
 				interactionModel: {
 					mousedown: function (event, g, context) {
 						if (tool == 'zoom') {
-							Dygraph.defaultInteractionModel.mousedown(event, g, context);
+							Dygraph.Interaction.defaultModel.mousedown(event, g, context);
 						} else {
 							if (event.altKey || event.shiftKey) {
-								Dygraph.defaultInteractionModel.mousedown(event, g, context);
+								Dygraph.Interaction.defaultModel.mousedown(event, g, context);
 							} else {
 								context.initializeMouseDown(event, g, context);
 								if (tool == 'nodiff' || tool == 'drop'  || tool == 'cancel') {
-									isSelecting = true; 
+									isSelecting = true; //startSelect
 								} else {
 									if (tool =='cut'){
 										add2cut(getX(context.dragStartX, g));
 									} else {
 										if (tool=='event'){
 											add2event(context, g);
-										} else {
+										} else { //it must be 'export' tool
 											interval2export(getX(context.dragStartX, g));
 										}
 									}
@@ -2565,11 +2565,11 @@ function createGraph(graph_data, labels){
 					},
 					mousemove: function (event, g, context) {
 						if (tool == 'zoom') {
-							Dygraph.defaultInteractionModel.mousemove(event, g, context);
+							Dygraph.Interaction.defaultModel.mousemove(event, g, context);
 						} else {
 							if (!isSelecting) {
 								if (event.altKey || event.shiftKey) {
-									Dygraph.defaultInteractionModel.mousemove(event, g, context);
+									Dygraph.Interaction.defaultModel.mousemove(event, g, context);
 								} else {
 									return;
 								}
@@ -2580,13 +2580,13 @@ function createGraph(graph_data, labels){
 					},
 					mouseup: function(event, g, context) {
 						if (tool == 'zoom') {
-							Dygraph.defaultInteractionModel.mouseup(event, g, context);
+							Dygraph.Interaction.defaultModel.mouseup(event, g, context);
 						} else {
 							if (isSelecting) {
 								eraseSelectRect(g, context);
 							};
 							if (event.altKey || event.shiftKey) {
-								Dygraph.defaultInteractionModel.mousemove(event, g, context);
+								Dygraph.Interaction.defaultModel.mousemove(event, g, context);
 							} else if (tool == 'nodiff' || tool == 'drop'  || tool == 'cancel') {
 								if (tool == 'nodiff'){
 									if (context.prevEndX != null){
@@ -2611,12 +2611,12 @@ function createGraph(graph_data, labels){
 					},
 					mouseout: function(event, g, context) {
 						if (tool == 'zoom') {
-							Dygraph.defaultInteractionModel.mouseout(event, g, context);
+							Dygraph.Interaction.defaultModel.mouseout(event, g, context);
 						}
 					},
 					dblclick: function(event, g, context) {
 						if (tool == 'zoom') {
-							Dygraph.defaultInteractionModel.dblclick(event, g, context);
+							Dygraph.Interaction.defaultModel.dblclick(event, g, context);
 						}
 					},
 					mousewheel: function(event, g, context) {
@@ -2637,6 +2637,21 @@ function createGraph(graph_data, labels){
 							dateWindow: dateWindow
 						});
 						Dygraph.cancelEvent(event);
+					},
+					touchstart: function(event, g, context) {
+						if (tool == 'zoom') {
+							Dygraph.Interaction.startTouch(event, g, context);
+						}
+					},
+					touchmove: function(event, g, context) {
+						if (tool == 'zoom') {
+							Dygraph.Interaction.moveTouch(event, g, context);
+						}
+					},
+					touchend: function(event, g, context) {
+						if (tool == 'zoom') {
+							Dygraph.Interaction.endTouch(event, g, context);
+						}
 					}
 				},
 				strokeWidth: 1.2,
@@ -3476,27 +3491,27 @@ function initGraph(cur_id, name){
 									interactionModel: {
 										mousedown: function (event, me, context) {
 											if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-												Dygraph.defaultInteractionModel.mousedown(event, me, context);
+												Dygraph.Interaction.defaultModel.mousedown(event, me, context);
 											}
 										},
 										mousemove: function (event, me, context) {
 											if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-												Dygraph.defaultInteractionModel.mousemove(event, me, context);
+												Dygraph.Interaction.defaultModel.mousemove(event, me, context);
 											}
 										},
 										mouseup: function(event, me, context) {
 											if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-												Dygraph.defaultInteractionModel.mouseup(event, me, context);
+												Dygraph.Interaction.defaultModel.mouseup(event, me, context);
 											}
 										},
 										mouseout: function(event, me, context) {
 											if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-												Dygraph.defaultInteractionModel.mouseout(event, me, context);
+												Dygraph.Interaction.defaultModel.mouseout(event, me, context);
 											}
 										},
 										dblclick: function(event, me, context) {
 											if (tool == 'zoom' || (event.altKey || event.shiftKey)) {
-												Dygraph.defaultInteractionModel.dblclick(event, me, context);
+												Dygraph.Interaction.defaultModel.dblclick(event, me, context);
 											}
 										},
 										mousewheel: function(event, me, context) {
@@ -3517,6 +3532,21 @@ function initGraph(cur_id, name){
 												dateWindow: dateWindow
 											});
 											Dygraph.cancelEvent(event);
+										},
+										touchstart: function(event, g, context) {
+											if (tool == 'zoom') {
+												Dygraph.Interaction.startTouch(event, g, context);
+											}
+										},
+										touchmove: function(event, g, context) {
+											if (tool == 'zoom') {
+												Dygraph.Interaction.moveTouch(event, g, context);
+											}
+										},
+										touchend: function(event, g, context) {
+											if (tool == 'zoom') {
+												Dygraph.Interaction.endTouch(event, g, context);
+											}
 										}
 									}
 								});
@@ -3701,7 +3731,38 @@ function updateGraph(series_name){
 function makeGraph(onsuccess){
 	$.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
 		//Load raw data
-		graph_data = data.result;
+		var smooth_factor = 10;
+		smooth_factor = 1;// - Math.pow(10,(-smooth_factor));
+		var smooth_it = true;
+		if (smooth_it && (smooth_factor != 1)) {
+			var data_series = [];
+			var smoothed_data_series;
+			var data_all_series = data.result;
+			graph_data = [];
+			for (var iS = data_all_series[0].length - 1; iS > 0; iS--) {
+				data_series = [];
+				//Extract series
+				for (var iP = data_all_series.length - 1; iP >= 0; iP--) {
+					data_series.unshift(data_all_series[iP][iS]);
+				};
+				//Smooth it
+				smoothed_data_series = smooth_spline(data_series, smooth_factor);
+				//Reconstruct data structure
+				for (iP = data_all_series.length - 1; iP >= 0; iP--) {
+					if (iS ==  data_all_series[0].length - 1) {
+						graph_data.unshift([smoothed_data_series[iP]]);
+					} else {
+						graph_data[iP].unshift(smoothed_data_series[iP]);
+					}
+				};
+			};
+			//Add time
+			for (iP = data_all_series.length - 1; iP >= 0; iP--) {
+				graph_data[iP].unshift(data.result[iP][0]);
+			};
+		} else{
+			graph_data = data.result;
+		};
 		graph_time = data.timepoint;
 		//Reset the global graph object "g"
 		if (g) { g.destroy(); }

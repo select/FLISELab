@@ -2708,13 +2708,7 @@ function initGraph(cur_id, name){
                 $('#series_options').append('<table id="series'+i+'">'+st+'</table>');
                 $('#series'+i+' option[value="'+data.name[i]+'"]').attr('selected', 'selected');
             }
-            //switch button iOS-iPhone style
-            $('#series_options').show(); //FIX: this is a dirty fix, otherwise width is not properly initialized
-            $('input[name="show"]').iphoneStyle({
-                checkedLabel: 'Show',
-                uncheckedLabel: 'Hide'
-            });
-            $('#series_options').hide(); //FIX: cf. above
+            
             //
             $('.add_species').unbind('click');
             $('.add_species').click(function () {
@@ -2907,32 +2901,6 @@ function initGraph(cur_id, name){
                     traditional: true
                 });
             });
-            //Check box to activate or not display of series
-            $('input[name="show"]').unbind('click');
-            $('input[name="show"]').click(function(){
-                var vis = []
-                $('input[name="show"]').each(function (){
-                    if ($(this).is(':checked')) vis.push(true);
-                    else vis.push(false);
-                });
-                //Pass visibility option to graph object
-                if (typeof g2 === "undefined")
-                    g.updateOptions({visibility: vis});
-                else {
-                    if ($("#overlay").is(':checked'))
-                        g.updateOptions({visibility: vis.concat(vis)});
-                    else
-                        g.updateOptions({visibility: vis});
-                    g2.updateOptions({visibility: vis});
-                }
-
-                //Save
-                $.ajax({
-                    url: '{{=URL("store_option")}}',
-                    data: {record_id:cur_id, var_name:'series_show', val: vis},
-                    traditional: true
-                });
-            });
             //Calibration slope
             $('input[name="calibration_slope"]').unbind('change');
             $('input[name="calibration_slope"]').change(function(){
@@ -2951,6 +2919,36 @@ function initGraph(cur_id, name){
             g.setAnnotations(g.annotations());
             //disp panel
             $('#series_options').slideDown();
+            //Display series on graph: switch button iOS-iPhone style
+            //FIX: style has to be applied when container div is not hidden, otherwise width is not properly initialized
+            $('input[name="show"]').iphoneStyle({
+                checkedLabel: 'Show',
+                uncheckedLabel: 'Hide',
+                onChange: function(elem, value) { 
+                    var vis = []
+                    $('input[name="show"]').each(function (){
+                        if ($(this).is(':checked')) vis.push(true);
+                        else vis.push(false);
+                    });
+                    //Pass visibility option to graph object
+                    if (typeof g2 === "undefined")
+                        g.updateOptions({visibility: vis});
+                    else {
+                        if ($("#overlay").is(':checked'))
+                            g.updateOptions({visibility: vis.concat(vis)});
+                        else
+                            g.updateOptions({visibility: vis});
+                        g2.updateOptions({visibility: vis});
+                    }
+
+                    //Save
+                    $.ajax({
+                        url: '{{=URL("store_option")}}',
+                        data: {record_id:cur_id, var_name:'series_show', val: vis},
+                        traditional: true
+                    });
+                }
+            });
 
             //***** Load global series options
             //Reset the panel
@@ -3582,8 +3580,9 @@ function initGraph(cur_id, name){
                         //Force to remove Dygraph smoothing
                         if ($('input[name="smooth"]').is(':checked')){
                             g.updateOptions({rollPeriod: 1});
-                            $('input[name="smooth"]').attr('checked', false).attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
-                            $('input[name="smooth_val"]').parent().find('span').eq(1).html('(disabled to overlay)');
+                            $('input[name="smooth"]').attr('checked', false).iphoneStyle("refresh");
+                            $('input[name="smooth"]').prop('checked', false).iphoneStyle("refresh").attr("disabled", "disabled").iphoneStyle("refresh");
+                            $('#smooth_strength').next().html('(disabled to overlay)');
                             $.ajax({
                                 url: '{{=URL("store_option")}}',
                                 data: {record_id:cur_id, var_name:'disp_smooth', val: $('input[name="smooth"]').is(':checked')},

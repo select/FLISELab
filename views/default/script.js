@@ -3021,7 +3021,10 @@ function initGraph(cur_id, name){
             });
             //Init slider
             smooth_val = data.smooth_value;
-            //Update graph "g" options
+            //Show or hide range selector
+            if (data.smooth) $('span#smooth_strength').show();
+            else $('span#smooth_strength').hide();
+            /*//Update graph "g" options
             if (data.smooth) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
             else g.updateOptions({file: graph_data, rollPeriod: 1});
             //Activate smoothing (only on "g")
@@ -3036,7 +3039,7 @@ function initGraph(cur_id, name){
                 //Apply visual smoothing
                 if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
                 else g.updateOptions({file: graph_data, rollPeriod: 1});
-            });
+            });*/
             //Value next to slider
             $('input[name="smooth_val"]').unbind();
             $('input[name="smooth_val"]').each(function(){
@@ -3053,15 +3056,26 @@ function initGraph(cur_id, name){
                     data: {record_id:cur_id, var_name:'disp_smooth_value', val: $(this).val()},
                     traditional: true
                 });
-                smooth_val = parseFloat($(this).attr("value"));
-                if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
+                /*smooth_val = parseFloat($(this).attr("value"));
+                if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});*/
             });
+            //Display panel
             $('#global_options').slideDown();
+            //Apply checkbox iPhone style (panel has to be visible otherwise width not calculated correctly)
             $('input[name="smooth"]').iphoneStyle({
                 checkedLabel: 'On',
                 uncheckedLabel: 'Off',
                 onChange: function(elem, value) { 
-                    $('span#status').html(value.toString());
+                    $('span#smooth_strength').toggle();
+                    //Save checked state
+                    $.ajax({
+                        url: '{{=URL("store_option")}}',
+                        data: {record_id:cur_id, var_name:'disp_smooth', val: value},
+                        traditional: true
+                    });
+                    //Apply visual smoothing
+                    /*if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
+                    else g.updateOptions({file: graph_data, rollPeriod: 1});*/
                 }
             });
             $('input[name="smooth"]').parent().css('display','inline-block');

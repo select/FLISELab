@@ -2959,7 +2959,7 @@ function initGraph(cur_id, name){
             st = st.replace(/%comments%/, data.comments);
             if (data.smooth == true) st = st.replace(/%smooth%/, 'checked');
             else st = st.replace(/%smooth%/, '');
-            st = st.replace(/%smooth_value%/, smooth_val);
+            st = st.replace(/%smooth_value%/, smooth_val).replace(/%smooth_value%/, smooth_val);
             if(data.od == null) st = st.replace(/%od%/, '');
             else st = st.replace(/%od%/, data.od);
             st = st.replace(/%dilutionf%/, data.dilution);
@@ -3021,13 +3021,11 @@ function initGraph(cur_id, name){
             if (data.smooth) $('span#smooth_strength').show();
             else $('span#smooth_strength').hide();
             //Value next to slider
-            $('input[name="smooth_val"]').unbind();
-            $('input[name="smooth_val"]').each(function(){
-                $(this).parent().find('span').eq(0).html($(this).val());
-            });
+            $('input[name="smooth_val"]').unbind('change');
+            $('input[name="smooth_val"]').unbind('mouseup');
             //Update smooth value
             $('input[name="smooth_val"]').change(function(){
-                $(this).parent().find('span').eq(0).html($(this).val());
+                $(this).parent().find('span').eq(0).html(parseFloat($(this).val()).toFixed(3));
             });
             $('input[name="smooth_val"]').mouseup(function(){
                 //Save new smooth_value
@@ -3069,8 +3067,8 @@ function initGraph(cur_id, name){
             
 
             //***** Load autosegmentation panel
-            $.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(data) {
-                var autoseg_str = data;
+            $.get('{{=URL(request.application, 'static/templates','autoseg_options.html')}}', function(htmlstr) {
+                var autoseg_str = htmlstr;
                 //Reset the panel
                 $('#autoseg_options').html('');
                 //Create panel
@@ -3132,7 +3130,7 @@ function initGraph(cur_id, name){
             });
 
             //***** Load Tools panel
-            $.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(data) {
+            $.get('{{=URL(request.application, 'static/templates','tools.html')}}', function(htmlstr) {
                 //Initialize tool variables
                 isSelecting = false;
                 tool = 'zoom'; // Default tool
@@ -3140,18 +3138,18 @@ function initGraph(cur_id, name){
                 //Reset panel
                 $('#tools').html('');
                 //Load the panel
-                htmlstr = data;
-                htmlstr = htmlstr.replace(/%img%/g, "{{=URL(request.application, 'static/icons', '%img%')}}");
-                htmlstr = htmlstr.replace(/%img%/g, "");
-                $('#tools').append(htmlstr);
+                toolsstr = htmlstr;
+                toolsstr = toolsstr.replace(/%img%/g, "{{=URL(request.application, 'static/icons', '%img%')}}");
+                toolsstr = toolsstr.replace(/%img%/g, "");
+                $('#tools').append(toolsstr);
                 $('#tools_info').hide();
                 
                 //Load Tool Export panel
-                $.get('{{=URL(request.application, 'static/templates','export.html')}}', function(data) {
+                $.get('{{=URL(request.application, 'static/templates','export.html')}}', function(htmlstr) {
                     //Reset panel
                     $('#export').html('');
                     //Load the panel
-                    $('#export').append(data);
+                    $('#export').append(htmlstr);
                     
                     //Initialize default tool
                     changeTool(document.getElementById("tool_"+tool));
@@ -3298,8 +3296,8 @@ function initGraph(cur_id, name){
 
 
             //***** Load preprocessing panel
-            $.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(data) {
-                var sg_str = data;
+            $.get('{{=URL(request.application, 'static/templates','preprocessing.html')}}', function(htmlstr) {
+                var sg_str = htmlstr;
                 //Reset panel
                 $('#deriv').html('');
                 //Load panel

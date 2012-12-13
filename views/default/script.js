@@ -1,10 +1,11 @@
 /************ GLOBAL VAR ******************/
+var original_data = [];//Original data
 var graph_data = [];//Data to be displayed and processed
-var graph_time = [];//Data for the original recorded time
+var original_time = [];//Data for the original recorded time
 var graph_labels;//Labels adapted
 var g;//Graph variable (from dygraph)
 var g2;//Graph variable for preprocessing result
-var smooth_val;//Smoothing roller tool value (just for dygraph, not for preprocessing)
+var smooth_val;//Smoothing spline tool value (for preprocessing)
 var cur_id;//ID of the Flise-file
 
 //Global variables to save
@@ -518,7 +519,7 @@ function interval2export(pos) {
     var od = $('input[name="od"]').val();
     var dilutionf = $('input[name="dilutionf"]').val();
     var celldiameter = $('input[name="celldiameter"]').val();
-    var name = $('input[name="created_on"]').val()+'('+graph_time[Math.floor(intStart/Tsamp)]+'-'+graph_time[Math.floor(intEnd/Tsamp)]+')_'+$('select[name="select_strain_global"] :selected').html();
+    var name = $('input[name="created_on"]').val()+'('+original_time[Math.floor(intStart/Tsamp)]+'-'+original_time[Math.floor(intEnd/Tsamp)]+')_'+$('select[name="select_strain_global"] :selected').html();
     var calintercept = [];
     var calslope = [];
     $('input[name="calibration_slope"]').each(function(){
@@ -614,7 +615,7 @@ function interval2export(pos) {
                             if ((graph_data[iP][0]>=intStart) && (graph_data[iP][0]<=intEnd)){
                                 raw_data_point = graph_data.slice(iP,iP+1)[0];
                                 raw_data.push(raw_data_point.slice());
-                                raw_time.push(graph_time[iP]);
+                                raw_time.push(original_time[iP]);
                                 raw_time_ref.push(raw_data_point[0]);
                                 for (var iS = 1; iS < raw_data_point.length; iS++) {
                                     raw_series[iS-1].push(raw_data_point[iS]);
@@ -2661,7 +2662,7 @@ function createGraph(graph_data, labels){
                     x:{
                         valueFormatter: function(t){
                             var Tsamp=(graph_data[1][0]-graph_data[0][0]);
-                            return t+' ('+graph_time[Math.floor(t/Tsamp)]+')'
+                            return t+' ('+original_time[Math.floor(t/Tsamp)]+')'
                         }
                     }
                 },
@@ -2956,12 +2957,11 @@ function initGraph(cur_id, name){
             $('#global_options').html('');
             //Adapt panel HTML
             var st = global_template;
-            //st = st.replace(/%strain_ref%/, data.strain);
             st = st.replace(/%strain_ref%/, $('#strains_store > div').html());
             st = st.replace(/%comments%/, data.comments);
             if (data.smooth == true) st = st.replace(/%smooth%/, 'checked');
             else st = st.replace(/%smooth%/, '');
-            st = st.replace(/%smooth_value%/, data.smooth_value);
+            st = st.replace(/%smooth_value%/, smooth_val);
             if(data.od == null) st = st.replace(/%od%/, '');
             else st = st.replace(/%od%/, data.od);
             st = st.replace(/%dilutionf%/, data.dilution);
@@ -3019,27 +3019,9 @@ function initGraph(cur_id, name){
                     traditional: true
                 });
             });
-            //Init slider
-            smooth_val = data.smooth_value;
             //Show or hide range selector
             if (data.smooth) $('span#smooth_strength').show();
             else $('span#smooth_strength').hide();
-            /*//Update graph "g" options
-            if (data.smooth) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
-            else g.updateOptions({file: graph_data, rollPeriod: 1});
-            //Activate smoothing (only on "g")
-            $('input[name="smooth"]').unbind('click');
-            $('input[name="smooth"]').click(function(){
-                //Save checked state
-                $.ajax({
-                    url: '{{=URL("store_option")}}',
-                    data: {record_id:cur_id, var_name:'disp_smooth', val: $(this).is(':checked')},
-                    traditional: true
-                });
-                //Apply visual smoothing
-                if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
-                else g.updateOptions({file: graph_data, rollPeriod: 1});
-            });*/
             //Value next to slider
             $('input[name="smooth_val"]').unbind();
             $('input[name="smooth_val"]').each(function(){
@@ -3056,8 +3038,13 @@ function initGraph(cur_id, name){
                     data: {record_id:cur_id, var_name:'disp_smooth_value', val: $(this).val()},
                     traditional: true
                 });
-                /*smooth_val = parseFloat($(this).attr("value"));
-                if ($('input[name="smooth"]').is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});*/
+                smooth_val = parseFloat($(this).attr("value"));
+                if ($('input[name="smooth"]').is(':checked')) {
+                    $('#loadgraph').show();
+                    formatData(true, smooth_val);
+                    g.updateOptions({file: graph_data});
+                    $('#loadgraph').hide();
+                }
             });
             //Display panel
             $('#global_options').slideDown();
@@ -3074,8 +3061,10 @@ function initGraph(cur_id, name){
                         traditional: true
                     });
                     //Apply visual smoothing
-                    /*if ($(this).is(':checked')) g.updateOptions({file: graph_data, rollPeriod: smooth_val});
-                    else g.updateOptions({file: graph_data, rollPeriod: 1});*/
+                    $('#loadgraph').show();
+                    formatData(value, smooth_val);
+                    g.updateOptions({file: graph_data});
+                    $('#loadgraph').hide();
                 }
             });
             $('input[name="smooth"]').parent().css('display','inline-block');
@@ -3167,7 +3156,7 @@ function initGraph(cur_id, name){
                     $('#export').append(data);
                     
                     //Initialize default tool
-                    change_tool(document.getElementById("tool_"+tool));
+                    changeTool(document.getElementById("tool_"+tool));
                 });
                 
                 //Undo button (see button Revert in Autosegmentation panel)
@@ -3744,8 +3733,6 @@ function updateGraph(series_name){
         });
         g.updateOptions({'visibility': visibilities});
 
-        //Update smoothingroller
-        if ($('input[name="smooth"]').is(':checked')) g.updateOptions({rollPeriod: parseFloat($('input[name="smooth_val"]').val())});
         $('#loadgraph').hide();
     }
 
@@ -3760,39 +3747,13 @@ function updateGraph(series_name){
 function makeGraph(onsuccess){
     $.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
         //Load raw data
-        var smooth_factor = 0.8; //from 0.1 (very little smoothing) to 0.9 (quite strong smoothing) for a smooth_factor from 1-10^(-20) to 1-10^(-10) 
-        smooth_factor = 1;// - Math.pow(10,(-((1-(smooth_factor-0.1)/0.8)*10+10)));
-        var smooth_it = true;
-        if (smooth_it && (smooth_factor != 1)) {
-            var data_series = [];
-            var smoothed_data_series;
-            var data_all_series = data.result;
-            graph_data = [];
-            for (var iS = data_all_series[0].length - 1; iS > 0; iS--) {
-                data_series = [];
-                //Extract series
-                for (var iP = data_all_series.length - 1; iP >= 0; iP--) {
-                    data_series.unshift(data_all_series[iP][iS]);
-                };
-                //Smooth it
-                smoothed_data_series = smooth_spline(data_series, smooth_factor);
-                //Reconstruct data structure
-                for (iP = data_all_series.length - 1; iP >= 0; iP--) {
-                    if (iS ==  data_all_series[0].length - 1) {
-                        graph_data.unshift([smoothed_data_series[iP]]);
-                    } else {
-                        graph_data[iP].unshift(smoothed_data_series[iP]);
-                    }
-                };
-            };
-            //Add time
-            for (iP = data_all_series.length - 1; iP >= 0; iP--) {
-                graph_data[iP].unshift(data.result[iP][0]);
-            };
-        } else{
-            graph_data = data.result;
-        };
-        graph_time = data.timepoint;
+        original_data = data.result;
+        smooth_val = data.smooth_value;
+        var smooth_strength = ((smooth_val>=0.1)&&(smooth_val<=0.9))?smooth_val:0.1; //from 0.1 (very little smoothing) to 0.9 (quite strong smoothing) for a smooth_factor from 1-10^(-20) to 1-10^(-10)
+        var smooth_it = data.smooth;
+        formatData(smooth_it, smooth_strength);
+        
+        original_time = data.timepoint;
         //Reset the global graph object "g"
         if (g) { g.destroy(); }
         g = undefined;
@@ -3913,10 +3874,43 @@ function makeGraph(onsuccess){
         if (onsuccess!=undefined) onsuccess();      
     });
 }
+/**************** FORMAT Graph Data  ************/
+function formatData(smooth_it, smooth_strength){
+    var smooth_factor = 1 - Math.pow(10,(-((1-(smooth_strength-0.1)/0.8)*10+10)));
+    if (smooth_it && (smooth_factor != 1)) {
+        var data_series = [];
+        var smoothed_data_series;
+        var data_all_series = original_data;
+        graph_data = []; //GLOBAL
+        for (var iS = data_all_series[0].length - 1; iS > 0; iS--) {
+            data_series = [];
+            //Extract series
+            for (var iP = data_all_series.length - 1; iP >= 0; iP--) {
+                data_series.unshift(data_all_series[iP][iS]);
+            };
+            //Smooth it
+            smoothed_data_series = smooth_spline(data_series, smooth_factor);
+            //Reconstruct data structure
+            for (iP = data_all_series.length - 1; iP >= 0; iP--) {
+                if (iS ==  data_all_series[0].length - 1) {
+                    graph_data.unshift([smoothed_data_series[iP]]);
+                } else {
+                    graph_data[iP].unshift(smoothed_data_series[iP]);
+                }
+            };
+        };
+        //Add time
+        for (iP = data_all_series.length - 1; iP >= 0; iP--) {
+            graph_data[iP].unshift(original_data[iP][0]);
+        };
+    } else{
+        graph_data = original_data;
+    };
+}
 
 /************* SELECTION TOOLS *********************/
 
-function change_tool(tool_div) {
+function changeTool(tool_div) {
     var ids = ['tool_zoom', 'tool_cut', 'tool_nodiff', 'tool_drop', 'tool_event', 'tool_cancel', 'tool_export'];
     for (var i = 0; i < ids.length; i++) {
         var div = document.getElementById(ids[i]);

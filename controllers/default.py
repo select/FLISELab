@@ -121,7 +121,18 @@ def get_data():
     sel_set_events = db(db.event.flise_file_id == int(request.args(0)))
     events = dict([(field, [record_event[field] for record_event in sel_set_events.select()]) for field in db.event.fields]) if sel_set_events else None
     if request.extension == 'json':
-        return dict(result=csv_data, labels=labels, timepoint=timepoint, cutT=record.cutT, nodiffT=record.nodiffT, dropT=record.dropT, eventT=record.eventT, events=events)
+        return dict(
+            result = csv_data,
+            labels = labels, 
+            timepoint = timepoint, 
+            cutT = record.cutT, 
+            nodiffT = record.nodiffT, 
+            dropT = record.dropT, 
+            eventT = record.eventT, 
+            events = events,
+            smooth = record.disp_smooth or False,
+            smooth_value = record.disp_smooth_value or 0.1
+        )
     #not really working so better not use it
     data = '\\n'.join([','.join([str(x) for x in line]) for line in csv_data])
     return data
@@ -173,8 +184,8 @@ def get_options():
         #global options
         strain_id = record.strain_id or defaults["strain"],
         comments = record.comments or defaults["comments"],
-        smooth = record.disp_smooth or defaults["smooth"],
-        smooth_value = record.disp_smooth_value or defaults["smooth_value"],
+        smooth = record.disp_smooth or defaults["smooth"], #passed already in get_data, but passed again to make it simple
+            #smooth_value = record.disp_smooth_value or defaults["smooth_value"],
         OD = record.optical_density or defaults["OD"],
         dilution = record.dilution_factor or defaults["dilution"],
         cell_diameter = record.cell_diameter or defaults["cell_diameter"],

@@ -24,8 +24,8 @@ def index():
     response.files.append(URL(request.application, 'static/css', 'flise.css'))
     response.files.append(URL(request.application, 'static/js', 'jquery.simplemodal.1.4.3.min.js'))
     response.files.append(URL(request.application, 'static/js', 'smooth_spline.js'))
-    #response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.checkbox.js'))
-    #response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.checkbox.css'))
+    response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.iphone-checkboxes.js'))
+    response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.iphone-checkboxes.css'))
     #import os
     #data = open(os.path.join(request.folder, 'private', 'FLISE', 'data.csv')).readlines()
     #data = '\\n'.join([l[:-1] for l in data])

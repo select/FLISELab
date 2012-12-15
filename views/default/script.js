@@ -2686,7 +2686,7 @@ function createGraph(graph_data, labels){
 function initGraph(cur_id, name){
     loadpanels = function(){
         //***** Load options and create corresponding panels
-        $.getJSON('{{=URL('get_options.json')}}/'+cur_id,function(data){
+        $.getJSON('{{=URL('get_options.json')}}/'+cur_id, function(data){
             //***** Load series options
             //Reset the panel
             $('#series_options').html('');
@@ -3036,10 +3036,11 @@ function initGraph(cur_id, name){
                 });
                 smooth_val = parseFloat($(this).attr("value"));
                 if ($('input[name="smooth"]').is(':checked')) {
-                    $('#loadgraph').show();
-                    formatData(true, smooth_val);
-                    g.updateOptions({file: graph_data});
-                    $('#loadgraph').hide();
+                    $('#loadgraph').show(1, function(){
+                        formatData(true, smooth_val);
+                        g.updateOptions({file: graph_data});
+                        $('#loadgraph').hide();
+                    });
                 }
             });
             //Display panel
@@ -3048,8 +3049,8 @@ function initGraph(cur_id, name){
             $('input[name="smooth"]').iphoneStyle({
                 checkedLabel: 'On',
                 uncheckedLabel: 'Off',
-                onChange: function(elem, value) { 
-                    $('span#smooth_strength').toggle();
+                onChange: function(elem, value) {
+                    $('input[name="smooth"]').attr("disabled", "disabled"); //avoid double call while waiting
                     //Save checked state
                     $.ajax({
                         url: '{{=URL("store_option")}}',
@@ -3057,10 +3058,14 @@ function initGraph(cur_id, name){
                         traditional: true
                     });
                     //Apply visual smoothing
-                    $('#loadgraph').show();
-                    formatData(value, smooth_val);
-                    g.updateOptions({file: graph_data});
-                    $('#loadgraph').hide();
+                    $('#loadgraph').show(1, function(){
+                        formatData(value, smooth_val);
+                        g.updateOptions({file: graph_data});
+                        $('#loadgraph').hide(1, function(){
+                            $('span#smooth_strength').toggle();
+                            $('input[name="smooth"]').removeAttr("disabled");
+                        });
+                    });
                 }
             });
             $('input[name="smooth"]').parent().css('display','inline-block');
@@ -3677,14 +3682,12 @@ function initGraph(cur_id, name){
                 //Default button unabling
                 $("#preproc_close").attr("disabled", "disabled").attr("style","color: rgb(170,170,170)");
             });
-            $('#graphdiv').show();
-            g.resize(window.innerWidth-530, (window.innerHeight-90));
+
+            showGraph();
         });
-        $('#loadgraph').hide();
     }
 
     //Show data extraction zone
-    $('#loadgraph').show();
     $('#my_records').slideUp();
     $('#edit_record').slideUp();
     $('#section_data').parent().attr('style','width:455px');
@@ -3709,9 +3712,7 @@ function initGraph(cur_id, name){
     dataT = [];
     
     //***** Load time-series and associated data, then display graph and initiate callbacks
-    $('#graphdiv').hide();
-    makeGraph(loadpanels);
-    
+    loadProgess(makeGraph(loadpanels));   
 }
 /**************** REPLOT Graph after 'sampling time' update ************/
 function updateGraph(series_name){
@@ -3730,19 +3731,39 @@ function updateGraph(series_name){
         });
         g.updateOptions({'visibility': visibilities});
 
-        $('#loadgraph').hide();
+        showGraph();
     }
 
-    $('#loadgraph').show();
     //Update name
     $('#my_records > ul').find('#'+cur_id).find('.flise_select').html(series_name); 
     $(".current_record").html(series_name);
     //Load time-series and associated data, then display graph and initiate callbacks
-    makeGraph(simpleUpdate);
+    loadProgess(makeGraph(simpleUpdate));
+}
+/**************** LOAD Graph Message  ************/
+function loadProgess(afterShow){
+    $('#graphdiv').hide(1, function(afterShow) {
+        if (afterShow != undefined) {
+            $('#loadgraph').show(1, afterShow);
+        } else {
+            $('#loadgraph').show();
+        };
+    });
+}
+/**************** Show Graph  ************/
+function showGraph(afterShow){
+    $('#graphdiv').show(1, function(afterShow) {
+        if (afterShow != undefined) {
+            $('#loadgraph').hide(1, afterShow);
+        } else {
+            g.resize(window.innerWidth-530, (window.innerHeight-90));
+            $('#loadgraph').hide("slow");
+        };
+    });
 }
 /**************** PLOT Graph  ************/
-function makeGraph(onsuccess){
-    $.getJSON('{{=URL('get_data.json')}}/'+cur_id,function(data){
+function makeGraph(onSuccess){
+    $.getJSON('{{=URL('get_data.json')}}/'+cur_id, function(data){
         //Load raw data
         original_data = data.result;
         smooth_val = data.smooth_value;
@@ -3868,7 +3889,7 @@ function makeGraph(onsuccess){
             }
         }
         g.setAnnotations(g.annotations());
-        if (onsuccess!=undefined) onsuccess();      
+        if (onSuccess!=undefined) onSuccess();      
     });
 }
 /**************** FORMAT Graph Data  ************/

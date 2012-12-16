@@ -3763,7 +3763,31 @@ function showGraph(afterShow){
 }
 /**************** PLOT Graph  ************/
 function makeGraph(onSuccess){
-    $.getJSON('{{=URL('get_data.json')}}/'+cur_id, function(data){
+    $.ajax({
+      url: '{{=URL('get_data.json')}}/'+cur_id,
+      dataType: 'json',
+      xhr: function()
+        {
+            var xhr = new window.XMLHttpRequest();
+            //Upload progress
+            xhr.upload.addEventListener("progress", function(evt){
+                if (evt.lengthComputable) {
+                    var percentComplete = evt.loaded / evt.total;
+                    //Do something with upload progress
+                    console.log(percentComplete);
+                }
+            }, false);
+            //Download progress
+            xhr.addEventListener("progress", function(evt){
+                if (evt.lengthComputable) {
+                    var percentComplete = evt.loaded / evt.total;
+                    //Do something with download progress
+                    console.log(percentComplete);
+                }
+            }, false);
+            return xhr;
+        },
+      success: function(data){
         //Load raw data
         original_data = data.result;
         smooth_val = data.smooth_value;
@@ -3889,7 +3913,8 @@ function makeGraph(onSuccess){
             }
         }
         g.setAnnotations(g.annotations());
-        if (onSuccess!=undefined) onSuccess();      
+        if (onSuccess!=undefined) onSuccess();
+      }
     });
 }
 /**************** FORMAT Graph Data  ************/

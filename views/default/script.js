@@ -36,6 +36,7 @@ function aOa_cp_val(aOa){
 
 /************ Init **************/
 $('#loadgraph').hide();
+$( "#progressload" ).hide();
 $('#create_record').show();
 $('.current_record').hide().prev().hide();
 $('.local-help').hide();
@@ -3743,6 +3744,7 @@ function updateGraph(series_name){
 /**************** LOAD Graph Message  ************/
 function loadProgess(afterShow){
     $('#graphdiv').hide(1, function(afterShow) {
+        $( "#progressload" ).show().css('width', Math.max(10, window.innerWidth-800)).progressbar({max: 1}).height(15);
         if (afterShow != undefined) {
             $('#loadgraph').show(1, afterShow);
         } else {
@@ -3759,6 +3761,7 @@ function showGraph(afterShow){
             g.resize(window.innerWidth-530, (window.innerHeight-90));
             $('#loadgraph').hide("slow");
         };
+        $( "#progressload" ).progressbar("destroy").hide();
     });
 }
 /**************** PLOT Graph  ************/
@@ -3774,7 +3777,7 @@ function makeGraph(onSuccess){
                 if (evt.lengthComputable) {
                     var percentComplete = evt.loaded / evt.total;
                     //Do something with upload progress
-                    console.log(percentComplete);
+                    //console.log(percentComplete);
                 }
             }, false);
             //Download progress
@@ -3782,7 +3785,7 @@ function makeGraph(onSuccess){
                 if (evt.lengthComputable) {
                     var percentComplete = evt.loaded / evt.total;
                     //Do something with download progress
-                    console.log(percentComplete);
+                    $( "#progressload" ).progressbar({value: percentComplete});
                 }
             }, false);
             return xhr;

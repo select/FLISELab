@@ -371,11 +371,11 @@ function autoseg(data){
                         flag = false;
                         break;
                     } else {
-                        if ((endX>dropT[j][0])&&(startX<dropT[j][0])){
+                        if ((endX>=dropT[j][0])&&(startX<dropT[j][0])){
                             insertT = true;
                             dropT[j][0]=startX;
                         }
-                        if ((endX>dropT[j][1])&&(startX<dropT[j][1])){
+                        if ((endX>dropT[j][1])&&(startX<=dropT[j][1])){
                             insertT = true;
                             dropT[j][1]=endX;
                         }
@@ -440,11 +440,11 @@ function autoseg(data){
                         flag = false;
                         break;
                     } else {
-                        if ((endX>nodiffT[j][0])&&(startX<nodiffT[j][0])){
+                        if ((endX>=nodiffT[j][0])&&(startX<nodiffT[j][0])){
                             insertT = true;
                             nodiffT[j][0]=startX;
                         }
-                        if ((endX>nodiffT[j][1])&&(startX<nodiffT[j][1])){
+                        if ((endX>nodiffT[j][1])&&(startX<=nodiffT[j][1])){
                             insertT = true;
                             nodiffT[j][1]=endX;
                         }
@@ -1304,11 +1304,11 @@ function add2nodiff(startX, endX) {
             if ((endX<=nodiffT[i][1])&&(startX>=nodiffT[i][0])){
                 return;
             } else {
-                if ((endX>nodiffT[i][0])&&(startX<nodiffT[i][0])){
+                if ((endX>=nodiffT[i][0])&&(startX<nodiffT[i][0])){
                     insertT = true;
                     nodiffT[i][0]=startX;
                 }
-                if ((endX>nodiffT[i][1])&&(startX<nodiffT[i][1])){
+                if ((endX>nodiffT[i][1])&&(startX<=nodiffT[i][1])){
                     insertT = true;
                     nodiffT[i][1]=endX;
                 }
@@ -1378,11 +1378,11 @@ function add2drop(startX, endX) {
             if ((endX<=dropT[i][1])&&(startX>=dropT[i][0])){
                 return;
             } else {
-                if ((endX>dropT[i][0])&&(startX<dropT[i][0])){
+                if ((endX>=dropT[i][0])&&(startX<dropT[i][0])){
                     insertT = true;
                     dropT[i][0]=startX;
                 }
-                if ((endX>dropT[i][1])&&(startX<dropT[i][1])){
+                if ((endX>dropT[i][1])&&(startX<=dropT[i][1])){
                     insertT = true;
                     dropT[i][1]=endX;
                 }
@@ -3434,14 +3434,20 @@ function initGraph(cur_id, name){
                         }
                     }
                     //Pass it to Savgol module
+                    $('#loadgraph').show();
                     $.ajax({
                         url: '{{=URL('get_savgol.json')}}',
-                        data: {w:lochw,order:porder,deriv:1,data:JSON.stringify(data2derive)},
+                        data: {
+                            w: lochw,
+                            order: porder,
+                            deriv: ($("#overlay").is(':checked'))?JSON.stringify([1,0]):JSON.stringify([1]),
+                            data: JSON.stringify(data2derive)
+                        },
                         traditional: true,
                         type: 'POST',
                         success: function(data){
-                            $('#loadgraph').show();
-                            var result = data.result;
+                            //*** Plot 1st order derivative
+                            var result = data.result[0];
                             g.resize(window.innerWidth-530, Math.floor((window.innerHeight-90)/2));
                             //Shape data to plot
                             var data2plot=[];
@@ -3471,7 +3477,7 @@ function initGraph(cur_id, name){
                                     }
                                 }
                             }
-                            //Plot
+                            //Plot differentiation graph
                             $('#graphdiv2').show();
                             var derivlabels=['Time'];
                             for (var i=1; i<graph_labels.length; i++){
@@ -3579,9 +3585,69 @@ function initGraph(cur_id, name){
                             if (!($("#overlay").is(':checked'))) {
                                 $('#loadgraph').hide();
                             }
+
+                            //*** Overlay smoothed data
+                            if ($("#overlay").is(':checked')){
+                                result = data.result[1];
+                                //Shape data to plot
+                                var data2plot=[];
+                                var nS = graph_data[0].length;
+                                for (var iP=0; iP<graph_data.length;iP++){
+                                    data2plot.push([graph_data[iP][0]]);//recopy time
+                                    //recopy graph_data points
+                                    for (var iS=1; iS<nS;iS++){
+                                        data2plot[iP].push([graph_data[iP][iS]]);
+                                    }
+                                    //initialize to null
+                                    for (var iS=1; iS<nS;iS++){
+                                        data2plot[iP].push(null);
+                                    }
+                                }
+                                var Tsamp=(graph_data[1][0]-graph_data[0][0]);
+                                var iIpass=0;
+                                for (var iI=0; iI<diffdataT.length; iI++){
+                                    //prevent small intervals to be passed
+                                    if (Math.ceil((diffdataT[iI][1]-diffdataT[iI][0])/Tsamp)<=(2*lochw+1)){
+                                        iIpass++;
+                                        continue;
+                                    }
+                                    //find index when graph_data[iP][0]==diffdataT[iI][0]
+                                    for (iP=0; iP<graph_data.length;iP++){
+                                        if (graph_data[iP][0]==diffdataT[iI][0]){break;}
+                                    }
+                                    //place values
+                                    for (iS=0; iS<result[iI-iIpass].length;iS++){
+                                        for (var iP2=0; iP2<result[iI-iIpass][iS].length;iP2++){
+                                            data2plot[iP+iP2][iS+nS]=result[iI-iIpass][iS][iP2];
+                                        }
+                                    }
+                                }
+                                //Plot in g
+                                var colors = [];
+                                $('input[name="color"]').each(function(){
+                                    colors.push($(this).val());
+                                });
+                                var labels = graph_labels.slice();
+                                for (var iS =  1; iS < nS; iS++) {
+                                    colors.push("#000000");
+                                    labels.push('SG0_'+graph_labels[iS]);
+                                };
+                                var vis = []
+                                $('input[name="show"]').each(function (){
+                                    if ($(this).is(':checked')) vis.push(true);
+                                    else vis.push(false);
+                                });
+                                g.updateOptions({ 
+                                    file: data2plot,
+                                    labels: labels,
+                                    colors: colors,
+                                    visibility: vis.concat(vis)
+                                });
+                            }
+                            $('#loadgraph').hide();
                         }
                     });
-                    //Get the smoothed data and overlay
+                    /*//Get the smoothed data and overlay
                     if ($("#overlay").is(':checked')){
                         //Force to remove Dygraph smoothing
                         if ($('input[name="smooth"]').is(':checked')){
@@ -3657,7 +3723,7 @@ function initGraph(cur_id, name){
                                 $('#loadgraph').hide();
                             }
                         });
-                    }
+                    }*/
                 });
                 $('#preproc_close').unbind('click');
                 $('#preproc_close').click(function(){

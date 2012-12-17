@@ -385,14 +385,17 @@ def del_solution():
 def get_savgol():
     response.generic_patterns = ['json']
     import savgol
-    myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), int(request.vars.deriv))
     from gluon.contrib import simplejson
     data2derive = simplejson.loads(request.vars.data)
+    deriv = simplejson.loads(request.vars.deriv)
     result = []
-    for iI in range(len(data2derive)):
+    for iD in range(len(deriv)):
         result.append([])
-        for iS in range(len(data2derive[iI])):
-            result[iI].append(myinstance.filterTS(data2derive[iI][iS]))
+        myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), deriv[iD])
+        for iI in range(len(data2derive)):
+            result[iD].append([])
+            for iS in range(len(data2derive[iI])):
+                result[iD][iI].append(myinstance.filterTS(data2derive[iI][iS]))
     return dict(result=result)
 
 

@@ -3435,6 +3435,7 @@ function initGraph(cur_id, name){
                     }
                     //Pass it to Savgol module
                     $('#loadgraph').show();
+                    $( "#progressload" ).show().css('width', Math.max(10, window.innerWidth-800)).progressbar({max: 1}).height(15);
                     $.ajax({
                         url: '{{=URL('get_savgol.json')}}',
                         data: {
@@ -3442,6 +3443,24 @@ function initGraph(cur_id, name){
                             order: porder,
                             deriv: ($("#overlay").is(':checked'))?JSON.stringify([1,0]):JSON.stringify([1]),
                             data: JSON.stringify(data2derive)
+                        },
+                        xhr: function() {
+                            var xhr = new window.XMLHttpRequest();
+                            //Upload progress
+                            xhr.upload.addEventListener("progress", function(evt){
+                                if (evt.lengthComputable) {
+                                    var percentComplete = evt.loaded / evt.total;
+                                    $( "#progressload" ).progressbar({value: percentComplete * 0.5});
+                                }
+                            }, false);
+                            //Download progress
+                            xhr.addEventListener("progress", function(evt){
+                                if (evt.lengthComputable) {
+                                    var percentComplete = evt.loaded / evt.total;
+                                    $( "#progressload" ).progressbar({value: (percentComplete + 1) * 0.5});
+                                }
+                            }, false);
+                            return xhr;
                         },
                         traditional: true,
                         type: 'POST',
@@ -3645,6 +3664,7 @@ function initGraph(cur_id, name){
                                 });
                             }
                             $('#loadgraph').hide();
+                            $( "#progressload" ).progressbar("destroy").hide();
                         }
                     });
                     /*//Get the smoothed data and overlay
@@ -3838,19 +3858,10 @@ function makeGraph(onSuccess){
       xhr: function()
         {
             var xhr = new window.XMLHttpRequest();
-            //Upload progress
-            xhr.upload.addEventListener("progress", function(evt){
-                if (evt.lengthComputable) {
-                    var percentComplete = evt.loaded / evt.total;
-                    //Do something with upload progress
-                    //console.log(percentComplete);
-                }
-            }, false);
             //Download progress
             xhr.addEventListener("progress", function(evt){
                 if (evt.lengthComputable) {
                     var percentComplete = evt.loaded / evt.total;
-                    //Do something with download progress
                     $( "#progressload" ).progressbar({value: percentComplete});
                 }
             }, false);

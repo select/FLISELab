@@ -292,10 +292,24 @@ class Savgol:
             Aa = [[0] * m for j in range(n)] if n!=0 else [0]*m
             for i in range(m):
                 if n==0:
-                    Aa[i]=abs(A[i])
+                    Aa[i] = abs(A[i])
                 else:
                     for j in range(n):
                         Aa[i][j] = abs(A[i][j])
+            return Aa
+
+        def matscalarprod(A, k):
+            """
+            Returns the product by a scalar of a matrix.
+            """
+            m,n = matdim(A)
+            Aa = [[0] * m for j in range(n)] if n!=0 else [0]*m
+            for i in range(m):
+                if n==0:
+                    Aa[i] = A[i]*k
+                else:
+                    for j in range(n):
+                        Aa[i][j] = A[i][j]*k
             return Aa
 
         def mattranslate(A, k):
@@ -330,8 +344,12 @@ class Savgol:
         if len(self.filter) > len(y):
             raise TypeError("timeseries size must be bigger than size of filter")
         # pad the signal at the extremes with values taken from the signal itself
-        firstvals = mattranslate(matabs(mattranslate(y[1:self.nright+1][::-1],-y[0])),y[0])
-        lastvals =  mattranslate(matabs(mattranslate(y[-self.nleft-1:-1][::-1], - y[-1])),y[-1])
+        # OLD padding: 
+        # firstvals = mattranslate(matabs(mattranslate(y[1:self.nright+1][::-1],-y[0])),y[0])
+        # lastvals =  mattranslate(matabs(mattranslate(y[-self.nleft-1:-1][::-1], - y[-1])),y[-1])
+        # NEW padding: should preserve 1st order derivative at extremes
+        firstvals = mattranslate(matscalarprod(mattranslate(y[1:self.nright+1][::-1],-y[0]), -1),y[0])
+        lastvals =  mattranslate(matscalarprod(mattranslate(y[-self.nleft-1:-1][::-1], - y[-1]), -1),y[-1])
         y = firstvals + y + lastvals
         # convolve the padded signal with the filter list
         return fconv(self.filter, y, self.nleft, self.nright)

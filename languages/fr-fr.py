@@ -16,6 +16,7 @@
 'Buy this book': 'Acheter ce livre',
 'cache': 'cache',
 'Cannot be empty': 'Ne peut pas être vide',
+'Change': 'Change',
 'Change password': 'Change password',
 'change password': 'changer le mot de passe',
 'Check to delete': 'Cliquez pour supprimer',

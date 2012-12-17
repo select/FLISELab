@@ -3,3 +3,4 @@ private/auth.key
 private/release
 .svn
 *.pyc
+VERSION

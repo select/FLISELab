@@ -2961,10 +2961,12 @@ function initGraph(cur_id, name){
             if (data.smooth == true) st = st.replace(/%smooth%/, 'checked');
             else st = st.replace(/%smooth%/, '');
             st = st.replace(/%smooth_value%/, smooth_val).replace(/%smooth_value%/, smooth_val);
-            if(data.od == null) st = st.replace(/%od%/, '');
-            else st = st.replace(/%od%/, data.od);
-            st = st.replace(/%dilutionf%/, data.dilution);
-            st = st.replace(/%celldiameter%/, data.celld);
+            if(data.OD == null) st = st.replace(/%od%/, '');
+            else st = st.replace(/%od%/, data.OD);
+            if(data.dilution == null) st = st.replace(/%dilutionf%/, '');
+            else st = st.replace(/%dilutionf%/, data.dilution);
+            if(data.cell_diameter == null) st = st.replace(/%celldiameter%/, '');
+            else st = st.replace(/%celldiameter%/, data.cell_diameter);
             $('#global_options').append('<table>'+st+'</table>');
             $('select[name="select_strain"]').attr('name','select_strain_global');
             if (!(data.strain_id==null)) $('select[name="select_strain_global"] option[value="'+data.strain_id+'"]').attr('selected', 'selected');

@@ -3066,7 +3066,7 @@ function initGraph(cur_id, name){
                         g.updateOptions({file: graph_data});
                         $('#loadgraph').hide(1, function(){
                             $('span#smooth_strength').toggle();
-                            $('input[name="smooth"]').removeAttr("disabled");
+                            $('input[name="smooth"]').removeAttr("disabled"); //WARNING: this will cause a bug if we will disable the checkbox before this.onChange is finished
                         });
                     });
                 }
@@ -3585,10 +3585,8 @@ function initGraph(cur_id, name){
                     if ($("#overlay").is(':checked')){
                         //Force to remove Dygraph smoothing
                         if ($('input[name="smooth"]').is(':checked')){
-                            g.updateOptions({rollPeriod: 1});
-                            $('input[name="smooth"]').attr('checked', false).iphoneStyle("refresh");
-                            $('input[name="smooth"]').prop('checked', false).iphoneStyle("refresh").attr("disabled", "disabled").iphoneStyle("refresh");
-                            $('#smooth_strength').next().html('(disabled to overlay)');
+                            $('input[name="smooth"]').attr('checked', false).prop('checked', false).iphoneStyle("refresh");
+                            $('#smooth_strength').next().html('(unactivated to overlay)');
                             $.ajax({
                                 url: '{{=URL("store_option")}}',
                                 data: {record_id:cur_id, var_name:'disp_smooth', val: $('input[name="smooth"]').is(':checked')},
@@ -3679,7 +3677,7 @@ function initGraph(cur_id, name){
                         colors: colors
                     });
                     g.resize(window.innerWidth-530, (window.innerHeight-90));
-                    $('input[name="smooth_val"]').parent().find('span').eq(1).html('');
+                    $('#smooth_strength').next().html('');
                     $('input[name="smooth"]').removeAttr("disabled").removeAttr("style");
                 });
                 //Default button unabling

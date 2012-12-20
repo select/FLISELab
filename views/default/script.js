@@ -3999,7 +3999,7 @@ function makeGraph(onSuccess){
 }
 /**************** FORMAT Graph Data  ************/
 function formatData(smooth_it, smooth_strength){
-    var smooth_factor = 1 - Math.pow(10,(-((1-(smooth_strength-0.1)/0.8)*10+10)));
+    var smooth_factor = 1 - Math.pow(10,(-((1-(smooth_strength-0.1)/0.8)*10+6)));
     if (smooth_it && (smooth_factor != 1)) {
         var data_series = [];
         var smoothed_data_series;

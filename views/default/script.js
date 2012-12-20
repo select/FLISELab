@@ -3041,7 +3041,11 @@ function initGraph(cur_id, name){
                 if ($('input[name="smooth"]').is(':checked')) {
                     $('#loadgraph').show(1, function(){
                         formatData(true, smooth_val);
-                        g.updateOptions({file: graph_data});
+                        if (g2 && ($("#overlay").is(':checked'))) {
+                            g.updateOptions({file: graph_data, labels: graph_labels});
+                        } else {
+                            g.updateOptions({file: graph_data});
+                        };
                         $('#loadgraph').hide();
                     });
                 }

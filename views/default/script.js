@@ -95,14 +95,14 @@ jQuery(document).ready(function(){
      $(window).resize(function(){
         if (typeof g !== "undefined"){
             if (typeof g2 === "undefined")
-                g.resize(window.innerWidth-530, window.innerHeight-90);
+                g.resize((window.innerWidth-530 > 150)?window.innerWidth-530:150, (window.innerHeight-90 > 150)?window.innerHeight-90:150);
             else {
-                g.resize(window.innerWidth-530, Math.floor((window.innerHeight-90)/2));
-                g2.resize(window.innerWidth-530, Math.floor((window.innerHeight-90)/2));
+                g.resize((window.innerWidth-530 > 150)?window.innerWidth-530:150, Math.floor(((window.innerHeight-90 > 150)?window.innerHeight-90:150)/2));
+                g2.resize((window.innerWidth-530 > 150)?window.innerWidth-530:150, Math.floor(((window.innerHeight-90 > 150)?window.innerHeight-90:150)/2));
             }
         }
-        $('#loadgraph').closest('td').width(window.innerWidth-535);
-        $('#section_menu').height(window.innerHeight-90).width($('#section_menu').closest('td').width()+15).css('overflow', 'auto');
+        $('#loadgraph').closest('td').width((window.innerWidth-535 > 145)?window.innerWidth-535:145);
+        $('#section_menu').height((window.innerHeight-90 > 150)?window.innerHeight-90:150).width($('#section_menu').closest('td').width()+15).css('overflow', 'auto');
      });
 });
 
@@ -2539,8 +2539,8 @@ function createGraph(graph_data, labels){
         g = new Dygraph(document.getElementById("graphdiv"), graph_data,
             {
                 labels: labels,
-                width: window.innerWidth-530,
-                height: window.innerHeight-90,
+                width: (window.innerWidth-530 > 150)?window.innerWidth-530:150,
+                height: (window.innerHeight-90 > 150)?window.innerHeight-90:150,
                 labelsDiv: "labelsdiv",
                 interactionModel: {
                     mousedown: function (event, g, context) {
@@ -3473,7 +3473,7 @@ function initGraph(cur_id, name){
                         success: function(data){
                             //*** Plot 1st order derivative
                             var result = data.result[0];
-                            g.resize(window.innerWidth-530, Math.floor((window.innerHeight-90)/2));
+                            g.resize((window.innerWidth-530 > 150)?window.innerWidth-530:150, Math.floor(((window.innerHeight-90 > 150)?window.innerHeight-90:150)/2));
                             //Shape data to plot
                             var data2plot=[];
                             for (var iP=0; iP<graph_data.length;iP++){
@@ -3525,8 +3525,8 @@ function initGraph(cur_id, name){
                                     colors: colors,
                                     visibility: vis,
                                     dateWindow: g.xAxisRange(),
-                                    width: window.innerWidth-530,
-                                    height: Math.floor((window.innerHeight-90)/2),
+                                    width: (window.innerWidth-530 > 150)?window.innerWidth-530:150,
+                                    height: Math.floor(((window.innerHeight-90 > 150)?window.innerHeight-90:150)/2),
                                     strokeWidth: 1.2,
                                     gridLineColor: 'rgb(196, 196, 196)',
                                     logscale : false,
@@ -3691,7 +3691,7 @@ function initGraph(cur_id, name){
                         labels: graph_labels,
                         colors: colors
                     });
-                    g.resize(window.innerWidth-530, (window.innerHeight-90));
+                    g.resize((window.innerWidth-530 > 150)?window.innerWidth-530:150, ((window.innerHeight-90 > 150)?window.innerHeight-90:150));
                     $('#smooth_strength').next().html('');
                     $('input[name="smooth"]').removeAttr("disabled").removeAttr("style");
                 });
@@ -3700,12 +3700,12 @@ function initGraph(cur_id, name){
             });
 
             showGraph();
-            $('#section_menu').height(window.innerHeight-90).width($('#section_menu').closest('td').width()+15).css('overflow', 'auto');
+            $('#section_menu').height((window.innerHeight-90 > 150)?window.innerHeight-90:150).width($('#section_menu').closest('td').width()+15).css('overflow', 'auto');
         });
     }
 
     //Show data extraction zone
-    $('#loadgraph').closest('td').width(window.innerWidth-535);
+    $('#loadgraph').closest('td').width((window.innerWidth-535 > 145)?window.innerWidth-535:145);
     $('#my_records').slideUp();
     $('#edit_record').slideUp();
     $('#section_data').parent().attr('style','width:455px');
@@ -3775,7 +3775,7 @@ function showGraph(afterShow){
         if (afterShow != undefined) {
             $('#loadgraph').hide(1, afterShow);
         } else {
-            g.resize(window.innerWidth-530, (window.innerHeight-90));
+            g.resize((window.innerWidth-530 > 150)?window.innerWidth-530:150, ((window.innerHeight-90 > 150)?window.innerHeight-90:150));
             $('#loadgraph').hide("slow");
         };
         $( "#progressload" ).progressbar("destroy").hide();

@@ -101,7 +101,8 @@ jQuery(document).ready(function(){
                 g2.resize(window.innerWidth-530, Math.floor((window.innerHeight-90)/2));
             }
         }
-        $('#section_menu').css('height', window.innerHeight-90)
+        $('#loadgraph').closest('td').width(window.innerWidth-535);
+        $('#section_menu').height(window.innerHeight-90).width($('#section_menu').closest('td').width()+15).css('overflow', 'auto');
      });
 });
 

@@ -348,8 +348,10 @@ class Savgol:
         # firstvals = mattranslate(matabs(mattranslate(y[1:self.nright+1][::-1],-y[0])),y[0])
         # lastvals =  mattranslate(matabs(mattranslate(y[-self.nleft-1:-1][::-1], - y[-1])),y[-1])
         # NEW padding: should preserve 1st order derivative at extremes
-        firstvals = mattranslate(matscalarprod(mattranslate(y[1:self.nright+1][::-1],-y[0]), -1),y[0])
-        lastvals =  mattranslate(matscalarprod(mattranslate(y[-self.nleft-1:-1][::-1], - y[-1]), -1),y[-1])
+        ystart = y[0] #sum(y[0:int(self.nright/4)])
+        yend = y[-1] #sum(y[-int(self.nleft/4):-1])
+        firstvals = mattranslate(matscalarprod(mattranslate(y[1:self.nright+1][::-1],-ystart), -1),ystart)
+        lastvals =  mattranslate(matscalarprod(mattranslate(y[-self.nleft-1:-1][::-1], - yend), -1),yend)
         y = firstvals + y + lastvals
         # convolve the padded signal with the filter list
         return fconv(self.filter, y, self.nleft, self.nright)

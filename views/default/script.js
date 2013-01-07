@@ -2658,7 +2658,7 @@ function createGraph(graph_data, labels){
                         }
                     }
                 },
-                strokeWidth: 1.2,
+                strokeWidth: 1,
                 gridLineColor: 'rgb(196, 196, 196)',
                 logscale : false,
                 axes:{
@@ -3527,7 +3527,7 @@ function initGraph(cur_id, name){
                                     dateWindow: g.xAxisRange(),
                                     width: (window.innerWidth-530 > 150)?window.innerWidth-530:150,
                                     height: Math.floor(((window.innerHeight-90 > 150)?window.innerHeight-90:150)/2),
-                                    strokeWidth: 1.2,
+                                    strokeWidth: 1,
                                     gridLineColor: 'rgb(196, 196, 196)',
                                     logscale : false,
                                     drawCallback: function(me, is_initial){

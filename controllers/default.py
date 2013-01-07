@@ -541,7 +541,16 @@ def subint_process_data():
                 t = t + ts
             volume.append(volume_step[volume_index])
             ncell.append(number_cell_step[volume_index])
-    return dict(concentrations=data2diff, concentrationsSmooth=datasmooth, concentrationsDiff=datadiff, fluxes=fluxes, volume=volume, ncell=ncell, surf2vol_ratio=vsr, intEvents=intEvents, intSolutions=intSolutions)
+    return dict(
+        concentrations=data2diff, 
+        concentrationsSmooth=datasmooth, 
+        concentrationsDiff=datadiff, 
+        fluxes=fluxes, 
+        volume=volume, 
+        ncell=ncell, 
+        surf2vol_ratio=vsr, 
+        intEvents=intEvents, 
+        intSolutions=intSolutions)
 
 
 def export_spreadsheet():

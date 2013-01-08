@@ -613,15 +613,15 @@ function interval2export(pos) {
                         for (var iS = graph_data[0].length - 2; iS >= 0; iS--) {
                             raw_series.push([]);
                         };
-                        var raw_data_point;
+                        var data_point;
                         for (var iP=0; iP<graph_data.length; iP++){
                             if ((graph_data[iP][0]>=intStart) && (graph_data[iP][0]<=intEnd)){
-                                raw_data_point = graph_data.slice(iP,iP+1)[0];
-                                raw_data.push(raw_data_point.slice());
+                                data_point = graph_data.slice(iP,iP+1)[0];
+                                raw_data.push(original_data.slice(iP,iP+1).pop().slice());
                                 raw_time.push(original_time[iP]);
-                                raw_time_ref.push(raw_data_point[0]);
-                                for (var iS = 1; iS < raw_data_point.length; iS++) {
-                                    raw_series[iS-1].push(raw_data_point[iS]);
+                                raw_time_ref.push(data_point[0]);
+                                for (var iS = 1; iS < data_point.length; iS++) {
+                                    raw_series[iS-1].push(data_point[iS]);
                                 };
                             }
                         }
@@ -659,6 +659,7 @@ function interval2export(pos) {
                             int_parameters.push(['Series:', 'Name:', graph_labels[$(this).parent().parent().index()+1], 'Slope:', $(this).parent().parent().find('td').eq(1).find('input').first().val(), 'Intercept:', $(this).val()]);
                         });
                         int_parameters.push(['Comments:', $('textarea[name="sub_comments"]').val(), ' ', ' ', ' ', ' ', ' ']);
+                        int_parameters.push(['Pre-smoothing strength:',($('input[name="smooth"]').is(':checked'))?$('input[name="smooth_val"]').val():"no presmoothing", ' ', ' ', ' ', ' ', ' ']);
                         int_parameters.push(['Savitzky-Golay window:',$('#lochw').val(), ' ', ' ', ' ', ' ', ' ']);
                         int_parameters.push(['Savitzky-Golay order:',$('#order').val(), ' ', ' ', ' ', ' ', ' ']);
                         //3 Processed data
@@ -679,6 +680,10 @@ function interval2export(pos) {
                                 int_parameters[8][1] = String(surf2vol_ratio);
                                 var intEvents = data.intEvents;
                                 var intSolutions = data.intSolutions;
+                                var header_raw = [graph_labels[0]];
+                                for (var iH = 1; iH < graph_labels.length; iH++) {
+                                    header_raw.push(graph_labels[iH]+' (Volt)');
+                                };
                                 //Structure results into a table
                                 var result = [];
                                 var header_result = [];
@@ -687,29 +692,29 @@ function interval2export(pos) {
                                 for (var iS = 0; iS < concentrations.length; iS++) {
                                     header_result.push('['+graph_labels[iS+1]+']cuv (mol/L)');
                                 };
-                                for (var iS = 0; iS < concentrationsSmooth.length; iS++) {
+                                for (iS = 0; iS < concentrationsSmooth.length; iS++) {
                                     header_result.push('['+graph_labels[iS+1]+']cuv_smoothed (mol/L)');
                                 };
-                                for (var iS = 0; iS < concentrationsDiff.length; iS++) {
+                                for (iS = 0; iS < concentrationsDiff.length; iS++) {
                                     header_result.push('d/dt['+graph_labels[iS+1]+']cuv (mol/L/s)');
                                 };
-                                for (var iS = 0; iS < fluxes.length; iS++) {
+                                for (iS = 0; iS < fluxes.length; iS++) {
                                     header_result.push('influx('+graph_labels[iS+1]+') (nmol/s/m^2)');
                                 };
                                 header_result.push('Cuvette volume (L)');
                                 header_result.push('Number of cells in cuvette');
                                 for (var iT = 0; iT < raw_time_ref.length; iT++) {
                                     result.push([raw_time_ref[iT], raw_time[iT]]);
-                                    for (var iS = 0; iS < concentrations.length; iS++) {
+                                    for (iS = 0; iS < concentrations.length; iS++) {
                                         result[iT].push(concentrations[iS][iT]);
                                     };
-                                    for (var iS = 0; iS < concentrationsSmooth.length; iS++) {
+                                    for (iS = 0; iS < concentrationsSmooth.length; iS++) {
                                         result[iT].push(concentrationsSmooth[iS][iT]);
                                     };
-                                    for (var iS = 0; iS < concentrationsDiff.length; iS++) {
+                                    for (iS = 0; iS < concentrationsDiff.length; iS++) {
                                         result[iT].push(concentrationsDiff[iS][iT]);
                                     };
-                                    for (var iS = 0; iS < fluxes.length; iS++) {
+                                    for (iS = 0; iS < fluxes.length; iS++) {
                                         result[iT].push(fluxes[iS][iT]);
                                     };
                                     result[iT].push(volume[iT]);
@@ -721,7 +726,7 @@ function interval2export(pos) {
                                 for (var iE = 0; iE < intEvents.length; iE++) {
                                     events.push([intEvents[iE].time, intEvents[iE].type, intEvents[iE].series_name, intEvents[iE].solution_name, (intEvents[iE].volume != null) ? intEvents[iE].volume : ' ', (intEvents[iE].concentration != null) ? intEvents[iE].concentration : ' ', intEvents[iE].comment]);
                                 };
-                                for (var iS = 0; iS < intSolutions.length; iS++) {
+                                for (iS = 0; iS < intSolutions.length; iS++) {
                                     for (var iC = 0; iC < intSolutions[iS].components_name.length; iC++) {
                                         solutions.push([(iC == 0) ? intSolutions[iS].name : ' ', intSolutions[iS].components_name[iC], intSolutions[iS].components_ratio[iC]]);
                                     };
@@ -730,7 +735,7 @@ function interval2export(pos) {
                                 var data = [['1 Parameters', { header:[], 
                                         data: int_parameters
                                     }],
-                                    ['2 Raw Data', { header:graph_labels, 
+                                    ['2 Raw Data', { header:header_raw, 
                                         data: raw_data
                                     }],
                                     ['3 Processed Data', { header:header_result, 

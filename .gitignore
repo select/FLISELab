@@ -4,3 +4,10 @@ private/release
 .svn
 *.pyc
 VERSION
+static/FliseLab_osx.tar
+static/FliseLab_osx.tar.gz
+static/FliseLab_src.tar
+static/FliseLab_src.tar.gz
+static/FliseLab_win.tar
+static/FliseLab_win.tar.gz
+static/web2py.app.FliseLab.w2p

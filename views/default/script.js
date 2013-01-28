@@ -73,7 +73,6 @@ function init_files(){
     $('.flise_del').unbind('click');
     $('.flise_del').unbind('confirm');
     $('.flise_del').click(function(){
-        console.log('ok');
         $(this).parent().parent().remove();
         $.ajax({
             url:'{{=URL('file')}}',
@@ -2597,17 +2596,22 @@ function createGraph(graph_data, labels){
                             if (event.altKey || event.shiftKey) {
                                 Dygraph.Interaction.defaultModel.mousemove(event, g, context);
                             } else if (tool == 'nodiff' || tool == 'drop'  || tool == 'cancel') {
+                                // when selecting out of range, the second extreme value becomes -1
+                                var startX = getX(context.dragStartX,g);
+                                var endX = getX(context.dragEndX,g);
+                                startX = (startX==-1)?graph_data[graph_data.length-1][0]:startX;
+                                endX = (endX==-1)?graph_data[graph_data.length-1][0]:endX; 
                                 if (tool == 'nodiff'){
                                     if (context.prevEndX != null){
-                                        add2nodiff(getX(context.dragStartX,g),getX(context.dragEndX,g));
+                                        add2nodiff(startX,endX);
                                     }
                                 } else if (tool == 'drop'){
                                     if (context.prevEndX != null){
-                                        add2drop(getX(context.dragStartX,g),getX(context.dragEndX,g));
+                                        add2drop(startX,endX);
                                     }
                                 }   else if (tool == 'cancel'){
                                     if (context.prevEndX != null){
-                                        erase(getX(context.dragStartX,g),getX(context.dragEndX,g));
+                                        erase(startX,endX);
                                     }
                                 }
                             }

@@ -487,6 +487,17 @@ def hg_update():
         TR(TD('update'), TD(ustdout),TD(ustderr)),
         ))
 
+
+@auth.requires_membership('admin')
+def git_update():
+    import subprocess
+    p = subprocess.Popen(['git','pull'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd = request.folder)
+    ustdout,ustderr = p.communicate()
+    return TAG[''](TABLE(
+        TR(TH('command'), TH('stdout'), TH('stderr')),
+        TR(TD('update'), TD(ustdout),TD(ustderr)),
+        ))
+
 def glob_ignore(path):
     '''returns True it path matches a pattern from IGNORE_PATTERNS'''
     for pattern in IGNORE_PATTERNS:

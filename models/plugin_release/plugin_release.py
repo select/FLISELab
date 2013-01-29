@@ -19,8 +19,10 @@ from gluon.sqlhtml import form_factory
 APPLICATION_NAME = 'FliseLab'
 RELEASE_FOLDER = os.path.join(request.folder, 'private', 'release')
 #this is the URL where the main app resides from which updates can be pulled
-APPLICATION_URL = "http://translucent-network.org/FLISELAB"
-APPLICATION_PACKAGE_URL = "http://translucent-network.org/fliselab_static"
+#APPLICATION_URL = "http://translucent-network.org/FLISELAB"
+#APPLICATION_PACKAGE_URL = "http://translucent-network.org/fliselab_static"
+APPLICATION_URL = "http://rumo.biologie.hu-berlin.de/FLISELAB"
+APPLICATION_PACKAGE_URL = "http://rumo.biologie.hu-berlin.de/fliselab_static"
 WEB2PY_URL = 'http://web2py.com'
 WEB2PY_VERSION_URL = WEB2PY_URL+'/examples/default/version'
 IGNORE_PATTERNS = ('*web2py.app.*', '*.sw?', '*~', '*.pyc', 'CVS', '^.git', '.svn', '*%s_*.zip'%APPLICATION_NAME, '*%s_*.tar*'%APPLICATION_NAME)

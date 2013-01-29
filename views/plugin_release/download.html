@@ -31,14 +31,14 @@ The following instructions should work for the operating system specific package
             <ul>
                 <li>On Windows you will find a {{=APPLICATION_NAME}}.bat file and a folder called "web2py". Double click the {{=APPLICATION_NAME}}.bat file. </li>
                 <li>On Linux make sure that you have Python &gt;=2.5 installed. You will find a {{=APPLICATION_NAME}}.sh file that you can execute</li>
-                <li>On Mac OsX we had not time to test it yet, sorry :/ Most likely you will need to install web2py as an application and start web2py from the menu. Everything else should be the same.</li>
+                <li>On Mac Os X, for Mountain Lion 10.8, you want to disable <a href="https://support.apple.com/kb/HT5290" target="_blank">Gatekeeper</a> for the first launch of the application. Go to 'System preferences' from the Apple menu, under 'Security' section: unlock the 'General' tab so that you can select temporally &quot;Allow applications downloaded from Anywhere&quot; (you will revert to previous state once our application is lauched). Then double click to lauch &quot;web2py&quot; app and authorize.</li>
             </ul>
         </li>
         <li>Choose a password
         <ul>
             <li>
             If you see a user interface like in the picture below you can type any password (it will not be stored and is only valid for this session) and press "start server".<br/>
-            <img src="{{=URL(request.application, 'static/plugin_release', 'web2py_start.png')}}" alt="web2py server start gui" /><br/>
+            <img src="{{=URL(request.application, 'static/plugin_release', 'web2py_start.png')}}" alt="web2py server start gui" /> or <img src="{{=URL(request.application, 'static/plugin_release', 'web2py_start_osx.png')}}" alt="web2py server start gui for mac" /><br/>
             You Broswer will automatically open and start the <i>{{=APPLICATION_NAME}}</i> application 
             </li>
             <li>
@@ -50,13 +50,12 @@ The following instructions should work for the operating system specific package
         On your first start you will be asked to create an initial user. If you are working locally with <i>{{=APPLICATION_NAME}}</i> you will not have to remember the password since you will be automatically logged in.<br/>
         You should now be able to use <i>{{=APPLICATION_NAME}}</i>.
         </li>
+        <li>Our application works together with the data management system <a href="http://translucent-network.org/pyMantis/">pyMantis</a>. In order to use the same strains name, export the list as explained (you can do it later going to &quot;config&quot; menu).</li>
     </ol>
 </p>
 <p>
     <h1>Update</h1>
     <p>If there is a new version of <i>{{=APPLICATION_NAME}}</i> available you will see a "update" button in your admin menu. After you updated <i>{{=APPLICATION_NAME}}</i> a restart might be required.
-    <br />
-    <img src="{{=URL(request.application, 'static/images/about', 'release_update.png')}}" alt="update button in menu" />
     <br />
     In addition to that you can click on the <a href="{{=URL(request.application, 'plugin_release', 'status')}}">version number in the admin menu</a> and you will be directed to a page where you can check for updates and install them.
     <br />

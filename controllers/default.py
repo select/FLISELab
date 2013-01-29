@@ -16,6 +16,8 @@ def index():
     rendered by views/default/index.html or views/generic.html
     """
     check_first_user()#check if the first users exits if not redirect to setup
+    response.files.append(URL(request.application, 'static','css/jquery-ui-1.9.2.css'))
+    response.files.append(URL(request.application, 'static','js/jquery-ui-1.9.2.js'))
     response.files.append(URL(request.application, 'static/dygraphs', 'dygraph-dev.js')) 
     response.files.append(URL(request.application, 'static/html5slider', 'html5slider.js'))      # to REMOVE in the end
     response.files.append(URL(request.application, 'static/js', 'jquery.confirm.js'))
@@ -23,8 +25,9 @@ def index():
     response.files.append(URL(request.application, 'static/colorpicker', 'colorPicker.css'))
     response.files.append(URL(request.application, 'static/css', 'flise.css'))
     response.files.append(URL(request.application, 'static/js', 'jquery.simplemodal.1.4.3.min.js'))
-    #response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.checkbox.js'))
-    #response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.checkbox.css'))
+    response.files.append(URL(request.application, 'static/js', 'smooth_spline.js'))
+    response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.iphone-checkboxes.js'))
+    response.files.append(URL(request.application, 'static/jquery-checkbox', 'jquery.iphone-checkboxes.css'))
     #import os
     #data = open(os.path.join(request.folder, 'private', 'FLISE', 'data.csv')).readlines()
     #data = '\\n'.join([l[:-1] for l in data])
@@ -120,7 +123,18 @@ def get_data():
     sel_set_events = db(db.event.flise_file_id == int(request.args(0)))
     events = dict([(field, [record_event[field] for record_event in sel_set_events.select()]) for field in db.event.fields]) if sel_set_events else None
     if request.extension == 'json':
-        return dict(result=csv_data, labels=labels, timepoint=timepoint, cutT=record.cutT, nodiffT=record.nodiffT, dropT=record.dropT, eventT=record.eventT, events=events)
+        return dict(
+            result = csv_data,
+            labels = labels, 
+            timepoint = timepoint, 
+            cutT = record.cutT, 
+            nodiffT = record.nodiffT, 
+            dropT = record.dropT, 
+            eventT = record.eventT, 
+            events = events,
+            smooth = record.disp_smooth or False,
+            smooth_value = record.disp_smooth_value or 0.1
+        )
     #not really working so better not use it
     data = '\\n'.join([','.join([str(x) for x in line]) for line in csv_data])
     return data
@@ -146,7 +160,7 @@ def get_options():
             strain = None,
             comments = 'General description, or any particular problem with the series...',
             smooth = False,
-            smooth_value = 10,
+            smooth_value = 0.1,
             OD = None,
             dilution = 50,
             cell_diameter = 4.5,
@@ -172,8 +186,8 @@ def get_options():
         #global options
         strain_id = record.strain_id or defaults["strain"],
         comments = record.comments or defaults["comments"],
-        smooth = record.disp_smooth or defaults["smooth"],
-        smooth_value = record.disp_smooth_value or defaults["smooth_value"],
+        smooth = record.disp_smooth or defaults["smooth"], #passed already in get_data, but passed again to make it simple
+            #smooth_value = record.disp_smooth_value or defaults["smooth_value"],
         OD = record.optical_density or defaults["OD"],
         dilution = record.dilution_factor or defaults["dilution"],
         cell_diameter = record.cell_diameter or defaults["cell_diameter"],
@@ -371,14 +385,17 @@ def del_solution():
 def get_savgol():
     response.generic_patterns = ['json']
     import savgol
-    myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), int(request.vars.deriv))
     from gluon.contrib import simplejson
     data2derive = simplejson.loads(request.vars.data)
+    deriv = simplejson.loads(request.vars.deriv)
     result = []
-    for iI in range(len(data2derive)):
+    for iD in range(len(deriv)):
         result.append([])
-        for iS in range(len(data2derive[iI])):
-            result[iI].append(myinstance.filterTS(data2derive[iI][iS]))
+        myinstance = savgol.Savgol(int(request.vars.w), int(request.vars.w), int(request.vars.order), deriv[iD])
+        for iI in range(len(data2derive)):
+            result[iD].append([])
+            for iS in range(len(data2derive[iI])):
+                result[iD][iI].append(myinstance.filterTS(data2derive[iI][iS]))
     return dict(result=result)
 
 
@@ -524,7 +541,16 @@ def subint_process_data():
                 t = t + ts
             volume.append(volume_step[volume_index])
             ncell.append(number_cell_step[volume_index])
-    return dict(concentrations=data2diff, concentrationsSmooth=datasmooth, concentrationsDiff=datadiff, fluxes=fluxes, volume=volume, ncell=ncell, surf2vol_ratio=vsr, intEvents=intEvents, intSolutions=intSolutions)
+    return dict(
+        concentrations=data2diff, 
+        concentrationsSmooth=datasmooth, 
+        concentrationsDiff=datadiff, 
+        fluxes=fluxes, 
+        volume=volume, 
+        ncell=ncell, 
+        surf2vol_ratio=vsr, 
+        intEvents=intEvents, 
+        intSolutions=intSolutions)
 
 
 def export_spreadsheet():

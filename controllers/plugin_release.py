@@ -110,6 +110,8 @@ def version():
     '''
     show the current version of this application
     '''
+    if not os.path.exists(os.path.join(request.folder, 'VERSION')):
+        open(os.path.join(request.folder, 'VERSION'), 'w').write('0.0.1')
     return open(os.path.join(request.folder, 'VERSION'), 'r').read()
 
 def check_version():
@@ -271,9 +273,11 @@ def create(sub_release_folder, release_type, release_web2py_base, update_web2py 
     #if os.path.exists(os.path.join(release_web2py_base, 'site-packages')):
     #    shutil.rmtree(os.path.join(release_web2py_base, 'site-packages'))
     #clean up web2py examples app
+    print 'removing exmaple app' 
     if os.path.exists(os.path.join(release_web2py_base, 'applications', 'examples')):
         shutil.rmtree(os.path.join(release_web2py_base, 'applications', 'examples'))
     #copy files and folders of current app into release applications/init
+    print 'copying app to web2py'
     for rdir in 'controllers cron languages models modules static views'.split():
         try:
             shutil.rmtree(os.path.join(new_app_dir, rdir))
@@ -288,26 +292,25 @@ def create(sub_release_folder, release_type, release_web2py_base, update_web2py 
             os.mkdir(os.path.join(new_app_dir, rdir))
         except:
             pass
+    print 'final preparations: startfile, executable flags, ...'
     if release_type == 'src':
-        open(os.path.join(sub_release_folder, '%s.sh'%APPLICATION_NAME), 'w').write('''#!/usr/bin/env bash
-python web2py/web2py.py''')
+        open(os.path.join(sub_release_folder, '%s'%APPLICATION_NAME), 'w').write('''#!/usr/bin/env bash
+python web2py/applications/init/static/plugin_release/open_browser.py&
+python web2py/web2py.py -p 8000 -a test -R ./application/init/open_browser.py''')
+        import stat
+        os.chmod(os.path.join(sub_release_folder, '%s'%APPLICATION_NAME), stat.S_IRWXU)
     elif release_type == 'win':
         shutil.copy(os.path.join(request.folder,'static', 'plugin_release', 'start.bat'), os.path.join(sub_release_folder, '%s.bat'%APPLICATION_NAME))
     elif release_type == 'osx':
         import stat
         os.chmod(os.path.join(sub_release_folder, 'web2py', 'web2py.app', 'Contents', 'MacOS',   'web2py'), 0755)
         os.chmod(os.path.join(sub_release_folder, 'web2py', 'web2py.app', 'Contents', 'MacOS',   'python'), 0755)
-        pass  # no clue what to do for osx to make it look nice
-    # move site-packages 
-    #if os.path.exists(os.path.join(request.folder, 'site-packages')):
-    #    shutil.copytree(os.path.join(request.folder, 'site-packages'), os.path.join(release_web2py_base, 'site-packages'))
-    #move and modify files for osx release
-    #if release_type == 'osx':
-    #    shutil.move()
-    #zipit(sub_release_folder, os.path.join(request.folder, 'static','%s_%s.zip'%(APPLICATION_NAME, release_type)))
-    #print 'creating tar.gz'
+        os.rename(os.path.join(sub_release_folder, 'web2py', 'web2py.app'),os.path.join(sub_release_folder, 'web2py', '%s.app'%APPLICATION_NAME))
+        targzit(os.path.join(sub_release_folder, 'web2py'), os.path.join(request.folder, 'static','%s_%s.tar.gz'%(APPLICATION_NAME, release_type)))
+        os.rename(os.path.join(sub_release_folder, 'web2py', '%s.app'%APPLICATION_NAME), os.path.join(sub_release_folder, 'web2py', 'web2py.app'))
+        return True
+    print 'creating compressed release'
     targzit(sub_release_folder, os.path.join(request.folder, 'static','%s_%s.tar.gz'%(APPLICATION_NAME, release_type)))
-    #TODO add start script
     return True
 
 def check_web2py_version(myversion, version_URL):
@@ -359,7 +362,7 @@ def compress(path, archive, base_path, archive_type = 'zip'):
             if archive_type == 'zip':
                 archive.write(p, './'+p[len(base_path):]) # Write the file to the zipfile
             elif archive_type == 'tar':
-                archive.add(p, './'+p[len(base_path):], False, glob_ignore)
+                archive.add(p, p[len(base_path):], False, glob_ignore)
     return
 
 def targzit(path, archname):
@@ -368,7 +371,7 @@ def targzit(path, archname):
     if os.path.isdir(path):
         compress(path, archive, path, 'tar')
     else:
-        archive.add(p, './'+p[len(base_path):])
+        archive.add(p, p[len(base_path):])
     archive.close()
 
     tgzfp = gzopen(archname, 'wb')
@@ -413,6 +416,7 @@ def full_release():
     '''
     create a full release package for linux, windows and mac and put it in the configured location
     '''
+    import os
     release_type = request.vars.type
     if not release_type in 'win src osx'.split():
         raise HTTP(500, 'unknown release type')
@@ -447,7 +451,7 @@ def full_release():
     #-------------------------------------------
     if not result == True:
         return result
-    download_location = URL(request.application, 'static', '%s_%s.tar.gz'%(APPLICATION_NAME, release_type))
+    download_location = URL(request.application, 'static', '%s_%s.tar.gz' % (APPLICATION_NAME, release_type))
     return TAG['']('Success, file can be downloaded from: ',A(download_location, _href=download_location))
     #redirect(URL(request.application, 'static', '%s_%s.zip'%(APPLICATION_NAME, release_type)))
 
@@ -482,12 +486,6 @@ def hg_update():
         TR(TD('pull'), TD(pstdout),TD(pstderr)),
         TR(TD('update'), TD(ustdout),TD(ustderr)),
         ))
-    #from mercurial import ui, hg
-    #from mercurial.node import hex
-    #'hg pull init'
-    #'hg update'
-    #repo = hg.repository('/path/to/repo/root', ui.ui())
-    #fctx = repo.filectx('/path/to/file', 'tip')
 
 def glob_ignore(path):
     '''returns True it path matches a pattern from IGNORE_PATTERNS'''

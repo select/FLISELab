@@ -487,10 +487,6 @@ def hg_update():
         TR(TD('update'), TD(ustdout),TD(ustderr)),
         ))
 
-<<<<<<< HEAD
-
-=======
->>>>>>> e95ce9c00d63f1cc0b9c62b4e36ca569858b9b73
 @auth.requires_membership('admin')
 def git_update():
     import subprocess

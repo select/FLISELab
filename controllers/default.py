@@ -528,6 +528,7 @@ def subint_process_data():
                 volume_time.append(intStart)
             volume_time.append(intEnd)
             t = intStart
+            volume_index = 0
             for iv, tv in enumerate(volume_time):
                 if tv <= intStart:
                     volume_index = iv
